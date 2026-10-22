@@ -3,6 +3,10 @@
 The pack of the game from game_data/, the folder the sprite editor keeps (its document, its pictures by kind,
 <KIND>.anim, dialogs/*.dlg), by the engine's packer: main/assets/<name>.pack and its header <name>_pack.h. The builds
 call it (make and idf.py alike), nobody needs to: python3 tools/pack.py <engine> [<the game's folder>]
+
+Two things more than the editor keeps: the samples of the sounds the document names, from sounds/<name>.wav beside it
+(the editor keeps their names only), and the constants of the document for the game's C, <name>_names.h:
+<NAME>_<CONSTANT> (the signals, the phases, the ways the scripts and the code share).
 """
 import glob
 import os
@@ -23,7 +27,14 @@ out = os.path.join(game, "main", "assets")
 os.makedirs(out, exist_ok=True)
 pack = Pack(name.upper())
 pack.add_sprites(docs[0])
+for sound in list(pack.sounds):
+    wav = os.path.join(data, "sounds", sound + ".wav")
+    if os.path.exists(wav):
+        pack.add_sound(sound, wav=wav)
 pack.write(os.path.join(out, name + ".pack"), os.path.join(out, name + "_pack.h"))
+with open(os.path.join(out, name + "_names.h"), "w", encoding="utf-8") as f:
+    f.write(f"/* Made by tools/pack.py: the constants of {name}.json, as its scripts name them. Do not edit. */\n#pragma once\n\n")
+    f.writelines(f"#define {name.upper()}_{c} {v}\n" for c, v in pack.constants.items())
 for w in pack.warnings:
     print("warning:", w)
 print(f"{name}.pack: {os.path.getsize(os.path.join(out, name + '.pack'))} bytes")

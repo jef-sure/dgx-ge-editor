@@ -1,6 +1,7 @@
-# Pac-Man: chomping his way, still against a wall, dying, running on the title.
-# The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and tells him his way.
-event left, right, up, down, stop, die
+# Pac-Man: chomping his way, still against a wall, caught, dying, running on the title.
+# The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and tells him his way. His body is the
+# mask PAC: a ghost that meets it says what follows (its hit: caught).
+event left, right, up, down, stop, caught, die
 
 script whole
     masks PAC
@@ -59,6 +60,12 @@ script still_down  # against a wall: his mouth stays as it was
     frame PAC_DOWN_1 1000ms
     hold
 
+script caught  # a ghost has him: he stands whole; the game is told (PLAY stands it all a while)
+    masks
+    signal SIG_CAUGHT
+    frame PAC_FULL 1000ms
+    hold
+
 script dying
     masks
     sound SND_DEATH
@@ -74,7 +81,7 @@ script dying
     frame PAC_DIE_9 133ms
     frame PAC_DIE_10 133ms
     frame none 500ms
-    signal 1  # tell the game: he is gone
+    signal SIG_GONE  # tell the game: he is gone
 label gone
     frame none 1000ms
     goto gone
@@ -99,4 +106,5 @@ on stop: right -> still_right now
 on stop: up -> still_up now
 on stop: left -> still_left now
 on stop: down -> still_down now
-on die: any -> dying now
+on caught: any -> caught now
+on die: caught -> dying now

@@ -1,107 +1,163 @@
-# The game itself as an actor: its numbers and what follows from what Pac-Man eats. The game tells it
-# what was eaten and reads the numbers (PACMAN_PLAY_PARAM_*); the pause dialog shows them. Its signals:
-# SIG_NUMBERS the numbers changed, SIG_LEVEL the level cleared, SIG_OVER no lives left, SIG_GO READY! is
-# over (the timer ready), SIG_FRUIT the cherry comes, SIG_FRUIT_GONE it is gone (the timer fruit), SIG_NEW a new
-# game (the game lays the dots and the actors anew).
-event start, dot, energizer, ghost, fruit, lost, go, fruit_gone, restart
+# The game itself as an actor: its numbers, its phases and how long each lasts, and the word it shows (READY!,
+# GAME OVER: the game draws it in the zone message). The game tells it what happened and reads its phase (what moves
+# now: PH_*) and its numbers (PACMAN_PLAY_PARAM_*); the pause dialog shows them. Its signals: SIG_NUMBERS the
+# numbers changed, SIG_LAY the dots anew (a game, a level), SIG_PLACE everyone where they start, SIG_DIE Pac-Man dies
+# (the ghosts go), SIG_HIDE the ghosts and the fruit go (the level eaten), SIG_WHITE and SIG_BLUE the maze flashing,
+# SIG_FRUIT the fruit comes, SIG_RELEASE the next ghost out of the house (no dot eaten for a while: the timer idle),
+# SIG_OVER the game is over, SIG_TITLE the title again.
+event start, restart, dot, energizer, ghost, fruit, caught, lost, idle
 
+param phase PH_TITLE
 param score 0
 param lives LIVES
 param eaten 0  # dots and energizers eaten on this level
 param bonus GHOST_SCORE  # what the next ghost of this fright is worth
+param extra 0  # 1: the extra life of this game is given
 
-script idle
+script title  # the title show plays (the game's)
+    set phase PH_TITLE
     frame none 1000ms
     hold
 
 script new_game
     set score 0
     set lives LIVES
-    set eaten 0
+    set extra 0
     sound SND_START
-    signal SIG_NEW
-    signal SIG_NUMBERS
+    goto level
+
+script level  # the dots anew
+    set eaten 0
+    signal SIG_LAY
     goto ready
 
-script ready  # READY! for a while, then the game goes
-    timer start ready
-    goto idle
+script ready  # everyone where they start, READY! a while, then the game goes
+    set phase PH_READY
+    timer stop idle
+    signal SIG_PLACE
+    signal SIG_NUMBERS
+    frame WORDS_READY READY_MS
+    set phase PH_PLAYING
+    timer start idle
+    goto playing
 
-script going
-    signal SIG_GO
-    goto idle
+script playing
+    frame none 1000ms
+    hold
 
 script ate_dot
     add score DOT_SCORE
-    goto bonus_life if score >= EXTRA_LIFE and score - DOT_SCORE < EXTRA_LIFE  # the score passed it just now
     goto counted
 
 script ate_energizer
     add score ENERGIZER_SCORE
     set bonus GHOST_SCORE
-    goto bonus_life if score >= EXTRA_LIFE and score - ENERGIZER_SCORE < EXTRA_LIFE
     goto counted
 
 script counted
     add eaten 1
     sound SND_CHOMP
-    signal SIG_NUMBERS
+    timer start idle  # anew: no dot for so long, the house lets one out
     goto cleared if eaten >= DOTS
     goto fruit_comes if eaten == FRUIT_DOTS1 or eaten == FRUIT_DOTS2
-    goto idle
+    goto scored
 
-script fruit_comes  # under the house for a while
-    timer start fruit
+script fruit_comes  # under the house, for a while (the fruit's own time)
     signal SIG_FRUIT
-    goto idle
+    goto scored
 
-script fruit_goes
-    signal SIG_FRUIT_GONE
-    goto idle
-
-script ate_ghost  # 200, 400, 800, 1600 in one fright
-    add score bonus
+script scored  # the numbers shown anew; an extra life once a game
     signal SIG_NUMBERS
-    goto doubled if score < EXTRA_LIFE or score - bonus >= EXTRA_LIFE
-    set bonus bonus * 2
-    goto bonus_life
+    goto bonus_life if extra == 0 and score >= EXTRA_LIFE
+    goto playing
 
-script doubled
-    set bonus bonus * 2
-    goto idle
-
-script ate_fruit
-    add score FRUIT_SCORE
-    sound SND_FRUIT
-    timer stop fruit
-    signal SIG_NUMBERS
-    goto bonus_life if score >= EXTRA_LIFE and score - FRUIT_SCORE < EXTRA_LIFE
-    goto idle
-
-script bonus_life  # once a game: the score passes EXTRA_LIFE only once
+script bonus_life
+    set extra 1
     add lives 1
     sound SND_EXTRA_LIFE
     signal SIG_NUMBERS
-    goto idle
+    goto playing
 
-script cleared  # the next level: the game lays the dots again
-    set eaten 0
-    signal SIG_LEVEL
-    goto ready
+script ate_ghost  # 200, 400, 800, 1600 in one fright: all stands a while, its points shown
+    add score bonus
+    set bonus bonus * 2
+    set phase PH_ATE
+    timer hold idle
+    signal SIG_NUMBERS
+    frame none EAT_GHOST_MS
+    set phase PH_PLAYING
+    timer go idle
+    goto scored
 
-script life_lost
+script ate_fruit
+    add score FRUIT_SCORE
+    goto scored
+
+script release  # no dot eaten for so long: the next ghost out, and the time anew
+    signal SIG_RELEASE
+    timer start idle
+    goto playing
+
+script caught  # a ghost has him: all stands a second, then he dies (the ghosts go)
+    set phase PH_CAUGHT
+    timer stop idle
+    frame none 1000ms
+    set phase PH_DYING
+    signal SIG_DIE
+    frame none 1000ms
+    hold
+
+script life_lost  # he is gone (the game says): again, or the game is over
     add lives -1
     signal SIG_NUMBERS
     goto ready if lives > 0
-    signal SIG_OVER
-    goto idle
+    goto game_over
 
-on start: idle -> new_game now
-on restart: idle -> new_game now
-on dot: idle -> ate_dot now
-on energizer: idle -> ate_energizer now
-on ghost: idle -> ate_ghost now
-on fruit: idle -> ate_fruit now
-on lost: idle -> life_lost now
-on go: idle -> going now
-on fruit_gone: idle -> fruit_goes now
+script cleared  # the level eaten: all stands, the maze flashes, the next level
+    set phase PH_CLEARED
+    timer stop idle
+    signal SIG_NUMBERS
+    frame none 1000ms
+    signal SIG_HIDE
+    signal SIG_WHITE
+    frame none 233ms
+    signal SIG_BLUE
+    frame none 233ms
+    signal SIG_WHITE
+    frame none 233ms
+    signal SIG_BLUE
+    frame none 233ms
+    signal SIG_WHITE
+    frame none 233ms
+    signal SIG_BLUE
+    frame none 233ms
+    signal SIG_WHITE
+    frame none 233ms
+    signal SIG_BLUE
+    frame none 233ms
+    frame none 300ms
+    goto level
+
+script game_over
+    set phase PH_OVER
+    signal SIG_OVER
+    frame WORDS_GAME_OVER 1000ms  # a start in this second is not taken
+    goto over
+
+script over
+    frame WORDS_GAME_OVER 7000ms
+    signal SIG_TITLE
+    goto title
+
+group any: title, new_game, level, ready, playing, ate_dot, ate_energizer, counted, fruit_comes, scored, bonus_life, ate_ghost, ate_fruit, release, caught, life_lost, cleared, game_over, over
+
+on start: title -> new_game now
+on start: over -> new_game now
+on restart: any -> new_game now
+on dot: playing -> ate_dot now
+on energizer: playing -> ate_energizer now
+on ghost: playing -> ate_ghost now
+on fruit: playing -> ate_fruit now
+on idle: playing -> release now
+on caught: playing -> caught now
+on lost: caught -> life_lost now

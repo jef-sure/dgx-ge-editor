@@ -39,9 +39,13 @@ Shift is A, Z and X are B and X of the engine's host board; the mouse is a finge
 | --- | --- | --- |
 | Snake | the field (walls, a scene), the snake as tiles chosen by the cell's modifier (the sides it goes on to), the apple shining, sparks, PLAY: score, best, length, speed, the star and its time | a cell a step, turning, what the head finds |
 | Tetris | the well and its boxes, blocks as tiles by piece, the shapes and the speeds of the levels as numbers, PLAY: score, lines, level, the time before a piece locks, full lines flashing | falling, moving, turning against walls, full lines |
-| Pac-Man | the maze (a picture, its walls and door as cells), dots and energizers as tiles, Pac-Man and the ghosts, frightened and flashing, the schedule of the ghosts' modes, speeds, times and the ghosts' corners as numbers, PLAY: score, lives, the bonus of a ghost, the extra life, the fruit, READY | walking the maze, where each ghost aims (the arcade's targets), the house |
+| Pac-Man | the maze (a picture, its walls and door as cells), dots and energizers as tiles; the ghosts whole: bobbing in the house and out through the door (`path`), where each aims (the arcade's targets: tables and questions to the game, `game.*`), the modes, Cruise Elroy, frightened anywhere (the dice, `rnd`), eaten, the eyes home and in again; who meets whom (masks, `hit`: caught, eaten, the fruit); the fruit; the house letting one out when no dot is eaten for a while (a timer); PLAY: the phases and how long each lasts, score, lives, the extra life, READY and GAME OVER; the sounds (`sounds/*.wav`) | walking the maze from cell to cell toward the cell a ghost aims at, the answers to its questions, the clocks (the maze stands while PLAY's phase says), passing on what the actors say and whom they meet; the best score in NVS |
 
 All three have a title show and a pause dialog (Continue / New game) with PLAY's numbers, made in the editor.
+
+Pac-Man's pack script (`pacman/tools/pack.py`) does two things more than the editor keeps: it gives the sounds the
+document names their samples, `game_data/sounds/<name>.wav` (the editor keeps names only), and writes the document's
+constants for the C, `pacman_names.h` (the signals, the phases, the ways the scripts and the code share).
 
 ### Remaking the data
 

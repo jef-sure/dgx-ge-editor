@@ -426,7 +426,7 @@ const AnimProps = {
                 </span>
                 <input v-model="newParam" :placeholder="T('new param', 'новый параметр')" size="8" @keyup.enter="addParam">
                 <button class="btn btn-sm btn-outline-secondary" @click="addParam" :title="T('Add a param with this name', 'Добавить параметр с этим именем')">{{T('+ param', '+ параметр')}}</button>
-                <span v-if="animation.params.length > Anim.runtimeParams" class="warning-text" :title="T('The engine keeps 4 params for an actor; it will not open a file with more', 'Движок держит у персонажа 4 параметра; файл с большим числом он не откроет')">⚠ {{T('the engine keeps ' + Anim.runtimeParams + ' params an actor', 'движок держит у персонажа ' + Anim.runtimeParams + ' параметра')}}</span>
+                <span v-if="animation.params.length > 4" class="help-text" :title="T('The build keeps as many params an actor as the greediest animation of the pack has (dgx_ge_params_of_pack): every actor of the game, 8 bytes a param', 'Сборка держит у актёра столько параметров, сколько у самой жадной анимации пакета (dgx_ge_params_of_pack): у каждого актёра игры, по 8 байт на параметр')">{{T('every actor of the game keeps ' + animation.params.length + ' params', 'у каждого актёра игры будет ' + animation.params.length + ' параметров')}}</span>
                 <span v-if="!animation.params.length" class="help-text">{{T('none; for example, «action»: what the actor is doing', 'нет — например, «action»: что делает персонаж')}}</span>
             </div>
             <div class="anim-params">

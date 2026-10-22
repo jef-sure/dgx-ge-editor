@@ -681,8 +681,10 @@ state with its transitions; the bottom shows the player.
   header they become `PREFIX_KIND_GAME_NAME`.
 - **Params**: the character's params, a name and a starting value. Renaming
   one updates the `set`/`add` statements, an empty name deletes it, and ‹ ›
-  change the order (which gives the numbers the game uses). The engine keeps
-  4 params per character; with more, the editor warns.
+  change the order (which gives the numbers the game uses). Every actor of
+  the game keeps as many params as the greediest animation of the pack
+  (the build takes the number from the pack's header); past 4 the editor
+  says so.
 - **Pockets, Stack**: how many places for things the character has, and how
   many things of this kind fit in one place of someone else's pocket.
 - **State**: the selected script as a state, with **all events** listed. If

@@ -134,8 +134,6 @@ const Anim = {
     },
     maxScripts: 255,
     maxParams: 255,
-    // params an actor keeps in the engine (DGX_GE_ANIM_PARAMS): a blob with more is not opened
-    runtimeParams: 4,
 
     empty() {
         return {
@@ -1882,8 +1880,6 @@ const Anim = {
             }
         }
         if (a.params.length > this.maxParams) err('param', null, null, a.params.length + ' params, ' + this.maxParams + ' at most');
-        else if (a.params.length > this.runtimeParams)
-            warn('param', null, null, a.params.length + ' params: the engine keeps ' + this.runtimeParams + ' an actor (DGX_GE_ANIM_PARAMS), it does not open a blob with more');
         let names = {};
         for (const s of a.scripts) {
             if (!this.isName(s.name)) err('script', s.name, null, "bad script name '" + s.name + "'");

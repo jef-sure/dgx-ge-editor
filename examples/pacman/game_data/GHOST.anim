@@ -1,12 +1,90 @@
-# A ghost: its way (its eyes look it), frightened and flashing as the fright ends, its eyes alone going home.
-# The four are one kind: the game draws each with its colors (param who: the palettes PINKY, INKY, CLYDE).
-event left, right, up, down, fright, eaten, home, hide
+# A ghost, all it does: bobbing in the house till its turn, out through the door, hunting in the maze,
+# frightened, eaten, its eyes home and in through the door, out again. In the maze the game walks it from the middle
+# of a cell to the next (dgx_ge_walk.h) toward the cell it aims at (tcol, trow) at its speed (speed), and tells it
+# its way; in the house its own path moves it. Where it aims is the arcade's, by who: Blinky at Pac-Man's cell, Pinky
+# four cells ahead of him, Inky past two ahead as far again as Blinky is from there, Clyde at Pac-Man when far and
+# at his corner when near; scattering, each at its corner; frightened, anywhere. Its body (the mask GHOST) catches
+# Pac-Man, or is eaten by him frightened (its hit). The four are one kind: the game draws each with its colors
+# (param who: the palettes PINKY, INKY, CLYDE). What it asks the game (game.*): where Pac-Man is (his cell, his way),
+# where Blinky is, its own cell, the mode, the dots left, whether it is in a tunnel, which ghost is the next in the
+# house, the dots eaten, the door and the middle of the house.
+event left, right, up, down, fright, eaten, enter, leave, hide
 
-param way WAY_LEFT  # the way it goes now: frightened, it keeps it for after
+table way_dx -1 1 0 0  # by WAY_*
+table way_dy 0 0 -1 1
+table ahead 0 4 2 0  # cells ahead of Pac-Man, by who
+table corner_col 25 2 27 0  # where each scatters: cells outside the maze, above and below it
+table corner_row -3 -3 31 31
+
+game pac_col pac_row pac_way blinky_col blinky_row col row mode dots_left tunnel next_home eaten door_col door_row door_x door_y inside_y
+
 param who 0  # 0 Blinky, 1 Pinky, 2 Inky, 3 Clyde
+param way WAY_LEFT  # the way it goes now: frightened, the game keeps telling it, for after
+param wait 0  # dots eaten before it may leave the house
+param state ST_HOUSE  # where it is (ST_*): the game walks it in the maze (hunting, blue, eyes)
+param speed GHOST_SPEED  # in the maze, points a second x 256
+param tcol 0  # the cell it aims at
+param trow 0
+param aim 0  # 1: its corner
 param n 0
+param dist 0
 
-script walk  # on its way, whichever it was
+script home  # in the house, bobbing, till it is the next and its dots are eaten (or the game lets it out)
+    set state ST_HOUSE
+    masks
+    path x: 0, y: (who % 2 ? 4 : -4) * sin(t * HOUSE_SPEED / 1024)
+label home_up
+    goto leaving if game.next_home == who and game.eaten >= wait
+    goto home_down if vy > 0
+    frame GHOST_UP_0 133ms
+    goto leaving if game.next_home == who and game.eaten >= wait
+    goto home_down if vy > 0
+    frame GHOST_UP_1 133ms
+    goto home_up
+label home_down
+    goto leaving if game.next_home == who and game.eaten >= wait
+    goto home_up if vy < 0
+    frame GHOST_DOWN_0 133ms
+    goto leaving if game.next_home == who and game.eaten >= wait
+    goto home_up if vy < 0
+    frame GHOST_DOWN_1 133ms
+    goto home_down
+
+script leaving  # out of the house: to the middle of the door, then up through it
+    set state ST_LEAVING
+    masks
+    set dist game.door_x - x
+    path x: max(min(t * HOUSE_SPEED / 256, dist), -t * HOUSE_SPEED / 256), y: 0
+    goto leave_up if abs(dist) < 0.5
+    goto leave_left if dist < 0
+label leave_right
+    frame GHOST_RIGHT_0 133ms
+    goto leave_up if x >= game.door_x - 0.5
+    frame GHOST_RIGHT_1 133ms
+    goto leave_up if x >= game.door_x - 0.5
+    goto leave_right
+label leave_left
+    frame GHOST_LEFT_0 133ms
+    goto leave_up if x <= game.door_x + 0.5
+    frame GHOST_LEFT_1 133ms
+    goto leave_up if x <= game.door_x + 0.5
+    goto leave_left
+label leave_up
+    set dist y - game.door_y
+    path x: 0, y: -min(t * HOUSE_SPEED / 256, dist)
+label leave_up_go
+    frame GHOST_UP_0 133ms
+    goto out if y <= game.door_y + 0.5
+    frame GHOST_UP_1 133ms
+    goto out if y <= game.door_y + 0.5
+    goto leave_up_go
+
+script out  # above the door: the game walks it from here, left
+    velocity 0 0
+    signal SIG_OUT
+    goto left
+
+script walk  # hunting on its way, whichever it was
     goto right if way == WAY_RIGHT
     goto up if way == WAY_UP
     goto down if way == WAY_DOWN
@@ -14,57 +92,147 @@ script walk  # on its way, whichever it was
 
 script right
     set way WAY_RIGHT
+    set state ST_HUNTING
     masks GHOST
+    hit GHOST on PAC event caught
 label right_go
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : ((who == 0 and game.dots_left <= ELROY2_DOTS) ? ELROY2_SPEED : ((who == 0 and game.dots_left <= ELROY1_DOTS) ? ELROY1_SPEED : GHOST_SPEED))
+    set tcol game.pac_col + (way_dx[game.pac_way] - (game.pac_way == WAY_UP)) * ahead[who]
+    set trow game.pac_row + way_dy[game.pac_way] * ahead[who]
+    set tcol who == 2 ? 2 * tcol - game.blinky_col : tcol
+    set trow who == 2 ? 2 * trow - game.blinky_row : trow
+    set aim (game.mode == SCATTER and not (who == 0 and game.dots_left <= ELROY1_DOTS)) or (who == 3 and (game.col - game.pac_col) * (game.col - game.pac_col) + (game.row - game.pac_row) * (game.row - game.pac_row) <= 64)
+    set tcol aim ? corner_col[who] : tcol
+    set trow aim ? corner_row[who] : trow
     frame GHOST_RIGHT_0 133ms
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : ((who == 0 and game.dots_left <= ELROY2_DOTS) ? ELROY2_SPEED : ((who == 0 and game.dots_left <= ELROY1_DOTS) ? ELROY1_SPEED : GHOST_SPEED))
+    set tcol game.pac_col + (way_dx[game.pac_way] - (game.pac_way == WAY_UP)) * ahead[who]
+    set trow game.pac_row + way_dy[game.pac_way] * ahead[who]
+    set tcol who == 2 ? 2 * tcol - game.blinky_col : tcol
+    set trow who == 2 ? 2 * trow - game.blinky_row : trow
+    set aim (game.mode == SCATTER and not (who == 0 and game.dots_left <= ELROY1_DOTS)) or (who == 3 and (game.col - game.pac_col) * (game.col - game.pac_col) + (game.row - game.pac_row) * (game.row - game.pac_row) <= 64)
+    set tcol aim ? corner_col[who] : tcol
+    set trow aim ? corner_row[who] : trow
     frame GHOST_RIGHT_1 133ms
     goto right_go
 
 script up
     set way WAY_UP
+    set state ST_HUNTING
     masks GHOST
+    hit GHOST on PAC event caught
 label up_go
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : ((who == 0 and game.dots_left <= ELROY2_DOTS) ? ELROY2_SPEED : ((who == 0 and game.dots_left <= ELROY1_DOTS) ? ELROY1_SPEED : GHOST_SPEED))
+    set tcol game.pac_col + (way_dx[game.pac_way] - (game.pac_way == WAY_UP)) * ahead[who]
+    set trow game.pac_row + way_dy[game.pac_way] * ahead[who]
+    set tcol who == 2 ? 2 * tcol - game.blinky_col : tcol
+    set trow who == 2 ? 2 * trow - game.blinky_row : trow
+    set aim (game.mode == SCATTER and not (who == 0 and game.dots_left <= ELROY1_DOTS)) or (who == 3 and (game.col - game.pac_col) * (game.col - game.pac_col) + (game.row - game.pac_row) * (game.row - game.pac_row) <= 64)
+    set tcol aim ? corner_col[who] : tcol
+    set trow aim ? corner_row[who] : trow
     frame GHOST_UP_0 133ms
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : ((who == 0 and game.dots_left <= ELROY2_DOTS) ? ELROY2_SPEED : ((who == 0 and game.dots_left <= ELROY1_DOTS) ? ELROY1_SPEED : GHOST_SPEED))
+    set tcol game.pac_col + (way_dx[game.pac_way] - (game.pac_way == WAY_UP)) * ahead[who]
+    set trow game.pac_row + way_dy[game.pac_way] * ahead[who]
+    set tcol who == 2 ? 2 * tcol - game.blinky_col : tcol
+    set trow who == 2 ? 2 * trow - game.blinky_row : trow
+    set aim (game.mode == SCATTER and not (who == 0 and game.dots_left <= ELROY1_DOTS)) or (who == 3 and (game.col - game.pac_col) * (game.col - game.pac_col) + (game.row - game.pac_row) * (game.row - game.pac_row) <= 64)
+    set tcol aim ? corner_col[who] : tcol
+    set trow aim ? corner_row[who] : trow
     frame GHOST_UP_1 133ms
     goto up_go
 
 script left
     set way WAY_LEFT
+    set state ST_HUNTING
     masks GHOST
+    hit GHOST on PAC event caught
 label left_go
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : ((who == 0 and game.dots_left <= ELROY2_DOTS) ? ELROY2_SPEED : ((who == 0 and game.dots_left <= ELROY1_DOTS) ? ELROY1_SPEED : GHOST_SPEED))
+    set tcol game.pac_col + (way_dx[game.pac_way] - (game.pac_way == WAY_UP)) * ahead[who]
+    set trow game.pac_row + way_dy[game.pac_way] * ahead[who]
+    set tcol who == 2 ? 2 * tcol - game.blinky_col : tcol
+    set trow who == 2 ? 2 * trow - game.blinky_row : trow
+    set aim (game.mode == SCATTER and not (who == 0 and game.dots_left <= ELROY1_DOTS)) or (who == 3 and (game.col - game.pac_col) * (game.col - game.pac_col) + (game.row - game.pac_row) * (game.row - game.pac_row) <= 64)
+    set tcol aim ? corner_col[who] : tcol
+    set trow aim ? corner_row[who] : trow
     frame GHOST_LEFT_0 133ms
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : ((who == 0 and game.dots_left <= ELROY2_DOTS) ? ELROY2_SPEED : ((who == 0 and game.dots_left <= ELROY1_DOTS) ? ELROY1_SPEED : GHOST_SPEED))
+    set tcol game.pac_col + (way_dx[game.pac_way] - (game.pac_way == WAY_UP)) * ahead[who]
+    set trow game.pac_row + way_dy[game.pac_way] * ahead[who]
+    set tcol who == 2 ? 2 * tcol - game.blinky_col : tcol
+    set trow who == 2 ? 2 * trow - game.blinky_row : trow
+    set aim (game.mode == SCATTER and not (who == 0 and game.dots_left <= ELROY1_DOTS)) or (who == 3 and (game.col - game.pac_col) * (game.col - game.pac_col) + (game.row - game.pac_row) * (game.row - game.pac_row) <= 64)
+    set tcol aim ? corner_col[who] : tcol
+    set trow aim ? corner_row[who] : trow
     frame GHOST_LEFT_1 133ms
     goto left_go
 
 script down
     set way WAY_DOWN
+    set state ST_HUNTING
     masks GHOST
+    hit GHOST on PAC event caught
 label down_go
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : ((who == 0 and game.dots_left <= ELROY2_DOTS) ? ELROY2_SPEED : ((who == 0 and game.dots_left <= ELROY1_DOTS) ? ELROY1_SPEED : GHOST_SPEED))
+    set tcol game.pac_col + (way_dx[game.pac_way] - (game.pac_way == WAY_UP)) * ahead[who]
+    set trow game.pac_row + way_dy[game.pac_way] * ahead[who]
+    set tcol who == 2 ? 2 * tcol - game.blinky_col : tcol
+    set trow who == 2 ? 2 * trow - game.blinky_row : trow
+    set aim (game.mode == SCATTER and not (who == 0 and game.dots_left <= ELROY1_DOTS)) or (who == 3 and (game.col - game.pac_col) * (game.col - game.pac_col) + (game.row - game.pac_row) * (game.row - game.pac_row) <= 64)
+    set tcol aim ? corner_col[who] : tcol
+    set trow aim ? corner_row[who] : trow
     frame GHOST_DOWN_0 133ms
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : ((who == 0 and game.dots_left <= ELROY2_DOTS) ? ELROY2_SPEED : ((who == 0 and game.dots_left <= ELROY1_DOTS) ? ELROY1_SPEED : GHOST_SPEED))
+    set tcol game.pac_col + (way_dx[game.pac_way] - (game.pac_way == WAY_UP)) * ahead[who]
+    set trow game.pac_row + way_dy[game.pac_way] * ahead[who]
+    set tcol who == 2 ? 2 * tcol - game.blinky_col : tcol
+    set trow who == 2 ? 2 * trow - game.blinky_row : trow
+    set aim (game.mode == SCATTER and not (who == 0 and game.dots_left <= ELROY1_DOTS)) or (who == 3 and (game.col - game.pac_col) * (game.col - game.pac_col) + (game.row - game.pac_row) * (game.row - game.pac_row) <= 64)
+    set tcol aim ? corner_col[who] : tcol
+    set trow aim ? corner_row[who] : trow
     frame GHOST_DOWN_1 133ms
     goto down_go
 
-script fright  # blue for a while, then flashing; the game makes it slow
+script fright  # blue for a while, then flashing; slow, anywhere; Pac-Man eats it
+    set state ST_BLUE
     masks GHOST
+    hit GHOST on PAC recoil eaten
     sound SND_FRIGHT
     set n 0
 label fright_blue
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : GHOST_FRIGHT_SPEED
+    set tcol rnd(COLS - 1)
+    set trow rnd(ROWS - 1)
     frame GHOST_FRIGHT_0 133ms
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : GHOST_FRIGHT_SPEED
+    set tcol rnd(COLS - 1)
+    set trow rnd(ROWS - 1)
     frame GHOST_FRIGHT_1 133ms
     add n 1
     goto fright_blue if n < FRIGHT_LOOPS
     set n 0
 label fright_flash
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : GHOST_FRIGHT_SPEED
+    set tcol rnd(COLS - 1)
+    set trow rnd(ROWS - 1)
     frame GHOST_FLASH_0 233ms
+    set speed game.tunnel ? GHOST_TUNNEL_SPEED : GHOST_FRIGHT_SPEED
+    set tcol rnd(COLS - 1)
+    set trow rnd(ROWS - 1)
     frame GHOST_FRIGHT_0 233ms
     add n 1
     goto fright_flash if n < FRIGHT_FLASHES
-    signal 1  # tell the game: the fright is over
     goto walk
 
-script eyes  # eaten: only its eyes go home, it meets nothing
+script eyes  # eaten: only its eyes go home, fast, to the door; they meet nothing
+    set state ST_EYES
     masks
     sound SND_EAT_GHOST
+    signal SIG_EATEN  # tell the game: PLAY counts it
+    set speed EYES_SPEED
+    set tcol game.door_col
+    set trow game.door_row
     goto eyes_right if way == WAY_RIGHT
     goto eyes_up if way == WAY_UP
     goto eyes_down if way == WAY_DOWN
@@ -90,10 +258,28 @@ script eyes_down
     frame GHOST_EYES_DOWN 1000ms
     hold
 
-script hidden
+script entering  # at the door (the game says): its eyes in, down to the middle of the house; alive, out again
+    set state ST_ENTERING
+    set dist game.door_x - x
+    path x: max(min(t * EYES_SPEED / 256, dist), -t * EYES_SPEED / 256), y: 0
+label entering_side
+    frame GHOST_EYES_DOWN 33ms
+    goto entering_down if abs(x - game.door_x) < 0.5
+    goto entering_side
+label entering_down
+    set dist game.inside_y - y
+    path x: 0, y: min(t * EYES_SPEED / 256, dist)
+label entering_down_go
+    frame GHOST_EYES_DOWN 33ms
+    goto leaving if y >= game.inside_y - 0.5
+    goto entering_down_go
+
+script hidden  # gone a while (Pac-Man dying, the level eaten): the game starts it anew
     masks
+    velocity 0 0
+label hidden_still
     frame none 1000ms
-    hold
+    goto hidden_still
 
 script parade  # entry: the title show starts it; after Pac-Man
     masks
@@ -103,21 +289,21 @@ label parade_go
     frame GHOST_RIGHT_1 133ms
     goto parade_go
 
-group walking: walk, right, up, left, down, hidden
+group hunting: walk, right, up, left, down
 group looking: eyes, eyes_right, eyes_up, eyes_left, eyes_down
+group seen: home, leaving, out, walk, right, up, left, down, fright, eyes, eyes_right, eyes_up, eyes_left, eyes_down, entering
 
-on right: walking -> right now
+on right: hunting -> right now
 on right: looking -> eyes_right now
-on up: walking -> up now
+on up: hunting -> up now
 on up: looking -> eyes_up now
-on left: walking -> left now
+on left: hunting -> left now
 on left: looking -> eyes_left now
-on down: walking -> down now
+on down: hunting -> down now
 on down: looking -> eyes_down now
-on fright: walking -> fright now
+on fright: hunting -> fright now
 on fright: fright -> fright now
 on eaten: fright -> eyes now
-on home: looking -> walk now
-on hide: walking -> hidden now
-on hide: looking -> hidden now
-on hide: fright -> hidden now
+on enter: looking -> entering now
+on leave: home -> leaving now
+on hide: seen -> hidden now

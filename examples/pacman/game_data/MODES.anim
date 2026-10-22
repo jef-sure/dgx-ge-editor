@@ -1,5 +1,5 @@
 # The schedule of the ghosts' modes, level 1: a signal to the game as each begins. The game starts it
-# with a life (an actor of its own, not drawn) and holds it while the ghosts are frightened.
+# with a life (an actor of its own, not drawn); its clock stands while the ghosts are frightened.
 script schedule
     signal SCATTER
     frame none 7000ms

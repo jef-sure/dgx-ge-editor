@@ -1,0 +1,23 @@
+# The fruit under the house: shown a while when PLAY says (SIG_FRUIT); Pac-Man meeting it eats it (its hit).
+event show, eaten, hide
+
+script hidden
+    masks
+    frame none 1000ms
+    hold
+
+script shown
+    masks FRUIT
+    hit FRUIT on PAC recoil eaten
+    frame FRUIT_CHERRY FRUIT_MS
+    goto hidden
+
+script taken
+    masks
+    sound SND_FRUIT
+    signal SIG_TAKEN  # tell the game: PLAY counts it
+    goto hidden
+
+on show: hidden -> shown now
+on eaten: shown -> taken now
+on hide: shown -> hidden now

@@ -2,7 +2,7 @@
 """Makes the data of the example games examples/pacman, examples/tetris, examples/snake: in each, game_data/, the
 folder the editor opens (Open folder) and the packer of the engine reads (dgx_ge_pack.py add_sprites): the document
 <name>.json, the pictures of each kind in a folder of its name, <KIND>.anim of each kind with animations,
-dialogs/*.dlg. The game's code beside it (main/, the builds) is not touched.
+dialogs/*.dlg, sounds/<name>.wav of the sounds it names (the editor keeps their names only). The game's code beside it (main/, the builds) is not touched.
 
 Everything is drawn here, simply: no pictures of anybody else's. What the games do is data as far as the engine
 takes it: the scripts of the actors, the score and the speed of the game in the game's own actor PLAY, the tiles
@@ -145,6 +145,43 @@ def write_png(path, pic, colors):
         out.write(chunk(b'IEND', b''))
 
 
+def square_mask(index, half):
+    """A frame's mask: a square of 2 x half points around its base point (the body that meets others)."""
+    w = 2 * half
+    digits = (w + 3) // 4
+    row = format(((1 << w) - 1) << (digits * 4 - w), f'0{digits}x')
+    return {str(index): {'x': -half, 'y': -half, 'width': w, 'height': w, 'rows': [row] * w}}
+
+
+# --- sounds ---
+
+SOUND_RATE = 11025
+
+
+def synth(notes, rate=SOUND_RATE):
+    """Samples of notes one after another, each (from Hz, to Hz, ms, volume, shape): the pitch glides from one to the
+    other; 0 Hz is a rest; shape square or triangle. Each note ends softly (no click)."""
+    out, phase = [], 0.0
+    for f0, f1, ms, vol, shape in notes:
+        n = int(rate * ms / 1000)
+        for i in range(n):
+            f = f0 + (f1 - f0) * i / max(1, n - 1)
+            phase = (phase + f / rate) % 1.0
+            v = 0 if f0 == 0 else (1 if phase < 0.5 else -1) if shape == 'square' else 4 * abs(phase - 0.5) - 1
+            fade = min(1.0, (n - i) / (rate * 0.004))
+            out.append(int(v * vol * fade * 32767))
+    return out
+
+
+def write_wav(path, samples, rate=SOUND_RATE):
+    import wave
+    with wave.open(path, 'wb') as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(struct.pack(f'<{len(samples)}h', *samples))
+
+
 # --- a project ---
 
 class Project:
@@ -157,6 +194,7 @@ class Project:
         self.colors = {}  # kind -> its colors
         self.anims = {}  # kind -> .anim text
         self.dialog_files = {}
+        self.sound_samples = {}  # name -> its samples: sounds/<name>.wav beside the document (the game's pack script adds them)
 
     def kind(self, name, colors, default_mask=None):
         self.doc['sets'].append({'name': name, 'defaultMask': default_mask, 'frames': []})
@@ -164,11 +202,11 @@ class Project:
         self.colors[name] = colors
         return name
 
-    def frame(self, kind, file, pic, origin, pack_name=None):
+    def frame(self, kind, file, pic, origin, pack_name=None, masks=None):
         st = next(s for s in self.doc['sets'] if s['name'] == kind)
         if max(pic.px, default=0) > len(self.colors[kind]):
             raise SystemExit(f'{kind}/{file}: value {max(pic.px)}, the kind has {len(self.colors[kind])} colors')
-        fr = {'image': file, 'width': pic.w, 'height': pic.h, 'origin': {'x': origin[0], 'y': origin[1]}, 'masks': {}, 'points': {}}
+        fr = {'image': file, 'width': pic.w, 'height': pic.h, 'origin': {'x': origin[0], 'y': origin[1]}, 'masks': masks or {}, 'points': {}}
         if pack_name:
             fr['packName'] = pack_name
         st['frames'].append(fr)
@@ -182,6 +220,11 @@ class Project:
 
     def dialog(self, name, text):
         self.doc['dialogs'].append({'name': name, 'text': text})
+
+    def sound(self, name, samples):
+        """A sound by its name (the editor keeps names only) and its samples, written as sounds/<name>.wav."""
+        self.doc['sounds'].append(name)
+        self.sound_samples[name] = samples
 
     def write(self, root):
         # the data of the game made anew, in its own folder; the game's code beside it is left as it is
@@ -209,6 +252,10 @@ class Project:
             for d in doc['dialogs']:
                 with open(os.path.join(out, 'dialogs', d['name'] + '.dlg'), 'w', encoding='utf-8') as f:
                     f.write(d['text'])
+        if self.sound_samples:
+            os.makedirs(os.path.join(out, 'sounds'))
+            for name, samples in self.sound_samples.items():
+                write_wav(os.path.join(out, 'sounds', name + '.wav'), samples)
         with open(os.path.join(out, self.name + '.json'), 'w', encoding='utf-8') as f:
             f.write(json.dumps(doc, indent=4, ensure_ascii=False))
         errors = [p for p in r['problems'] if p['error']]
@@ -445,8 +492,13 @@ def cherry():
 def pacman_game():
     p = Project('pacman', 'Pac-Man', (224, 288))
     d = p.doc
-    d['masks'] = [{'index': 1, 'name': 'pac', 'color': '#e0c020'}, {'index': 2, 'name': 'ghost', 'color': '#e04040'}]
-    d['meets'] = "foreign PAC GHOST    # caught, or eaten when frightened: the game decides\n"
+    # who meets whom is the masks': Pac-Man's body, a ghost's, the fruit's, a small square around each base point (as
+    # the arcade's cell); what a meeting does is the scripts' (hit): a ghost catches him or, frightened, is eaten, the
+    # fruit is eaten
+    d['masks'] = [{'index': 1, 'name': 'pac', 'color': '#e0c020'}, {'index': 2, 'name': 'ghost', 'color': '#e04040'},
+                  {'index': 3, 'name': 'fruit', 'color': '#40c040'}]
+    d['meets'] = "foreign PAC GHOST    # caught, or eaten when frightened: the ghost's hit says\nforeign PAC FRUIT    # eaten: the fruit's hit\n"
+    pac_mask, ghost_mask, fruit_mask = square_mask(1, 2), square_mask(2, 2), square_mask(3, 3)
 
     p.kind('MAZE', [BLUE, PINK])
     p.frame('MAZE', 'maze.png', maze_picture(), (0, ROWS * CELL - 1))
@@ -462,12 +514,12 @@ def pacman_game():
     p.frame('DOTS', 'blank.png', Pic(8, 8), (0, 7))
 
     p.kind('PAC', [YELLOW], default_mask=1)
-    p.frame('PAC', 'full.png', pacman(0, 0), (6, 6))
+    p.frame('PAC', 'full.png', pacman(0, 0), (6, 6), masks=pac_mask)
     for w, a in WAYS.items():
-        p.frame('PAC', f'{w}_1.png', pacman(a, 50), (6, 6))
-        p.frame('PAC', f'{w}_2.png', pacman(a, 100), (6, 6))
+        p.frame('PAC', f'{w}_1.png', pacman(a, 50), (6, 6), masks=pac_mask)
+        p.frame('PAC', f'{w}_2.png', pacman(a, 100), (6, 6), masks=pac_mask)
     for k in range(11):
-        p.frame('PAC', f'die_{k}.png', pacman(90, 40 + k * 32), (6, 6))
+        p.frame('PAC', f'die_{k}.png', pacman(90, 40 + k * 32), (6, 6), masks=pac_mask)
 
     # a ghost: Blinky's colors are the kind's, the others are palettes of the same values (the game draws each with its
     # own): 1 the body, 2 white, 3 the pupils; frightened 4 and 5, flashing 6 and 7
@@ -475,16 +527,16 @@ def pacman_game():
     p.kind('GHOST', ghost_colors, default_mask=2)
     for w, look in LOOKS.items():
         for f in (0, 1):
-            p.frame('GHOST', f'{w}_{f}.png', ghost_eyes(ghost_body(f), look), (7, 7))
-        p.frame('GHOST', f'eyes_{w}.png', ghost_eyes(Pic(14, 14), look), (7, 7))
+            p.frame('GHOST', f'{w}_{f}.png', ghost_eyes(ghost_body(f), look), (7, 7), masks=ghost_mask)
+        p.frame('GHOST', f'eyes_{w}.png', ghost_eyes(Pic(14, 14), look), (7, 7), masks=ghost_mask)
     for f in (0, 1):
-        p.frame('GHOST', f'fright_{f}.png', fright_face(ghost_body(f, 4), 5), (7, 7))
-        p.frame('GHOST', f'flash_{f}.png', fright_face(ghost_body(f, 6), 7), (7, 7))
+        p.frame('GHOST', f'fright_{f}.png', fright_face(ghost_body(f, 4), 5), (7, 7), masks=ghost_mask)
+        p.frame('GHOST', f'flash_{f}.png', fright_face(ghost_body(f, 6), 7), (7, 7), masks=ghost_mask)
     for name, color, _, _ in GHOSTS[1:]:
         d['palettes'].append({'name': name.upper(), 'colors': [list(color)] + [list(c) for c in ghost_colors[1:]]})
 
-    p.kind('FRUIT', [RED, (222, 151, 81), (255, 255, 255)])
-    p.frame('FRUIT', 'cherry.png', cherry(), (6, 6))
+    p.kind('FRUIT', [RED, (222, 151, 81), (255, 255, 255)], default_mask=3)
+    p.frame('FRUIT', 'cherry.png', cherry(), (6, 6), masks=fruit_mask)
 
     words(p, 'WORDS', [('ready.png', 'READY!', 1, 1, 0), ('game_over.png', 'GAME  OVER', 2, 1, 0),
                        ('logo.png', 'PAC-MAN', 1, 3, 3), ('press_start.png', 'PRESS START', 4, 1, 0),
@@ -502,7 +554,10 @@ def pacman_game():
     ]})
     # the maze as cells: a dot, an energizer, a wall, the door; 0 a way with nothing in it (or outside the maze)
     cells = [[{'.': 1, 'o': 2, '#': 3, '-': 4}.get(ch, 0) for ch in row] for row in MAZE]
-    ghosts = [actor(name, 'GHOST', way, x, y + TOP, params={'who': i, 'way': f'WAY_{way.upper()}'})
+    # the ghosts as they start: Blinky above the door, out at once; the others in the house, each waiting for so many
+    # dots eaten (wait) after the one before it is out
+    waits = (0, 0, 30, 60)
+    ghosts = [actor(name, 'GHOST', 'out' if i == 0 else 'home', x, y + TOP, params={'who': i, 'way': f'WAY_{way.upper()}', 'wait': waits[i]})
               for i, (name, _, (x, y), way) in enumerate(GHOSTS)]
     d['scenes'].append({
         'name': 'maze', 'width': 224, 'height': 288, 'background': '#000000',
@@ -510,43 +565,66 @@ def pacman_game():
             layer('maze', [picture('MAZE', 'maze.png', 0, TOP + ROWS * CELL - 1, 'walls')]),
             layer('dots'),
             layer('actors', [actor('pac', 'PAC', 'whole', 14 * 8, 23 * 8 + 4 + TOP)] + ghosts + [
+                actor('fruit', 'FRUIT', 'hidden', 14 * 8, 17 * 8 + 4 + TOP),
                 zone('house', 'house', 10 * 8, TOP + 12 * 8, 8 * 8, 5 * 8),
                 zone('tunnel_left', 'tunnel', 0, TOP + 14 * 8, 6 * 8, 8),
                 zone('tunnel_right', 'tunnel', 22 * 8, TOP + 14 * 8, 6 * 8, 8),
-                zone('fruit', 'fruit', 13 * 8, TOP + 17 * 8, 2 * 8, 8),
-                entry('pac_start', 14 * 8, 23 * 8 + 4 + TOP), entry('house_door', 14 * 8, 11 * 8 + 4 + TOP),
+                entry('house_door', 14 * 8, 11 * 8 + 4 + TOP),
             ]),
             layer('text', [picture('WORDS', 'score.png', 112, 8, 'score_words'),
-                           zone('message', 'message', 56, TOP + 17 * 8, 112, 8),  # READY!, GAME OVER: the game shows them there
+                           zone('message', 'message', 56, TOP + 17 * 8, 112, 8),  # what PLAY shows: READY!, GAME OVER
                            zone('score', 'label', 8, 8, 56, 16), zone('high', 'label', 84, 8, 56, 16),
                            zone('lives', 'lives', 16, 274, 80, 13)]),
         ],
         'grids': [{'name': 'maze', 'tileset': 'MAZE', 'x': 0, 'y': TOP, 'cols': COLS, 'rows': ROWS, 'cells': cells, 'mods': {}, 'variants': {}}],
         'exits': [], 'links': []})
 
-    # the rules of the arcade, level 1, as numbers of the game (GAME blob): speeds in points a second x 256, times ms
+    # the rules of the arcade, level 1. Speeds in points a second x 256, times ms. What only the game's code reads is a
+    # number of the game (GAME blob: PACMAN_GAME_*); what the scripts read is a constant (the game's code reads them
+    # too, by the header its pack script writes of them: PACMAN_<NAME>)
     top = 75.75757625
-    speeds = {'pac_speed': .80, 'pac_fright_speed': .90, 'ghost_speed': .75, 'ghost_fright_speed': .50, 'ghost_tunnel_speed': .40,
-              'eyes_speed': 1.60, 'house_speed': .50, 'elroy1_speed': .80, 'elroy2_speed': .85}
-    d['game'] = [{'name': n, 'value': round(v * top * 256)} for n, v in speeds.items()] + [
-        {'name': n, 'value': v} for n, v in (('elroy1_dots', 20), ('elroy2_dots', 10), ('ready_ms', 2000), ('eat_ghost_ms', 1000),
-                                             ('idle_release_ms', 4000), ('inky_dots', 30), ('clyde_dots', 60), ('corner_points', 4),
-                                             ('dot_pause_ms', 17), ('energizer_pause_ms', 50))] + [
-        # where each ghost aims scattering (cells outside the maze, above and below it), and the four cells a ghost
-        # hunting does not turn up from: the arcade's
-        {'name': f'{name}_corner_{axis}', 'value': v} for name, corner in (('blinky', (25, -3)), ('pinky', (2, -3)), ('inky', (27, 31)),
-                                                                            ('clyde', (0, 31))) for axis, v in zip(('col', 'row'), corner)] + [
+
+    def speed(v):
+        return round(v * top * 256)
+    d['game'] = [{'name': n, 'value': v} for n, v in (
+        ('pac_speed', speed(.80)), ('pac_fright_speed', speed(.90)), ('corner_points', 4), ('dot_pause_ms', 17),
+        ('energizer_pause_ms', 50), ('points_ms', 1500), ('kinds', 8), ('timers', 2), ('voices', 4))] + [
+        # the four cells a ghost hunting does not turn up from: the arcade's
         {'name': f'no_up_{i + 1}_{axis}', 'value': v} for i, cell in enumerate(((12, 11), (15, 11), (12, 23), (15, 23)))
         for axis, v in zip(('col', 'row'), cell)]
-    d['constants'] = {'WAY_RIGHT': 0, 'WAY_UP': 1, 'WAY_LEFT': 2, 'WAY_DOWN': 3, 'FRIGHT_LOOPS': 14, 'FRIGHT_FLASHES': 5,
-                      'DOT_SCORE': 10, 'ENERGIZER_SCORE': 50, 'GHOST_SCORE': 200, 'FRUIT_SCORE': 100, 'LIVES': 3,
-                      'EXTRA_LIFE': 10000, 'DOTS': 244, 'FRUIT_DOTS1': 70, 'FRUIT_DOTS2': 170, 'SCATTER': 1, 'CHASE': 2,
-                      'SIG_NUMBERS': 1, 'SIG_LEVEL': 2, 'SIG_OVER': 3, 'SIG_GO': 4, 'SIG_FRUIT': 5, 'SIG_FRUIT_GONE': 6, 'SIG_NEW': 7}
-    d['sounds'] = ['start', 'chomp', 'fright', 'eat_ghost', 'death', 'fruit', 'extra_life']
+    d['constants'] = {
+        # the ways, as DGX-GE's sides (dgx_ge_graph.h); where a ghost is (its param state); the phases of the game
+        # (PLAY's param phase)
+        'WAY_LEFT': 0, 'WAY_RIGHT': 1, 'WAY_UP': 2, 'WAY_DOWN': 3,
+        'ST_HOUSE': 0, 'ST_LEAVING': 1, 'ST_HUNTING': 2, 'ST_BLUE': 3, 'ST_EYES': 4, 'ST_ENTERING': 5,
+        'PH_TITLE': 0, 'PH_READY': 1, 'PH_PLAYING': 2, 'PH_ATE': 3, 'PH_CAUGHT': 4, 'PH_DYING': 5, 'PH_CLEARED': 6, 'PH_OVER': 7,
+        # the signals of the actors to the game: PLAY's, then the ghosts', Pac-Man's, the fruit's; MODES' are the modes
+        'SIG_NUMBERS': 1, 'SIG_LAY': 2, 'SIG_PLACE': 3, 'SIG_DIE': 4, 'SIG_HIDE': 5, 'SIG_WHITE': 6, 'SIG_BLUE': 7,
+        'SIG_FRUIT': 8, 'SIG_RELEASE': 9, 'SIG_OVER': 10, 'SIG_TITLE': 11,
+        'SIG_OUT': 12, 'SIG_EATEN': 13, 'SIG_CAUGHT': 14, 'SIG_GONE': 15, 'SIG_TAKEN': 16,
+        'SCATTER': 1, 'CHASE': 2,
+        'COLS': COLS, 'ROWS': ROWS, 'FRIGHT_LOOPS': 14, 'FRIGHT_FLASHES': 5,
+        'GHOST_SPEED': speed(.75), 'GHOST_FRIGHT_SPEED': speed(.50), 'GHOST_TUNNEL_SPEED': speed(.40), 'EYES_SPEED': speed(1.60),
+        'HOUSE_SPEED': speed(.50), 'ELROY1_SPEED': speed(.80), 'ELROY2_SPEED': speed(.85), 'ELROY1_DOTS': 20, 'ELROY2_DOTS': 10,
+        'DOT_SCORE': 10, 'ENERGIZER_SCORE': 50, 'GHOST_SCORE': 200, 'FRUIT_SCORE': 100, 'LIVES': 3, 'EXTRA_LIFE': 10000,
+        'DOTS': 244, 'FRUIT_DOTS1': 70, 'FRUIT_DOTS2': 170, 'READY_MS': 2000, 'EAT_GHOST_MS': 1000, 'FRUIT_MS': 9500}
+    # the sounds, made here as the pictures are: a melody of a start, a chomp, a siren, a blip
+    sq, tri = 'square', 'triangle'
+    for name, notes in (
+            ('start', [(f, f, 110, .3, tri) for f in (523, 659, 784, 1047, 784, 659, 523, 0, 587, 740, 880, 1175, 880, 740, 587, 0,
+                                                      523, 659, 784, 1047)] + [(1047, 1047, 330, .3, tri)]),
+            ('chomp', [(480, 240, 55, .18, sq), (240, 480, 55, .18, sq)]),
+            ('fright', [(f0, f1, 70, .2, tri) for _ in range(4) for f0, f1 in ((300, 650), (650, 300))]),
+            ('eat_ghost', [(180, 1400, 280, .25, sq)]),
+            ('death', [(f, f - 260, 140, .25, tri) for f in range(950, 250, -100)] + [(0, 0, 80, 0, sq), (200, 120, 90, .3, sq),
+                                                                                       (0, 0, 60, 0, sq), (200, 120, 90, .3, sq)]),
+            ('fruit', [(700, 1100, 70, .25, sq), (0, 0, 30, 0, sq), (1100, 1500, 90, .25, sq)]),
+            ('extra_life', [n for _ in range(6) for n in ((1320, 1320, 70, .22, sq), (0, 0, 50, 0, sq))])):
+        p.sound(name, synth(notes))
     d['constants'].update({f'SND_{s.upper()}': i for i, s in enumerate(d['sounds'])})
     d['timers'] = [
-        {'name': 'ready', 'once': '2000ms', 'reset': 'scene', 'event': 'go', 'start': ''},
-        {'name': 'fruit', 'once': '9500ms', 'reset': 'scene', 'event': 'fruit_gone', 'start': ''},
+        # the house lets the next ghost out when no dot is eaten for so long: each dot starts it anew
+        {'name': 'idle', 'once': '4000ms', 'reset': 'scene', 'event': 'idle', 'start': ''},
     ]
 
     ways = list(WAYS)
@@ -565,20 +643,27 @@ script still_{w}            # against a wall: his mouth stays as it was
     frame PAC_{w.upper()}_1 1000ms
     hold
 """ for w in ways)
-    p.anim('PAC', f"""# Pac-Man: chomping his way, still against a wall, dying, running on the title.
-# The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and tells him his way.
-event left, right, up, down, stop, die
+    p.anim('PAC', f"""# Pac-Man: chomping his way, still against a wall, caught, dying, running on the title.
+# The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and tells him his way. His body is the
+# mask PAC: a ghost that meets it says what follows (its hit: caught).
+event left, right, up, down, stop, caught, die
 
 script whole
     masks PAC
     frame PAC_FULL 1000ms
     hold
 {chomp}{still}
+script caught               # a ghost has him: he stands whole; the game is told (PLAY stands it all a while)
+    masks
+    signal SIG_CAUGHT
+    frame PAC_FULL 1000ms
+    hold
+
 script dying
     masks
     sound SND_DEATH
 """ + ''.join(f"    frame PAC_DIE_{k} 133ms\n" for k in range(11)) + f"""    frame none 500ms
-    signal 1                  # tell the game: he is gone
+    signal SIG_GONE           # tell the game: he is gone
 label gone
     frame none 1000ms
     goto gone
@@ -595,15 +680,34 @@ label parade_chomp
 
 group any: whole, {', '.join(ways)}, {', '.join('still_' + w for w in ways)}
 """ + ''.join(f"on {w}: any -> {w} now\n" for w in ways) + ''.join(f"on stop: {w} -> still_{w} now\n" for w in ways)
-           + "on die: any -> dying now\n")
+           + "on caught: any -> caught now\non die: caught -> dying now\n")
 
+    # what a ghost hunting aims at, before each of its frames: the arcade's, by who. Blinky hurrying (so few dots
+    # left: "Cruise Elroy") is faster and hunts scattering too.
+    elroy1, elroy2 = 'who == 0 and game.dots_left <= ELROY1_DOTS', 'who == 0 and game.dots_left <= ELROY2_DOTS'
+    hunt = f"""    set speed game.tunnel ? GHOST_TUNNEL_SPEED : (({elroy2}) ? ELROY2_SPEED : (({elroy1}) ? ELROY1_SPEED : GHOST_SPEED))
+    set tcol game.pac_col + (way_dx[game.pac_way] - (game.pac_way == WAY_UP)) * ahead[who]
+    set trow game.pac_row + way_dy[game.pac_way] * ahead[who]
+    set tcol who == 2 ? 2 * tcol - game.blinky_col : tcol
+    set trow who == 2 ? 2 * trow - game.blinky_row : trow
+    set aim (game.mode == SCATTER and not ({elroy1})) or (who == 3 and (game.col - game.pac_col) * (game.col - game.pac_col) + (game.row - game.pac_row) * (game.row - game.pac_row) <= 64)
+    set tcol aim ? corner_col[who] : tcol
+    set trow aim ? corner_row[who] : trow
+"""
+    # frightened: slow, anywhere (a cell of the dice, anew each frame)
+    scared = """    set speed game.tunnel ? GHOST_TUNNEL_SPEED : GHOST_FRIGHT_SPEED
+    set tcol rnd(COLS - 1)
+    set trow rnd(ROWS - 1)
+"""
     walk = ''.join(f"""
 script {w}
     set way WAY_{w.upper()}
+    set state ST_HUNTING
     masks GHOST
+    hit GHOST on PAC event caught
 label {w}_go
-    frame GHOST_{w.upper()}_0 133ms
-    frame GHOST_{w.upper()}_1 133ms
+{hunt}    frame GHOST_{w.upper()}_0 133ms
+{hunt}    frame GHOST_{w.upper()}_1 133ms
     goto {w}_go
 """ for w in ways)
     eyes = ''.join(f"""
@@ -612,49 +716,150 @@ script eyes_{w}
     frame GHOST_EYES_{w.upper()} 1000ms
     hold
 """ for w in ways)
-    p.anim('GHOST', f"""# A ghost: its way (its eyes look it), frightened and flashing as the fright ends, its eyes alone going home.
-# The four are one kind: the game draws each with its colors (param who: the palettes PINKY, INKY, CLYDE).
-event left, right, up, down, fright, eaten, home, hide
-param way WAY_LEFT          # the way it goes now: frightened, it keeps it for after
+    leave = 'goto leaving if game.next_home == who and game.eaten >= wait'
+    p.anim('GHOST', f"""# A ghost, all it does: bobbing in the house till its turn, out through the door, hunting in the maze,
+# frightened, eaten, its eyes home and in through the door, out again. In the maze the game walks it from the middle
+# of a cell to the next (dgx_ge_walk.h) toward the cell it aims at (tcol, trow) at its speed (speed), and tells it
+# its way; in the house its own path moves it. Where it aims is the arcade's, by who: Blinky at Pac-Man's cell, Pinky
+# four cells ahead of him, Inky past two ahead as far again as Blinky is from there, Clyde at Pac-Man when far and
+# at his corner when near; scattering, each at its corner; frightened, anywhere. Its body (the mask GHOST) catches
+# Pac-Man, or is eaten by him frightened (its hit). The four are one kind: the game draws each with its colors
+# (param who: the palettes PINKY, INKY, CLYDE). What it asks the game (game.*): where Pac-Man is (his cell, his way),
+# where Blinky is, its own cell, the mode, the dots left, whether it is in a tunnel, which ghost is the next in the
+# house, the dots eaten, the door and the middle of the house.
+event left, right, up, down, fright, eaten, enter, leave, hide
+game pac_col pac_row pac_way blinky_col blinky_row col row mode dots_left tunnel next_home eaten door_col door_row door_x door_y inside_y
+table way_dx -1 1 0 0         # by WAY_*
+table way_dy 0 0 -1 1
+table ahead 0 4 2 0           # cells ahead of Pac-Man, by who
+table corner_col 25 2 27 0    # where each scatters: cells outside the maze, above and below it
+table corner_row -3 -3 31 31
 param who 0                 # 0 Blinky, 1 Pinky, 2 Inky, 3 Clyde
+param way WAY_LEFT          # the way it goes now: frightened, the game keeps telling it, for after
+param wait 0                # dots eaten before it may leave the house
+param state ST_HOUSE        # where it is (ST_*): the game walks it in the maze (hunting, blue, eyes)
+param speed GHOST_SPEED     # in the maze, points a second x 256
+param tcol 0                # the cell it aims at
+param trow 0
+param aim 0                 # 1: its corner
 param n 0
+param dist 0
 
-script walk                 # on its way, whichever it was
+script home                 # in the house, bobbing, till it is the next and its dots are eaten (or the game lets it out)
+    set state ST_HOUSE
+    masks
+    path x: 0, y: (who % 2 ? 4 : -4) * sin(t * HOUSE_SPEED / 1024)
+label home_up
+    {leave}
+    goto home_down if vy > 0
+    frame GHOST_UP_0 133ms
+    {leave}
+    goto home_down if vy > 0
+    frame GHOST_UP_1 133ms
+    goto home_up
+label home_down
+    {leave}
+    goto home_up if vy < 0
+    frame GHOST_DOWN_0 133ms
+    {leave}
+    goto home_up if vy < 0
+    frame GHOST_DOWN_1 133ms
+    goto home_down
+
+script leaving              # out of the house: to the middle of the door, then up through it
+    set state ST_LEAVING
+    masks
+    set dist game.door_x - x
+    path x: max(min(t * HOUSE_SPEED / 256, dist), -t * HOUSE_SPEED / 256), y: 0
+    goto leave_up if abs(dist) < 0.5
+    goto leave_left if dist < 0
+label leave_right
+    frame GHOST_RIGHT_0 133ms
+    goto leave_up if x >= game.door_x - 0.5
+    frame GHOST_RIGHT_1 133ms
+    goto leave_up if x >= game.door_x - 0.5
+    goto leave_right
+label leave_left
+    frame GHOST_LEFT_0 133ms
+    goto leave_up if x <= game.door_x + 0.5
+    frame GHOST_LEFT_1 133ms
+    goto leave_up if x <= game.door_x + 0.5
+    goto leave_left
+label leave_up
+    set dist y - game.door_y
+    path x: 0, y: -min(t * HOUSE_SPEED / 256, dist)
+label leave_up_go
+    frame GHOST_UP_0 133ms
+    goto out if y <= game.door_y + 0.5
+    frame GHOST_UP_1 133ms
+    goto out if y <= game.door_y + 0.5
+    goto leave_up_go
+
+script out                  # above the door: the game walks it from here, left
+    velocity 0 0
+    signal SIG_OUT
+    goto left
+
+script walk                 # hunting on its way, whichever it was
     goto right if way == WAY_RIGHT
     goto up if way == WAY_UP
     goto down if way == WAY_DOWN
     goto left
 {walk}
-script fright               # blue for a while, then flashing; the game makes it slow
+script fright               # blue for a while, then flashing; slow, anywhere; Pac-Man eats it
+    set state ST_BLUE
     masks GHOST
+    hit GHOST on PAC recoil eaten
     sound SND_FRIGHT
     set n 0
 label fright_blue
-    frame GHOST_FRIGHT_0 133ms
-    frame GHOST_FRIGHT_1 133ms
+{scared}    frame GHOST_FRIGHT_0 133ms
+{scared}    frame GHOST_FRIGHT_1 133ms
     add n 1
     goto fright_blue if n < FRIGHT_LOOPS
     set n 0
 label fright_flash
-    frame GHOST_FLASH_0 233ms
-    frame GHOST_FRIGHT_0 233ms
+{scared}    frame GHOST_FLASH_0 233ms
+{scared}    frame GHOST_FRIGHT_0 233ms
     add n 1
     goto fright_flash if n < FRIGHT_FLASHES
-    signal 1                  # tell the game: the fright is over
     goto walk
 
-script eyes                 # eaten: only its eyes go home, it meets nothing
+script eyes                 # eaten: only its eyes go home, fast, to the door; they meet nothing
+    set state ST_EYES
     masks
     sound SND_EAT_GHOST
+    signal SIG_EATEN          # tell the game: PLAY counts it
+    set speed EYES_SPEED
+    set tcol game.door_col
+    set trow game.door_row
     goto eyes_right if way == WAY_RIGHT
     goto eyes_up if way == WAY_UP
     goto eyes_down if way == WAY_DOWN
     goto eyes_left
 {eyes}
-script hidden
+script entering             # at the door (the game says): its eyes in, down to the middle of the house; alive, out again
+    set state ST_ENTERING
+    set dist game.door_x - x
+    path x: max(min(t * EYES_SPEED / 256, dist), -t * EYES_SPEED / 256), y: 0
+label entering_side
+    frame GHOST_EYES_DOWN 33ms
+    goto entering_down if abs(x - game.door_x) < 0.5
+    goto entering_side
+label entering_down
+    set dist game.inside_y - y
+    path x: 0, y: min(t * EYES_SPEED / 256, dist)
+label entering_down_go
+    frame GHOST_EYES_DOWN 33ms
+    goto leaving if y >= game.inside_y - 0.5
+    goto entering_down_go
+
+script hidden               # gone a while (Pac-Man dying, the level eaten): the game starts it anew
     masks
+    velocity 0 0
+label hidden_still
     frame none 1000ms
-    hold
+    goto hidden_still
 
 script parade               # entry: the title show starts it; after Pac-Man
     masks
@@ -664,19 +869,44 @@ label parade_go
     frame GHOST_RIGHT_1 133ms
     goto parade_go
 
-group walking: walk, {', '.join(ways)}, hidden
+group hunting: walk, {', '.join(ways)}
 group looking: eyes, {', '.join('eyes_' + w for w in ways)}
-""" + ''.join(f"on {w}: walking -> {w} now\non {w}: looking -> eyes_{w} now\n" for w in ways) + """on fright: walking -> fright now
+group seen: home, leaving, out, walk, {', '.join(ways)}, fright, eyes, {', '.join('eyes_' + w for w in ways)}, entering
+""" + ''.join(f"on {w}: hunting -> {w} now\non {w}: looking -> eyes_{w} now\n" for w in ways) + """on fright: hunting -> fright now
 on fright: fright -> fright now
 on eaten: fright -> eyes now
-on home: looking -> walk now
-on hide: walking -> hidden now
-on hide: looking -> hidden now
-on hide: fright -> hidden now
+on enter: looking -> entering now
+on leave: home -> leaving now
+on hide: seen -> hidden now
+""")
+
+    p.anim('FRUIT', """# The fruit under the house: shown a while when PLAY says (SIG_FRUIT); Pac-Man meeting it eats it (its hit).
+event show, eaten, hide
+
+script hidden
+    masks
+    frame none 1000ms
+    hold
+
+script shown
+    masks FRUIT
+    hit FRUIT on PAC recoil eaten
+    frame FRUIT_CHERRY FRUIT_MS
+    goto hidden
+
+script taken
+    masks
+    sound SND_FRUIT
+    signal SIG_TAKEN          # tell the game: PLAY counts it
+    goto hidden
+
+on show: hidden -> shown now
+on eaten: shown -> taken now
+on hide: shown -> hidden now
 """)
 
     p.anim('MODES', """# The schedule of the ghosts' modes, level 1: a signal to the game as each begins. The game starts it
-# with a life (an actor of its own, not drawn) and holds it while the ghosts are frightened.
+# with a life (an actor of its own, not drawn); its clock stands while the ghosts are frightened.
 script schedule
     signal SCATTER
     frame none 7000ms
@@ -698,112 +928,157 @@ label chasing                 # the last chase lasts
     goto chasing
 """)
 
-    p.anim('PLAY', """# The game itself as an actor: its numbers and what follows from what Pac-Man eats. The game tells it
-# what was eaten and reads the numbers (PACMAN_PLAY_PARAM_*); the pause dialog shows them. Its signals:
-# SIG_NUMBERS the numbers changed, SIG_LEVEL the level cleared, SIG_OVER no lives left, SIG_GO READY! is
-# over (the timer ready), SIG_FRUIT the cherry comes, SIG_FRUIT_GONE it is gone (the timer fruit), SIG_NEW a new
-# game (the game lays the dots and the actors anew).
-event start, dot, energizer, ghost, fruit, lost, go, fruit_gone, restart
+    play = ['title', 'new_game', 'level', 'ready', 'playing', 'ate_dot', 'ate_energizer', 'counted', 'fruit_comes', 'scored',
+            'bonus_life', 'ate_ghost', 'ate_fruit', 'release', 'caught', 'life_lost', 'cleared', 'game_over', 'over']
+    p.anim('PLAY', """# The game itself as an actor: its numbers, its phases and how long each lasts, and the word it shows (READY!,
+# GAME OVER: the game draws it in the zone message). The game tells it what happened and reads its phase (what moves
+# now: PH_*) and its numbers (PACMAN_PLAY_PARAM_*); the pause dialog shows them. Its signals: SIG_NUMBERS the
+# numbers changed, SIG_LAY the dots anew (a game, a level), SIG_PLACE everyone where they start, SIG_DIE Pac-Man dies
+# (the ghosts go), SIG_HIDE the ghosts and the fruit go (the level eaten), SIG_WHITE and SIG_BLUE the maze flashing,
+# SIG_FRUIT the fruit comes, SIG_RELEASE the next ghost out of the house (no dot eaten for a while: the timer idle),
+# SIG_OVER the game is over, SIG_TITLE the title again.
+event start, restart, dot, energizer, ghost, fruit, caught, lost, idle
+param phase PH_TITLE
 param score 0
 param lives LIVES
 param eaten 0                 # dots and energizers eaten on this level
 param bonus GHOST_SCORE       # what the next ghost of this fright is worth
+param extra 0                 # 1: the extra life of this game is given
 
-script idle
+script title                  # the title show plays (the game's)
+    set phase PH_TITLE
     frame none 1000ms
     hold
 
 script new_game
     set score 0
     set lives LIVES
-    set eaten 0
+    set extra 0
     sound SND_START
-    signal SIG_NEW
-    signal SIG_NUMBERS
+    goto level
+
+script level                  # the dots anew
+    set eaten 0
+    signal SIG_LAY
     goto ready
 
-script ready                  # READY! for a while, then the game goes
-    timer start ready
-    goto idle
+script ready                  # everyone where they start, READY! a while, then the game goes
+    set phase PH_READY
+    timer stop idle
+    signal SIG_PLACE
+    signal SIG_NUMBERS
+    frame WORDS_READY READY_MS
+    set phase PH_PLAYING
+    timer start idle
+    goto playing
 
-script going
-    signal SIG_GO
-    goto idle
+script playing
+    frame none 1000ms
+    hold
 
 script ate_dot
     add score DOT_SCORE
-    goto bonus_life if score >= EXTRA_LIFE and score - DOT_SCORE < EXTRA_LIFE   # the score passed it just now
     goto counted
 
 script ate_energizer
     add score ENERGIZER_SCORE
     set bonus GHOST_SCORE
-    goto bonus_life if score >= EXTRA_LIFE and score - ENERGIZER_SCORE < EXTRA_LIFE
     goto counted
 
 script counted
     add eaten 1
     sound SND_CHOMP
-    signal SIG_NUMBERS
+    timer start idle            # anew: no dot for so long, the house lets one out
     goto cleared if eaten >= DOTS
     goto fruit_comes if eaten == FRUIT_DOTS1 or eaten == FRUIT_DOTS2
-    goto idle
+    goto scored
 
-script fruit_comes            # under the house for a while
-    timer start fruit
+script fruit_comes            # under the house, for a while (the fruit's own time)
     signal SIG_FRUIT
-    goto idle
+    goto scored
 
-script fruit_goes
-    signal SIG_FRUIT_GONE
-    goto idle
-
-script ate_ghost              # 200, 400, 800, 1600 in one fright
-    add score bonus
+script scored                 # the numbers shown anew; an extra life once a game
     signal SIG_NUMBERS
-    goto doubled if score < EXTRA_LIFE or score - bonus >= EXTRA_LIFE
-    set bonus bonus * 2
-    goto bonus_life
+    goto bonus_life if extra == 0 and score >= EXTRA_LIFE
+    goto playing
 
-script doubled
-    set bonus bonus * 2
-    goto idle
-
-script ate_fruit
-    add score FRUIT_SCORE
-    sound SND_FRUIT
-    timer stop fruit
-    signal SIG_NUMBERS
-    goto bonus_life if score >= EXTRA_LIFE and score - FRUIT_SCORE < EXTRA_LIFE
-    goto idle
-
-script bonus_life             # once a game: the score passes EXTRA_LIFE only once
+script bonus_life
+    set extra 1
     add lives 1
     sound SND_EXTRA_LIFE
     signal SIG_NUMBERS
-    goto idle
+    goto playing
 
-script cleared                # the next level: the game lays the dots again
-    set eaten 0
-    signal SIG_LEVEL
-    goto ready
+script ate_ghost              # 200, 400, 800, 1600 in one fright: all stands a while, its points shown
+    add score bonus
+    set bonus bonus * 2
+    set phase PH_ATE
+    timer hold idle
+    signal SIG_NUMBERS
+    frame none EAT_GHOST_MS
+    set phase PH_PLAYING
+    timer go idle
+    goto scored
 
-script life_lost
+script ate_fruit
+    add score FRUIT_SCORE
+    goto scored
+
+script release                # no dot eaten for so long: the next ghost out, and the time anew
+    signal SIG_RELEASE
+    timer start idle
+    goto playing
+
+script caught                 # a ghost has him: all stands a second, then he dies (the ghosts go)
+    set phase PH_CAUGHT
+    timer stop idle
+    frame none 1000ms
+    set phase PH_DYING
+    signal SIG_DIE
+    frame none 1000ms
+    hold
+
+script life_lost              # he is gone (the game says): again, or the game is over
     add lives -1
     signal SIG_NUMBERS
     goto ready if lives > 0
-    signal SIG_OVER
-    goto idle
+    goto game_over
 
-on start: idle -> new_game now
-on restart: idle -> new_game now
-on dot: idle -> ate_dot now
-on energizer: idle -> ate_energizer now
-on ghost: idle -> ate_ghost now
-on fruit: idle -> ate_fruit now
-on lost: idle -> life_lost now
-on go: idle -> going now
-on fruit_gone: idle -> fruit_goes now
+script cleared                # the level eaten: all stands, the maze flashes, the next level
+    set phase PH_CLEARED
+    timer stop idle
+    signal SIG_NUMBERS
+    frame none 1000ms
+    signal SIG_HIDE
+""" + """    signal SIG_WHITE
+    frame none 233ms
+    signal SIG_BLUE
+    frame none 233ms
+""" * 4 + """    frame none 300ms
+    goto level
+
+script game_over
+    set phase PH_OVER
+    signal SIG_OVER
+    frame WORDS_GAME_OVER 1000ms  # a start in this second is not taken
+    goto over
+
+script over
+    frame WORDS_GAME_OVER 7000ms
+    signal SIG_TITLE
+    goto title
+
+group any: """ + ', '.join(play) + """
+on start: title -> new_game now
+on start: over -> new_game now
+on restart: any -> new_game now
+on dot: playing -> ate_dot now
+on energizer: playing -> ate_energizer now
+on ghost: playing -> ate_ghost now
+on fruit: playing -> ate_fruit now
+on idle: playing -> release now
+on caught: playing -> caught now
+on lost: caught -> life_lost now
 """)
     p.anim('WORDS', """# Words on the screen: the prompt of the title blinks.
 script blink

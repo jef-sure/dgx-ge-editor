@@ -417,9 +417,10 @@ A **parameter** is a number each actor keeps for itself: lives, "what it is
 doing". The engine only stores it and lets scripts change it (`set`,
 `add`); its meaning is known to the game. When an actor starts, its
 parameters get their initial values, and they persist across scripts. The
-assembler accepts up to 255 parameters, but the engine's runtime keeps
-`DGX_GE_ANIM_PARAMS` per actor (4 by default) and won't open a blob with
-more; the editor warns about that.
+assembler accepts up to 255 parameters. The engine's runtime keeps
+`DGX_GE_ANIM_PARAMS` per actor and won't open a blob with more; a game's
+build sets it from the pack's header (`dgx_ge_params_of_pack`): as many as
+the greediest animation of the pack has, 8 bytes a param in every actor.
 
 ### Script lines
 
