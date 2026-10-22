@@ -1,0 +1,10 @@
+# Where the snake ate: sparks fly out and are gone.
+script pop
+    frame SPARKLE_SPARKLE_1 50ms
+    frame SPARKLE_SPARKLE_2 50ms
+    frame SPARKLE_SPARKLE_3 60ms
+    frame SPARKLE_SPARKLE_4 80ms
+    vanish
+label gone
+    frame none 1000ms
+    goto gone

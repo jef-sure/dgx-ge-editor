@@ -1,0 +1,3953 @@
+{
+    "format": "dgx-ge-sprites",
+    "formatVersion": 1,
+    "name": "pacman",
+    "masks": [
+        {
+            "index": 1,
+            "name": "pac",
+            "color": "#e0c020"
+        },
+        {
+            "index": 2,
+            "name": "ghost",
+            "color": "#e04040"
+        }
+    ],
+    "meets": "foreign PAC GHOST    # caught, or eaten when frightened: the game decides\n",
+    "sets": [
+        {
+            "name": "MAZE",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": -247,
+                "width": 224,
+                "height": 248
+            },
+            "frames": [
+                {
+                    "image": "maze.png",
+                    "width": 224,
+                    "height": 248,
+                    "origin": {
+                        "x": 0,
+                        "y": 247
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [],
+                "rules": []
+            }
+        },
+        {
+            "name": "DOTS",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": -7,
+                "width": 8,
+                "height": 8
+            },
+            "frames": [
+                {
+                    "image": "blank.png",
+                    "width": 8,
+                    "height": 8,
+                    "origin": {
+                        "x": 0,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "dot.png",
+                    "width": 8,
+                    "height": 8,
+                    "origin": {
+                        "x": 0,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "energizer.png",
+                    "width": 8,
+                    "height": 8,
+                    "origin": {
+                        "x": 0,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [],
+                "rules": []
+            }
+        },
+        {
+            "name": "PAC",
+            "defaultMask": 1,
+            "canvas": {
+                "left": -6,
+                "top": -6,
+                "width": 13,
+                "height": 13
+            },
+            "frames": [
+                {
+                    "image": "die_0.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_1.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_2.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_3.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_4.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_5.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_6.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_7.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_8.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_9.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "die_10.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "down_1.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "down_2.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "full.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "left_1.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "left_2.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "right_1.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "right_2.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "up_1.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "up_2.png",
+                    "width": 13,
+                    "height": 13,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [
+                    "left",
+                    "right",
+                    "up",
+                    "down",
+                    "stop",
+                    "die"
+                ],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [
+                    {
+                        "name": "any",
+                        "scripts": [
+                            "whole",
+                            "right",
+                            "up",
+                            "left",
+                            "down",
+                            "still_right",
+                            "still_up",
+                            "still_left",
+                            "still_down"
+                        ]
+                    }
+                ],
+                "scripts": [
+                    {
+                        "name": "whole",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "PAC"
+                                ]
+                            },
+                            {
+                                "op": "frame",
+                                "image": "full.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "right",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "PAC"
+                                ]
+                            },
+                            {
+                                "op": "label",
+                                "name": "right_chomp"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_2.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "full.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "goto",
+                                "target": "right_chomp"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "up",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "PAC"
+                                ]
+                            },
+                            {
+                                "op": "label",
+                                "name": "up_chomp"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "up_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "up_2.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "up_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "full.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "goto",
+                                "target": "up_chomp"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "left",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "PAC"
+                                ]
+                            },
+                            {
+                                "op": "label",
+                                "name": "left_chomp"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "left_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "left_2.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "left_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "full.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "goto",
+                                "target": "left_chomp"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "down",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "PAC"
+                                ]
+                            },
+                            {
+                                "op": "label",
+                                "name": "down_chomp"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "down_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "down_2.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "down_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "full.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "goto",
+                                "target": "down_chomp"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "still_right",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "right_1.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ],
+                        "note": " against a wall: his mouth stays as it was"
+                    },
+                    {
+                        "name": "still_up",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "up_1.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ],
+                        "note": " against a wall: his mouth stays as it was"
+                    },
+                    {
+                        "name": "still_left",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "left_1.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ],
+                        "note": " against a wall: his mouth stays as it was"
+                    },
+                    {
+                        "name": "still_down",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "down_1.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ],
+                        "note": " against a wall: his mouth stays as it was"
+                    },
+                    {
+                        "name": "dying",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": []
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_DEATH"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_0.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_1.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_2.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_3.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_4.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_5.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_6.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_7.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_8.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_9.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "die_10.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 500
+                            },
+                            {
+                                "op": "signal",
+                                "value": 1,
+                                "note": " tell the game: he is gone"
+                            },
+                            {
+                                "op": "label",
+                                "name": "gone"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "gone"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "parade",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": []
+                            },
+                            {
+                                "op": "velocity",
+                                "x": 60,
+                                "y": 0
+                            },
+                            {
+                                "op": "label",
+                                "name": "parade_chomp"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_2.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_1.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "frame",
+                                "image": "full.png",
+                                "ms": 40
+                            },
+                            {
+                                "op": "goto",
+                                "target": "parade_chomp"
+                            }
+                        ],
+                        "entry": true,
+                        "note": " entry: the title show starts it; he runs across, the ghost after him"
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "right",
+                        "source": "any",
+                        "to": "right",
+                        "when": "now"
+                    },
+                    {
+                        "event": "up",
+                        "source": "any",
+                        "to": "up",
+                        "when": "now"
+                    },
+                    {
+                        "event": "left",
+                        "source": "any",
+                        "to": "left",
+                        "when": "now"
+                    },
+                    {
+                        "event": "down",
+                        "source": "any",
+                        "to": "down",
+                        "when": "now"
+                    },
+                    {
+                        "event": "stop",
+                        "source": "right",
+                        "to": "still_right",
+                        "when": "now"
+                    },
+                    {
+                        "event": "stop",
+                        "source": "up",
+                        "to": "still_up",
+                        "when": "now"
+                    },
+                    {
+                        "event": "stop",
+                        "source": "left",
+                        "to": "still_left",
+                        "when": "now"
+                    },
+                    {
+                        "event": "stop",
+                        "source": "down",
+                        "to": "still_down",
+                        "when": "now"
+                    },
+                    {
+                        "event": "die",
+                        "source": "any",
+                        "to": "dying",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " Pac-Man: chomping his way, still against a wall, dying, running on the title.",
+                            " The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and tells him his way."
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "name": "GHOST",
+            "defaultMask": 2,
+            "canvas": {
+                "left": -7,
+                "top": -7,
+                "width": 14,
+                "height": 14
+            },
+            "frames": [
+                {
+                    "image": "down_0.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "down_1.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "eyes_down.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "eyes_left.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "eyes_right.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "eyes_up.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "flash_0.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "flash_1.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "fright_0.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "fright_1.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "left_0.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "left_1.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "right_0.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "right_1.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "up_0.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "up_1.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [
+                    "left",
+                    "right",
+                    "up",
+                    "down",
+                    "fright",
+                    "eaten",
+                    "home",
+                    "hide"
+                ],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [
+                    {
+                        "name": "way",
+                        "value": "WAY_LEFT",
+                        "note": " the way it goes now: frightened, it keeps it for after"
+                    },
+                    {
+                        "name": "who",
+                        "value": 0,
+                        "note": " 0 Blinky, 1 Pinky, 2 Inky, 3 Clyde"
+                    },
+                    {
+                        "name": "n",
+                        "value": 0
+                    }
+                ],
+                "groups": [
+                    {
+                        "name": "walking",
+                        "scripts": [
+                            "walk",
+                            "right",
+                            "up",
+                            "left",
+                            "down",
+                            "hidden"
+                        ]
+                    },
+                    {
+                        "name": "looking",
+                        "scripts": [
+                            "eyes",
+                            "eyes_right",
+                            "eyes_up",
+                            "eyes_left",
+                            "eyes_down"
+                        ]
+                    }
+                ],
+                "scripts": [
+                    {
+                        "name": "walk",
+                        "lines": [
+                            {
+                                "op": "goto",
+                                "target": "right",
+                                "cond": "way == WAY_RIGHT"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "up",
+                                "cond": "way == WAY_UP"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "down",
+                                "cond": "way == WAY_DOWN"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "left"
+                            }
+                        ],
+                        "note": " on its way, whichever it was"
+                    },
+                    {
+                        "name": "right",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "way",
+                                "value": "WAY_RIGHT"
+                            },
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "GHOST"
+                                ]
+                            },
+                            {
+                                "op": "label",
+                                "name": "right_go"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_0.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_1.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "goto",
+                                "target": "right_go"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "up",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "way",
+                                "value": "WAY_UP"
+                            },
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "GHOST"
+                                ]
+                            },
+                            {
+                                "op": "label",
+                                "name": "up_go"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "up_0.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "up_1.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "goto",
+                                "target": "up_go"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "left",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "way",
+                                "value": "WAY_LEFT"
+                            },
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "GHOST"
+                                ]
+                            },
+                            {
+                                "op": "label",
+                                "name": "left_go"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "left_0.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "left_1.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "goto",
+                                "target": "left_go"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "down",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "way",
+                                "value": "WAY_DOWN"
+                            },
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "GHOST"
+                                ]
+                            },
+                            {
+                                "op": "label",
+                                "name": "down_go"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "down_0.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "down_1.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "goto",
+                                "target": "down_go"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "fright",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": [
+                                    "GHOST"
+                                ]
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_FRIGHT"
+                            },
+                            {
+                                "op": "set",
+                                "param": "n",
+                                "value": 0
+                            },
+                            {
+                                "op": "label",
+                                "name": "fright_blue"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "fright_0.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "fright_1.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "add",
+                                "param": "n",
+                                "value": 1
+                            },
+                            {
+                                "op": "goto",
+                                "target": "fright_blue",
+                                "cond": "n < FRIGHT_LOOPS"
+                            },
+                            {
+                                "op": "set",
+                                "param": "n",
+                                "value": 0
+                            },
+                            {
+                                "op": "label",
+                                "name": "fright_flash"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "flash_0.png",
+                                "ms": 233
+                            },
+                            {
+                                "op": "frame",
+                                "image": "fright_0.png",
+                                "ms": 233
+                            },
+                            {
+                                "op": "add",
+                                "param": "n",
+                                "value": 1
+                            },
+                            {
+                                "op": "goto",
+                                "target": "fright_flash",
+                                "cond": "n < FRIGHT_FLASHES"
+                            },
+                            {
+                                "op": "signal",
+                                "value": 1,
+                                "note": " tell the game: the fright is over"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "walk"
+                            }
+                        ],
+                        "note": " blue for a while, then flashing; the game makes it slow"
+                    },
+                    {
+                        "name": "eyes",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": []
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_EAT_GHOST"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "eyes_right",
+                                "cond": "way == WAY_RIGHT"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "eyes_up",
+                                "cond": "way == WAY_UP"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "eyes_down",
+                                "cond": "way == WAY_DOWN"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "eyes_left"
+                            }
+                        ],
+                        "note": " eaten: only its eyes go home, it meets nothing"
+                    },
+                    {
+                        "name": "eyes_right",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "way",
+                                "value": "WAY_RIGHT"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "eyes_right.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "eyes_up",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "way",
+                                "value": "WAY_UP"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "eyes_up.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "eyes_left",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "way",
+                                "value": "WAY_LEFT"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "eyes_left.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "eyes_down",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "way",
+                                "value": "WAY_DOWN"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "eyes_down.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "hidden",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": []
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "parade",
+                        "lines": [
+                            {
+                                "op": "masks",
+                                "indexes": []
+                            },
+                            {
+                                "op": "velocity",
+                                "x": 60,
+                                "y": 0
+                            },
+                            {
+                                "op": "label",
+                                "name": "parade_go"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_0.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "frame",
+                                "image": "right_1.png",
+                                "ms": 133
+                            },
+                            {
+                                "op": "goto",
+                                "target": "parade_go"
+                            }
+                        ],
+                        "entry": true,
+                        "note": " entry: the title show starts it; after Pac-Man"
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "right",
+                        "source": "walking",
+                        "to": "right",
+                        "when": "now"
+                    },
+                    {
+                        "event": "right",
+                        "source": "looking",
+                        "to": "eyes_right",
+                        "when": "now"
+                    },
+                    {
+                        "event": "up",
+                        "source": "walking",
+                        "to": "up",
+                        "when": "now"
+                    },
+                    {
+                        "event": "up",
+                        "source": "looking",
+                        "to": "eyes_up",
+                        "when": "now"
+                    },
+                    {
+                        "event": "left",
+                        "source": "walking",
+                        "to": "left",
+                        "when": "now"
+                    },
+                    {
+                        "event": "left",
+                        "source": "looking",
+                        "to": "eyes_left",
+                        "when": "now"
+                    },
+                    {
+                        "event": "down",
+                        "source": "walking",
+                        "to": "down",
+                        "when": "now"
+                    },
+                    {
+                        "event": "down",
+                        "source": "looking",
+                        "to": "eyes_down",
+                        "when": "now"
+                    },
+                    {
+                        "event": "fright",
+                        "source": "walking",
+                        "to": "fright",
+                        "when": "now"
+                    },
+                    {
+                        "event": "fright",
+                        "source": "fright",
+                        "to": "fright",
+                        "when": "now"
+                    },
+                    {
+                        "event": "eaten",
+                        "source": "fright",
+                        "to": "eyes",
+                        "when": "now"
+                    },
+                    {
+                        "event": "home",
+                        "source": "looking",
+                        "to": "walk",
+                        "when": "now"
+                    },
+                    {
+                        "event": "hide",
+                        "source": "walking",
+                        "to": "hidden",
+                        "when": "now"
+                    },
+                    {
+                        "event": "hide",
+                        "source": "looking",
+                        "to": "hidden",
+                        "when": "now"
+                    },
+                    {
+                        "event": "hide",
+                        "source": "fright",
+                        "to": "hidden",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " A ghost: its way (its eyes look it), frightened and flashing as the fright ends, its eyes alone going home.",
+                            " The four are one kind: the game draws each with its colors (param who: the palettes PINKY, INKY, CLYDE)."
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "name": "FRUIT",
+            "defaultMask": null,
+            "canvas": {
+                "left": -6,
+                "top": -6,
+                "width": 12,
+                "height": 12
+            },
+            "frames": [
+                {
+                    "image": "cherry.png",
+                    "width": 12,
+                    "height": 12,
+                    "origin": {
+                        "x": 6,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [],
+                "rules": []
+            }
+        },
+        {
+            "name": "WORDS",
+            "defaultMask": null,
+            "canvas": {
+                "left": -62,
+                "top": -22,
+                "width": 125,
+                "height": 23
+            },
+            "frames": [
+                {
+                    "image": "game_over.png",
+                    "width": 59,
+                    "height": 7,
+                    "origin": {
+                        "x": 29,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "logo.png",
+                    "width": 125,
+                    "height": 23,
+                    "origin": {
+                        "x": 62,
+                        "y": 22
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "press_start.png",
+                    "width": 65,
+                    "height": 7,
+                    "origin": {
+                        "x": 32,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "ready.png",
+                    "width": 35,
+                    "height": 7,
+                    "origin": {
+                        "x": 17,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "score.png",
+                    "width": 95,
+                    "height": 7,
+                    "origin": {
+                        "x": 47,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "blink",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "press_start.png",
+                                "ms": 500
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 300
+                            },
+                            {
+                                "op": "goto",
+                                "target": "blink"
+                            }
+                        ],
+                        "above": [
+                            " Words on the screen: the prompt of the title blinks."
+                        ]
+                    }
+                ],
+                "rules": []
+            }
+        },
+        {
+            "name": "MODES",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": 0,
+                "width": 1,
+                "height": 1
+            },
+            "frames": [],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "schedule",
+                        "lines": [
+                            {
+                                "op": "signal",
+                                "value": "SCATTER"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 7000
+                            },
+                            {
+                                "op": "signal",
+                                "value": "CHASE"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 20000
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SCATTER"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 7000
+                            },
+                            {
+                                "op": "signal",
+                                "value": "CHASE"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 20000
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SCATTER"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 5000
+                            },
+                            {
+                                "op": "signal",
+                                "value": "CHASE"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 20000
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SCATTER"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 5000
+                            },
+                            {
+                                "op": "signal",
+                                "value": "CHASE"
+                            },
+                            {
+                                "op": "label",
+                                "name": "chasing",
+                                "note": " the last chase lasts"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 60000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "chasing"
+                            }
+                        ],
+                        "above": [
+                            " The schedule of the ghosts' modes, level 1: a signal to the game as each begins. The game starts it",
+                            " with a life (an actor of its own, not drawn) and holds it while the ghosts are frightened."
+                        ]
+                    }
+                ],
+                "rules": []
+            }
+        },
+        {
+            "name": "PLAY",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": 0,
+                "width": 1,
+                "height": 1
+            },
+            "frames": [],
+            "animation": {
+                "events": [
+                    "start",
+                    "dot",
+                    "energizer",
+                    "ghost",
+                    "fruit",
+                    "lost",
+                    "go",
+                    "fruit_gone",
+                    "restart"
+                ],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [
+                    {
+                        "name": "score",
+                        "value": 0
+                    },
+                    {
+                        "name": "lives",
+                        "value": "LIVES"
+                    },
+                    {
+                        "name": "eaten",
+                        "value": 0,
+                        "note": " dots and energizers eaten on this level"
+                    },
+                    {
+                        "name": "bonus",
+                        "value": "GHOST_SCORE",
+                        "note": " what the next ghost of this fright is worth"
+                    }
+                ],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "idle",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "new_game",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "score",
+                                "value": 0
+                            },
+                            {
+                                "op": "set",
+                                "param": "lives",
+                                "value": "LIVES"
+                            },
+                            {
+                                "op": "set",
+                                "param": "eaten",
+                                "value": 0
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_START"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NEW"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "ready"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "ready",
+                        "lines": [
+                            {
+                                "op": "timer",
+                                "action": "start",
+                                "name": "ready"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ],
+                        "note": " READY! for a while, then the game goes"
+                    },
+                    {
+                        "name": "going",
+                        "lines": [
+                            {
+                                "op": "signal",
+                                "value": "SIG_GO"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "ate_dot",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "score",
+                                "value": "DOT_SCORE"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "bonus_life",
+                                "cond": "score >= EXTRA_LIFE and score - DOT_SCORE < EXTRA_LIFE",
+                                "note": " the score passed it just now"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "counted"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "ate_energizer",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "score",
+                                "value": "ENERGIZER_SCORE"
+                            },
+                            {
+                                "op": "set",
+                                "param": "bonus",
+                                "value": "GHOST_SCORE"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "bonus_life",
+                                "cond": "score >= EXTRA_LIFE and score - ENERGIZER_SCORE < EXTRA_LIFE"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "counted"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "counted",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "eaten",
+                                "value": 1
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_CHOMP"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "cleared",
+                                "cond": "eaten >= DOTS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "fruit_comes",
+                                "cond": "eaten == FRUIT_DOTS1 or eaten == FRUIT_DOTS2"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "fruit_comes",
+                        "lines": [
+                            {
+                                "op": "timer",
+                                "action": "start",
+                                "name": "fruit"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_FRUIT"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ],
+                        "note": " under the house for a while"
+                    },
+                    {
+                        "name": "fruit_goes",
+                        "lines": [
+                            {
+                                "op": "signal",
+                                "value": "SIG_FRUIT_GONE"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "ate_ghost",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "score",
+                                "value": "bonus"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "doubled",
+                                "cond": "score < EXTRA_LIFE or score - bonus >= EXTRA_LIFE"
+                            },
+                            {
+                                "op": "set",
+                                "param": "bonus",
+                                "value": "bonus * 2"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "bonus_life"
+                            }
+                        ],
+                        "note": " 200, 400, 800, 1600 in one fright"
+                    },
+                    {
+                        "name": "doubled",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "bonus",
+                                "value": "bonus * 2"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "ate_fruit",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "score",
+                                "value": "FRUIT_SCORE"
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_FRUIT"
+                            },
+                            {
+                                "op": "timer",
+                                "action": "stop",
+                                "name": "fruit"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "bonus_life",
+                                "cond": "score >= EXTRA_LIFE and score - FRUIT_SCORE < EXTRA_LIFE"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "bonus_life",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "lives",
+                                "value": 1
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_EXTRA_LIFE"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ],
+                        "note": " once a game: the score passes EXTRA_LIFE only once"
+                    },
+                    {
+                        "name": "cleared",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "eaten",
+                                "value": 0
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_LEVEL"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "ready"
+                            }
+                        ],
+                        "note": " the next level: the game lays the dots again"
+                    },
+                    {
+                        "name": "life_lost",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "lives",
+                                "value": -1
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "ready",
+                                "cond": "lives > 0"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_OVER"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "start",
+                        "source": "idle",
+                        "to": "new_game",
+                        "when": "now"
+                    },
+                    {
+                        "event": "restart",
+                        "source": "idle",
+                        "to": "new_game",
+                        "when": "now"
+                    },
+                    {
+                        "event": "dot",
+                        "source": "idle",
+                        "to": "ate_dot",
+                        "when": "now"
+                    },
+                    {
+                        "event": "energizer",
+                        "source": "idle",
+                        "to": "ate_energizer",
+                        "when": "now"
+                    },
+                    {
+                        "event": "ghost",
+                        "source": "idle",
+                        "to": "ate_ghost",
+                        "when": "now"
+                    },
+                    {
+                        "event": "fruit",
+                        "source": "idle",
+                        "to": "ate_fruit",
+                        "when": "now"
+                    },
+                    {
+                        "event": "lost",
+                        "source": "idle",
+                        "to": "life_lost",
+                        "when": "now"
+                    },
+                    {
+                        "event": "go",
+                        "source": "idle",
+                        "to": "going",
+                        "when": "now"
+                    },
+                    {
+                        "event": "fruit_gone",
+                        "source": "idle",
+                        "to": "fruit_goes",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " The game itself as an actor: its numbers and what follows from what Pac-Man eats. The game tells it",
+                            " what was eaten and reads the numbers (PACMAN_PLAY_PARAM_*); the pause dialog shows them. Its signals:",
+                            " SIG_NUMBERS the numbers changed, SIG_LEVEL the level cleared, SIG_OVER no lives left, SIG_GO READY! is",
+                            " over (the timer ready), SIG_FRUIT the cherry comes, SIG_FRUIT_GONE it is gone (the timer fruit), SIG_NEW a new",
+                            " game (the game lays the dots and the actors anew)."
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "screen": {
+        "width": 224,
+        "height": 288
+    },
+    "tilesets": [
+        {
+            "name": "MAZE",
+            "cellWidth": 8,
+            "cellHeight": 8,
+            "fields": {},
+            "tiles": [
+                {
+                    "name": "dot",
+                    "kind": 1,
+                    "solid": {
+                        "top": false,
+                        "left": false,
+                        "right": false,
+                        "bottom": false
+                    },
+                    "pieces": [
+                        {
+                            "layer": "dots",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "set": "DOTS",
+                            "image": "dot.png"
+                        }
+                    ]
+                },
+                {
+                    "name": "energizer",
+                    "kind": 2,
+                    "solid": {
+                        "top": false,
+                        "left": false,
+                        "right": false,
+                        "bottom": false
+                    },
+                    "pieces": [
+                        {
+                            "layer": "dots",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "cycle": [
+                                {
+                                    "set": "DOTS",
+                                    "image": "energizer.png",
+                                    "ms": 166
+                                },
+                                {
+                                    "set": "DOTS",
+                                    "image": "blank.png",
+                                    "ms": 166
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "wall",
+                    "kind": 3,
+                    "solid": {
+                        "top": true,
+                        "left": true,
+                        "right": true,
+                        "bottom": true
+                    },
+                    "pieces": []
+                },
+                {
+                    "name": "door",
+                    "kind": 4,
+                    "solid": {
+                        "top": true,
+                        "left": false,
+                        "right": false,
+                        "bottom": true
+                    },
+                    "pieces": []
+                }
+            ]
+        }
+    ],
+    "scenes": [
+        {
+            "name": "maze",
+            "width": 224,
+            "height": 288,
+            "background": "#000000",
+            "layers": [
+                {
+                    "name": "maze",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": [
+                        {
+                            "type": "picture",
+                            "name": "walls",
+                            "set": "MAZE",
+                            "image": "maze.png",
+                            "x": 0,
+                            "y": 271,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        }
+                    ]
+                },
+                {
+                    "name": "dots",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": []
+                },
+                {
+                    "name": "actors",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": [
+                        {
+                            "type": "actor",
+                            "name": "pac",
+                            "set": "PAC",
+                            "script": "whole",
+                            "x": 112,
+                            "y": 212,
+                            "flip": false,
+                            "params": {}
+                        },
+                        {
+                            "type": "actor",
+                            "name": "blinky",
+                            "set": "GHOST",
+                            "script": "left",
+                            "x": 112,
+                            "y": 116,
+                            "flip": false,
+                            "params": {
+                                "who": 0
+                            }
+                        },
+                        {
+                            "type": "actor",
+                            "name": "pinky",
+                            "set": "GHOST",
+                            "script": "down",
+                            "x": 112,
+                            "y": 140,
+                            "flip": false,
+                            "params": {
+                                "who": 1
+                            }
+                        },
+                        {
+                            "type": "actor",
+                            "name": "inky",
+                            "set": "GHOST",
+                            "script": "up",
+                            "x": 96,
+                            "y": 140,
+                            "flip": false,
+                            "params": {
+                                "who": 2
+                            }
+                        },
+                        {
+                            "type": "actor",
+                            "name": "clyde",
+                            "set": "GHOST",
+                            "script": "up",
+                            "x": 128,
+                            "y": 140,
+                            "flip": false,
+                            "params": {
+                                "who": 3
+                            }
+                        },
+                        {
+                            "type": "zone",
+                            "name": "house",
+                            "kind": "house",
+                            "x": 80,
+                            "y": 120,
+                            "width": 64,
+                            "height": 40
+                        },
+                        {
+                            "type": "zone",
+                            "name": "tunnel_left",
+                            "kind": "tunnel",
+                            "x": 0,
+                            "y": 136,
+                            "width": 48,
+                            "height": 8
+                        },
+                        {
+                            "type": "zone",
+                            "name": "tunnel_right",
+                            "kind": "tunnel",
+                            "x": 176,
+                            "y": 136,
+                            "width": 48,
+                            "height": 8
+                        },
+                        {
+                            "type": "zone",
+                            "name": "fruit",
+                            "kind": "fruit",
+                            "x": 104,
+                            "y": 160,
+                            "width": 16,
+                            "height": 8
+                        },
+                        {
+                            "type": "entry",
+                            "name": "pac_start",
+                            "x": 112,
+                            "y": 212,
+                            "flip": false,
+                            "arrive": "",
+                            "fires": null
+                        },
+                        {
+                            "type": "entry",
+                            "name": "house_door",
+                            "x": 112,
+                            "y": 116,
+                            "flip": false,
+                            "arrive": "",
+                            "fires": null
+                        }
+                    ]
+                },
+                {
+                    "name": "text",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": [
+                        {
+                            "type": "picture",
+                            "name": "score_words",
+                            "set": "WORDS",
+                            "image": "score.png",
+                            "x": 112,
+                            "y": 8,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "zone",
+                            "name": "message",
+                            "kind": "message",
+                            "x": 56,
+                            "y": 160,
+                            "width": 112,
+                            "height": 8
+                        },
+                        {
+                            "type": "zone",
+                            "name": "score",
+                            "kind": "label",
+                            "x": 8,
+                            "y": 8,
+                            "width": 56,
+                            "height": 16
+                        },
+                        {
+                            "type": "zone",
+                            "name": "high",
+                            "kind": "label",
+                            "x": 84,
+                            "y": 8,
+                            "width": 56,
+                            "height": 16
+                        },
+                        {
+                            "type": "zone",
+                            "name": "lives",
+                            "kind": "lives",
+                            "x": 16,
+                            "y": 274,
+                            "width": 80,
+                            "height": 13
+                        }
+                    ]
+                }
+            ],
+            "grids": [
+                {
+                    "name": "maze",
+                    "tileset": "MAZE",
+                    "x": 0,
+                    "y": 24,
+                    "cols": 28,
+                    "rows": 31,
+                    "cells": [
+                        [
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            2,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            2,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            1,
+                            3,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            3,
+                            1,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            1,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            3,
+                            4,
+                            4,
+                            3,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            1,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            0,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            0,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1,
+                            0,
+                            0,
+                            0,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            0,
+                            0,
+                            0,
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            0,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            0,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            1,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            1,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            1,
+                            3,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            3,
+                            1,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            3,
+                            1,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            1,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            0,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            2,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            0,
+                            0,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            2,
+                            3
+                        ],
+                        [
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3
+                        ],
+                        [
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3,
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            1,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            3
+                        ],
+                        [
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3,
+                            3
+                        ]
+                    ],
+                    "mods": {},
+                    "variants": {}
+                }
+            ],
+            "exits": [],
+            "links": [],
+            "map": "",
+            "index": 0,
+            "kind": "room",
+            "onEnter": "",
+            "leave": {
+                "left": "",
+                "right": "",
+                "up": "",
+                "down": ""
+            }
+        }
+    ],
+    "styles": [
+        {
+            "name": "menu",
+            "frame": "fill",
+            "place": [
+                32,
+                112,
+                160,
+                64
+            ],
+            "padding": [
+                8,
+                6,
+                8,
+                6
+            ],
+            "font": "TerminusTTFMedium12",
+            "scale": [
+                1,
+                1
+            ],
+            "important": false,
+            "scrollMs": 1200,
+            "waitMs": 0,
+            "borderWidth": 2,
+            "showName": false,
+            "align": "middle",
+            "colors": {
+                "fill": [
+                    0,
+                    0,
+                    0
+                ],
+                "border": [
+                    33,
+                    33,
+                    222
+                ],
+                "text": [
+                    222,
+                    222,
+                    255
+                ],
+                "bar": [
+                    33,
+                    33,
+                    120
+                ],
+                "name": [
+                    222,
+                    222,
+                    255
+                ]
+            }
+        }
+    ],
+    "palettes": [
+        {
+            "name": "MAZE_WHITE",
+            "colors": [
+                [
+                    222,
+                    222,
+                    255
+                ],
+                [
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        },
+        {
+            "name": "PINKY",
+            "colors": [
+                [
+                    255,
+                    184,
+                    255
+                ],
+                [
+                    222,
+                    222,
+                    255
+                ],
+                [
+                    33,
+                    33,
+                    222
+                ],
+                [
+                    33,
+                    33,
+                    255
+                ],
+                [
+                    255,
+                    184,
+                    151
+                ],
+                [
+                    222,
+                    222,
+                    255
+                ],
+                [
+                    255,
+                    0,
+                    0
+                ]
+            ]
+        },
+        {
+            "name": "INKY",
+            "colors": [
+                [
+                    0,
+                    255,
+                    255
+                ],
+                [
+                    222,
+                    222,
+                    255
+                ],
+                [
+                    33,
+                    33,
+                    222
+                ],
+                [
+                    33,
+                    33,
+                    255
+                ],
+                [
+                    255,
+                    184,
+                    151
+                ],
+                [
+                    222,
+                    222,
+                    255
+                ],
+                [
+                    255,
+                    0,
+                    0
+                ]
+            ]
+        },
+        {
+            "name": "CLYDE",
+            "colors": [
+                [
+                    255,
+                    184,
+                    82
+                ],
+                [
+                    222,
+                    222,
+                    255
+                ],
+                [
+                    33,
+                    33,
+                    222
+                ],
+                [
+                    33,
+                    33,
+                    255
+                ],
+                [
+                    255,
+                    184,
+                    151
+                ],
+                [
+                    222,
+                    222,
+                    255
+                ],
+                [
+                    255,
+                    0,
+                    0
+                ]
+            ]
+        }
+    ],
+    "dialogs": [
+        {
+            "name": "pause",
+            "text": "dialog pause\nroles play PLAY\ngame PLAY\nstyle menu\npause\n    say game \"PAUSE  Score {score}  Lives {lives}\"\nchoose play\n    \"Continue\" -> resume\n    \"New game\" -> restart\nlabel resume\n    end\nlabel restart\n    tell play restart\n    end\n"
+        }
+    ],
+    "game": [
+        {
+            "name": "pac_speed",
+            "value": 15515
+        },
+        {
+            "name": "pac_fright_speed",
+            "value": 17455
+        },
+        {
+            "name": "ghost_speed",
+            "value": 14545
+        },
+        {
+            "name": "ghost_fright_speed",
+            "value": 9697
+        },
+        {
+            "name": "ghost_tunnel_speed",
+            "value": 7758
+        },
+        {
+            "name": "eyes_speed",
+            "value": 31030
+        },
+        {
+            "name": "house_speed",
+            "value": 9697
+        },
+        {
+            "name": "elroy1_speed",
+            "value": 15515
+        },
+        {
+            "name": "elroy2_speed",
+            "value": 16485
+        },
+        {
+            "name": "elroy1_dots",
+            "value": 20
+        },
+        {
+            "name": "elroy2_dots",
+            "value": 10
+        },
+        {
+            "name": "ready_ms",
+            "value": 2000
+        },
+        {
+            "name": "eat_ghost_ms",
+            "value": 1000
+        },
+        {
+            "name": "idle_release_ms",
+            "value": 4000
+        },
+        {
+            "name": "inky_dots",
+            "value": 30
+        },
+        {
+            "name": "clyde_dots",
+            "value": 60
+        },
+        {
+            "name": "corner_points",
+            "value": 4
+        },
+        {
+            "name": "dot_pause_ms",
+            "value": 17
+        },
+        {
+            "name": "energizer_pause_ms",
+            "value": 50
+        },
+        {
+            "name": "blinky_corner_col",
+            "value": 25
+        },
+        {
+            "name": "blinky_corner_row",
+            "value": -3
+        },
+        {
+            "name": "pinky_corner_col",
+            "value": 2
+        },
+        {
+            "name": "pinky_corner_row",
+            "value": -3
+        },
+        {
+            "name": "inky_corner_col",
+            "value": 27
+        },
+        {
+            "name": "inky_corner_row",
+            "value": 31
+        },
+        {
+            "name": "clyde_corner_col",
+            "value": 0
+        },
+        {
+            "name": "clyde_corner_row",
+            "value": 31
+        },
+        {
+            "name": "no_up_1_col",
+            "value": 12
+        },
+        {
+            "name": "no_up_1_row",
+            "value": 11
+        },
+        {
+            "name": "no_up_2_col",
+            "value": 15
+        },
+        {
+            "name": "no_up_2_row",
+            "value": 11
+        },
+        {
+            "name": "no_up_3_col",
+            "value": 12
+        },
+        {
+            "name": "no_up_3_row",
+            "value": 23
+        },
+        {
+            "name": "no_up_4_col",
+            "value": 15
+        },
+        {
+            "name": "no_up_4_row",
+            "value": 23
+        }
+    ],
+    "constants": {
+        "WAY_RIGHT": 0,
+        "WAY_UP": 1,
+        "WAY_LEFT": 2,
+        "WAY_DOWN": 3,
+        "FRIGHT_LOOPS": 14,
+        "FRIGHT_FLASHES": 5,
+        "DOT_SCORE": 10,
+        "ENERGIZER_SCORE": 50,
+        "GHOST_SCORE": 200,
+        "FRUIT_SCORE": 100,
+        "LIVES": 3,
+        "EXTRA_LIFE": 10000,
+        "DOTS": 244,
+        "FRUIT_DOTS1": 70,
+        "FRUIT_DOTS2": 170,
+        "SCATTER": 1,
+        "CHASE": 2,
+        "SIG_NUMBERS": 1,
+        "SIG_LEVEL": 2,
+        "SIG_OVER": 3,
+        "SIG_GO": 4,
+        "SIG_FRUIT": 5,
+        "SIG_FRUIT_GONE": 6,
+        "SIG_NEW": 7,
+        "SND_START": 0,
+        "SND_CHOMP": 1,
+        "SND_FRIGHT": 2,
+        "SND_EAT_GHOST": 3,
+        "SND_DEATH": 4,
+        "SND_FRUIT": 5,
+        "SND_EXTRA_LIFE": 6
+    },
+    "timers": [
+        {
+            "name": "ready",
+            "once": "2000ms",
+            "every": "",
+            "until": "",
+            "reset": "scene",
+            "event": "go",
+            "start": ""
+        },
+        {
+            "name": "fruit",
+            "once": "9500ms",
+            "every": "",
+            "until": "",
+            "reset": "scene",
+            "event": "fruit_gone",
+            "start": ""
+        }
+    ],
+    "sounds": [
+        "start",
+        "chomp",
+        "fright",
+        "eat_ghost",
+        "death",
+        "fruit",
+        "extra_life"
+    ],
+    "shows": [
+        {
+            "name": "TITLE",
+            "pictures": [
+                {
+                    "picture": "WORDS_LOGO",
+                    "x": 112,
+                    "y": 90,
+                    "layer": 0,
+                    "flip": false,
+                    "color": 0
+                }
+            ],
+            "actors": [
+                {
+                    "name": "prompt",
+                    "kind": "WORDS",
+                    "script": "blink",
+                    "x": 112,
+                    "y": 230,
+                    "layer": 1,
+                    "flip": false,
+                    "color": 0
+                },
+                {
+                    "name": "pac",
+                    "kind": "PAC",
+                    "script": "parade",
+                    "x": -20,
+                    "y": 160,
+                    "layer": 1,
+                    "flip": false,
+                    "color": 0
+                },
+                {
+                    "name": "ghost",
+                    "kind": "GHOST",
+                    "script": "parade",
+                    "x": -60,
+                    "y": 160,
+                    "layer": 1,
+                    "flip": false,
+                    "color": 0
+                }
+            ],
+            "cues": [
+                {
+                    "at": "5s",
+                    "role": "end",
+                    "event": ""
+                }
+            ]
+        }
+    ],
+    "chases": [],
+    "crops": []
+}

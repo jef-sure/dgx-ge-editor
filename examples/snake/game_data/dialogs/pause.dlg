@@ -1,0 +1,14 @@
+dialog pause
+roles play PLAY
+game PLAY
+style menu
+pause
+    say game "PAUSE  Score {score}  Best {best}"
+choose play
+    "Continue" -> resume
+    "New game" -> restart
+label resume
+    end
+label restart
+    tell play restart
+    end

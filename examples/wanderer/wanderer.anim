@@ -1,0 +1,75 @@
+# The wanderer of make_wanderer.py: stands, walks, strikes with the sword, jumps.
+# Pictures are named as the pack names them: <SET>_<FILE>, WANDERER_WALK_1 is walk-1.png of set wanderer.
+
+event walk, stop, strike, jump
+
+# what the wanderer is doing, for the game: 0 stands, 1 walks, 2 strikes, 3 jumps
+param action 0
+
+script stand
+    set action 0
+    masks 1 3
+    frame WANDERER_WALK_1 200ms
+    hold
+
+script walk
+    set action 1
+label walk_cycle
+    dx 3
+    frame WANDERER_WALK_2 100ms
+    dx 3
+    frame WANDERER_WALK_3 100ms
+    dx 3
+    frame WANDERER_WALK_4 100ms
+    branch
+    dx 3
+    frame WANDERER_WALK_5 100ms
+    dx 3
+    frame WANDERER_WALK_6 100ms
+    dx 3
+    frame WANDERER_WALK_7 100ms
+    dx 3
+    frame WANDERER_WALK_8 100ms
+    branch
+    dx 3
+    frame WANDERER_WALK_1 100ms
+    goto walk_cycle
+
+script strike
+    set action 2
+    frame WANDERER_STRIKE_1 100ms
+    frame WANDERER_STRIKE_2 150ms
+    frame WANDERER_STRIKE_3 80ms
+    # the blade is dangerous on the lunge only
+    masks 1 2 3
+    dx 4
+    frame WANDERER_STRIKE_4 160ms
+    frame WANDERER_STRIKE_5 100ms
+    masks 1 3
+    dx -4
+    frame WANDERER_STRIKE_6 120ms
+    goto stand
+
+script jump
+    set action 3
+    frame WANDERER_JUMP_1 120ms
+    dx 2
+    frame WANDERER_JUMP_2 100ms
+    dx 6
+    frame WANDERER_JUMP_3 160ms
+    dx 6
+    frame WANDERER_JUMP_4 120ms
+    dx 2
+    frame WANDERER_JUMP_5 150ms
+    goto stand
+
+# on the floor and free to start something
+group ground: stand, walk
+# busy until the end: then they go on to what was asked
+group busy: strike, jump
+
+on walk: stand -> walk now
+on stop: walk -> stand branch
+on strike: ground -> strike branch
+on jump: ground -> jump branch
+on walk: busy -> walk end

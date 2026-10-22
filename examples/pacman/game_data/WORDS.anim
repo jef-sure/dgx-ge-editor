@@ -1,0 +1,5 @@
+# Words on the screen: the prompt of the title blinks.
+script blink
+    frame WORDS_PRESS_START 500ms
+    frame none 300ms
+    goto blink

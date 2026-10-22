@@ -1,0 +1,234 @@
+# The title: each letter falls in after the one before and bounces.
+script letter_1
+    frame none 1ms
+    dy -120
+    frame LOGO_LETTER_1 25ms
+    dy 2
+    frame LOGO_LETTER_1 25ms
+    dy 5
+    frame LOGO_LETTER_1 25ms
+    dy 6
+    frame LOGO_LETTER_1 25ms
+    dy 9
+    frame LOGO_LETTER_1 25ms
+    dy 11
+    frame LOGO_LETTER_1 25ms
+    dy 13
+    frame LOGO_LETTER_1 25ms
+    dy 16
+    frame LOGO_LETTER_1 25ms
+    dy 17
+    frame LOGO_LETTER_1 25ms
+    dy 20
+    frame LOGO_LETTER_1 25ms
+    dy 21
+    frame LOGO_LETTER_1 25ms
+    dy -6
+    frame LOGO_LETTER_1 25ms
+    dy -3
+    frame LOGO_LETTER_1 25ms
+    dy -1
+    frame LOGO_LETTER_1 25ms
+    dy 1
+    frame LOGO_LETTER_1 25ms
+    dy 3
+    frame LOGO_LETTER_1 25ms
+    dy 6
+label landed_1
+    frame LOGO_LETTER_1 1000ms
+    goto landed_1
+
+script letter_2  # entry: the title show starts it
+    frame none 151ms
+    dy -120
+    frame LOGO_LETTER_2 25ms
+    dy 2
+    frame LOGO_LETTER_2 25ms
+    dy 5
+    frame LOGO_LETTER_2 25ms
+    dy 6
+    frame LOGO_LETTER_2 25ms
+    dy 9
+    frame LOGO_LETTER_2 25ms
+    dy 11
+    frame LOGO_LETTER_2 25ms
+    dy 13
+    frame LOGO_LETTER_2 25ms
+    dy 16
+    frame LOGO_LETTER_2 25ms
+    dy 17
+    frame LOGO_LETTER_2 25ms
+    dy 20
+    frame LOGO_LETTER_2 25ms
+    dy 21
+    frame LOGO_LETTER_2 25ms
+    dy -6
+    frame LOGO_LETTER_2 25ms
+    dy -3
+    frame LOGO_LETTER_2 25ms
+    dy -1
+    frame LOGO_LETTER_2 25ms
+    dy 1
+    frame LOGO_LETTER_2 25ms
+    dy 3
+    frame LOGO_LETTER_2 25ms
+    dy 6
+label landed_2
+    frame LOGO_LETTER_2 1000ms
+    goto landed_2
+
+script letter_3  # entry: the title show starts it
+    frame none 301ms
+    dy -120
+    frame LOGO_LETTER_3 25ms
+    dy 2
+    frame LOGO_LETTER_3 25ms
+    dy 5
+    frame LOGO_LETTER_3 25ms
+    dy 6
+    frame LOGO_LETTER_3 25ms
+    dy 9
+    frame LOGO_LETTER_3 25ms
+    dy 11
+    frame LOGO_LETTER_3 25ms
+    dy 13
+    frame LOGO_LETTER_3 25ms
+    dy 16
+    frame LOGO_LETTER_3 25ms
+    dy 17
+    frame LOGO_LETTER_3 25ms
+    dy 20
+    frame LOGO_LETTER_3 25ms
+    dy 21
+    frame LOGO_LETTER_3 25ms
+    dy -6
+    frame LOGO_LETTER_3 25ms
+    dy -3
+    frame LOGO_LETTER_3 25ms
+    dy -1
+    frame LOGO_LETTER_3 25ms
+    dy 1
+    frame LOGO_LETTER_3 25ms
+    dy 3
+    frame LOGO_LETTER_3 25ms
+    dy 6
+label landed_3
+    frame LOGO_LETTER_3 1000ms
+    goto landed_3
+
+script letter_4  # entry: the title show starts it
+    frame none 451ms
+    dy -120
+    frame LOGO_LETTER_4 25ms
+    dy 2
+    frame LOGO_LETTER_4 25ms
+    dy 5
+    frame LOGO_LETTER_4 25ms
+    dy 6
+    frame LOGO_LETTER_4 25ms
+    dy 9
+    frame LOGO_LETTER_4 25ms
+    dy 11
+    frame LOGO_LETTER_4 25ms
+    dy 13
+    frame LOGO_LETTER_4 25ms
+    dy 16
+    frame LOGO_LETTER_4 25ms
+    dy 17
+    frame LOGO_LETTER_4 25ms
+    dy 20
+    frame LOGO_LETTER_4 25ms
+    dy 21
+    frame LOGO_LETTER_4 25ms
+    dy -6
+    frame LOGO_LETTER_4 25ms
+    dy -3
+    frame LOGO_LETTER_4 25ms
+    dy -1
+    frame LOGO_LETTER_4 25ms
+    dy 1
+    frame LOGO_LETTER_4 25ms
+    dy 3
+    frame LOGO_LETTER_4 25ms
+    dy 6
+label landed_4
+    frame LOGO_LETTER_4 1000ms
+    goto landed_4
+
+script letter_5  # entry: the title show starts it
+    frame none 601ms
+    dy -120
+    frame LOGO_LETTER_5 25ms
+    dy 2
+    frame LOGO_LETTER_5 25ms
+    dy 5
+    frame LOGO_LETTER_5 25ms
+    dy 6
+    frame LOGO_LETTER_5 25ms
+    dy 9
+    frame LOGO_LETTER_5 25ms
+    dy 11
+    frame LOGO_LETTER_5 25ms
+    dy 13
+    frame LOGO_LETTER_5 25ms
+    dy 16
+    frame LOGO_LETTER_5 25ms
+    dy 17
+    frame LOGO_LETTER_5 25ms
+    dy 20
+    frame LOGO_LETTER_5 25ms
+    dy 21
+    frame LOGO_LETTER_5 25ms
+    dy -6
+    frame LOGO_LETTER_5 25ms
+    dy -3
+    frame LOGO_LETTER_5 25ms
+    dy -1
+    frame LOGO_LETTER_5 25ms
+    dy 1
+    frame LOGO_LETTER_5 25ms
+    dy 3
+    frame LOGO_LETTER_5 25ms
+    dy 6
+label landed_5
+    frame LOGO_LETTER_5 1000ms
+    goto landed_5
+
+script letter_6  # entry: the title show starts it
+    frame none 751ms
+    dy -120
+    frame LOGO_LETTER_6 25ms
+    dy 2
+    frame LOGO_LETTER_6 25ms
+    dy 5
+    frame LOGO_LETTER_6 25ms
+    dy 6
+    frame LOGO_LETTER_6 25ms
+    dy 9
+    frame LOGO_LETTER_6 25ms
+    dy 11
+    frame LOGO_LETTER_6 25ms
+    dy 13
+    frame LOGO_LETTER_6 25ms
+    dy 16
+    frame LOGO_LETTER_6 25ms
+    dy 17
+    frame LOGO_LETTER_6 25ms
+    dy 20
+    frame LOGO_LETTER_6 25ms
+    dy 21
+    frame LOGO_LETTER_6 25ms
+    dy -6
+    frame LOGO_LETTER_6 25ms
+    dy -3
+    frame LOGO_LETTER_6 25ms
+    dy -1
+    frame LOGO_LETTER_6 25ms
+    dy 1
+    frame LOGO_LETTER_6 25ms
+    dy 3
+    frame LOGO_LETTER_6 25ms
+    dy 6
+label landed_6
+    frame LOGO_LETTER_6 1000ms
+    goto landed_6

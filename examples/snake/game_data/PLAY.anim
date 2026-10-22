@@ -1,0 +1,64 @@
+# The game itself as an actor: the score, the length the snake is to grow to, how fast it goes, when a star
+# comes. The game moves the snake a cell every speed ms and tells this actor what the head found.
+# Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over, SIG_STAR a star comes (a cell
+# of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays the
+# snake and an apple anew).
+event start, ate, star, crash, star_gone, restart
+
+param score 0
+param best 0
+param length START_LENGTH  # the snake grows a cell a step until it is so long
+param speed STEP_MS  # ms a step
+
+script idle
+    frame none 1000ms
+    hold
+
+script new_game
+    set score 0
+    set length START_LENGTH
+    set speed STEP_MS
+    timer stop star
+    signal SIG_NEW
+    signal SIG_NUMBERS
+    goto idle
+
+script apple  # each apple: longer and faster
+    add score APPLE_SCORE
+    add length GROW
+    set speed max(FASTEST_MS, speed - FASTER_MS)
+    sound SND_EAT
+    goto star_comes if (length - START_LENGTH) / GROW % STAR_EVERY == 0  # every STAR_EVERY apples
+    goto counted
+
+script star_comes
+    timer start star
+    signal SIG_STAR
+    goto counted
+
+script star_goes
+    signal SIG_STAR_GONE
+    goto idle
+
+script bonus  # a star: only points
+    add score STAR_SCORE
+    sound SND_STAR
+    timer stop star
+    goto counted
+
+script counted
+    set best max(best, score)
+    signal SIG_NUMBERS
+    goto idle
+
+script crashed
+    sound SND_CRASH
+    signal SIG_OVER
+    goto idle
+
+on start: idle -> new_game now
+on restart: idle -> new_game now
+on ate: idle -> apple now
+on star: idle -> bonus now
+on crash: idle -> crashed now
+on star_gone: idle -> star_goes now

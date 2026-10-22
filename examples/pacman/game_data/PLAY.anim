@@ -1,0 +1,107 @@
+# The game itself as an actor: its numbers and what follows from what Pac-Man eats. The game tells it
+# what was eaten and reads the numbers (PACMAN_PLAY_PARAM_*); the pause dialog shows them. Its signals:
+# SIG_NUMBERS the numbers changed, SIG_LEVEL the level cleared, SIG_OVER no lives left, SIG_GO READY! is
+# over (the timer ready), SIG_FRUIT the cherry comes, SIG_FRUIT_GONE it is gone (the timer fruit), SIG_NEW a new
+# game (the game lays the dots and the actors anew).
+event start, dot, energizer, ghost, fruit, lost, go, fruit_gone, restart
+
+param score 0
+param lives LIVES
+param eaten 0  # dots and energizers eaten on this level
+param bonus GHOST_SCORE  # what the next ghost of this fright is worth
+
+script idle
+    frame none 1000ms
+    hold
+
+script new_game
+    set score 0
+    set lives LIVES
+    set eaten 0
+    sound SND_START
+    signal SIG_NEW
+    signal SIG_NUMBERS
+    goto ready
+
+script ready  # READY! for a while, then the game goes
+    timer start ready
+    goto idle
+
+script going
+    signal SIG_GO
+    goto idle
+
+script ate_dot
+    add score DOT_SCORE
+    goto bonus_life if score >= EXTRA_LIFE and score - DOT_SCORE < EXTRA_LIFE  # the score passed it just now
+    goto counted
+
+script ate_energizer
+    add score ENERGIZER_SCORE
+    set bonus GHOST_SCORE
+    goto bonus_life if score >= EXTRA_LIFE and score - ENERGIZER_SCORE < EXTRA_LIFE
+    goto counted
+
+script counted
+    add eaten 1
+    sound SND_CHOMP
+    signal SIG_NUMBERS
+    goto cleared if eaten >= DOTS
+    goto fruit_comes if eaten == FRUIT_DOTS1 or eaten == FRUIT_DOTS2
+    goto idle
+
+script fruit_comes  # under the house for a while
+    timer start fruit
+    signal SIG_FRUIT
+    goto idle
+
+script fruit_goes
+    signal SIG_FRUIT_GONE
+    goto idle
+
+script ate_ghost  # 200, 400, 800, 1600 in one fright
+    add score bonus
+    signal SIG_NUMBERS
+    goto doubled if score < EXTRA_LIFE or score - bonus >= EXTRA_LIFE
+    set bonus bonus * 2
+    goto bonus_life
+
+script doubled
+    set bonus bonus * 2
+    goto idle
+
+script ate_fruit
+    add score FRUIT_SCORE
+    sound SND_FRUIT
+    timer stop fruit
+    signal SIG_NUMBERS
+    goto bonus_life if score >= EXTRA_LIFE and score - FRUIT_SCORE < EXTRA_LIFE
+    goto idle
+
+script bonus_life  # once a game: the score passes EXTRA_LIFE only once
+    add lives 1
+    sound SND_EXTRA_LIFE
+    signal SIG_NUMBERS
+    goto idle
+
+script cleared  # the next level: the game lays the dots again
+    set eaten 0
+    signal SIG_LEVEL
+    goto ready
+
+script life_lost
+    add lives -1
+    signal SIG_NUMBERS
+    goto ready if lives > 0
+    signal SIG_OVER
+    goto idle
+
+on start: idle -> new_game now
+on restart: idle -> new_game now
+on dot: idle -> ate_dot now
+on energizer: idle -> ate_energizer now
+on ghost: idle -> ate_ghost now
+on fruit: idle -> ate_fruit now
+on lost: idle -> life_lost now
+on go: idle -> going now
+on fruit_gone: idle -> fruit_goes now

@@ -1,0 +1,123 @@
+# A ghost: its way (its eyes look it), frightened and flashing as the fright ends, its eyes alone going home.
+# The four are one kind: the game draws each with its colors (param who: the palettes PINKY, INKY, CLYDE).
+event left, right, up, down, fright, eaten, home, hide
+
+param way WAY_LEFT  # the way it goes now: frightened, it keeps it for after
+param who 0  # 0 Blinky, 1 Pinky, 2 Inky, 3 Clyde
+param n 0
+
+script walk  # on its way, whichever it was
+    goto right if way == WAY_RIGHT
+    goto up if way == WAY_UP
+    goto down if way == WAY_DOWN
+    goto left
+
+script right
+    set way WAY_RIGHT
+    masks GHOST
+label right_go
+    frame GHOST_RIGHT_0 133ms
+    frame GHOST_RIGHT_1 133ms
+    goto right_go
+
+script up
+    set way WAY_UP
+    masks GHOST
+label up_go
+    frame GHOST_UP_0 133ms
+    frame GHOST_UP_1 133ms
+    goto up_go
+
+script left
+    set way WAY_LEFT
+    masks GHOST
+label left_go
+    frame GHOST_LEFT_0 133ms
+    frame GHOST_LEFT_1 133ms
+    goto left_go
+
+script down
+    set way WAY_DOWN
+    masks GHOST
+label down_go
+    frame GHOST_DOWN_0 133ms
+    frame GHOST_DOWN_1 133ms
+    goto down_go
+
+script fright  # blue for a while, then flashing; the game makes it slow
+    masks GHOST
+    sound SND_FRIGHT
+    set n 0
+label fright_blue
+    frame GHOST_FRIGHT_0 133ms
+    frame GHOST_FRIGHT_1 133ms
+    add n 1
+    goto fright_blue if n < FRIGHT_LOOPS
+    set n 0
+label fright_flash
+    frame GHOST_FLASH_0 233ms
+    frame GHOST_FRIGHT_0 233ms
+    add n 1
+    goto fright_flash if n < FRIGHT_FLASHES
+    signal 1  # tell the game: the fright is over
+    goto walk
+
+script eyes  # eaten: only its eyes go home, it meets nothing
+    masks
+    sound SND_EAT_GHOST
+    goto eyes_right if way == WAY_RIGHT
+    goto eyes_up if way == WAY_UP
+    goto eyes_down if way == WAY_DOWN
+    goto eyes_left
+
+script eyes_right
+    set way WAY_RIGHT
+    frame GHOST_EYES_RIGHT 1000ms
+    hold
+
+script eyes_up
+    set way WAY_UP
+    frame GHOST_EYES_UP 1000ms
+    hold
+
+script eyes_left
+    set way WAY_LEFT
+    frame GHOST_EYES_LEFT 1000ms
+    hold
+
+script eyes_down
+    set way WAY_DOWN
+    frame GHOST_EYES_DOWN 1000ms
+    hold
+
+script hidden
+    masks
+    frame none 1000ms
+    hold
+
+script parade  # entry: the title show starts it; after Pac-Man
+    masks
+    velocity 60 0
+label parade_go
+    frame GHOST_RIGHT_0 133ms
+    frame GHOST_RIGHT_1 133ms
+    goto parade_go
+
+group walking: walk, right, up, left, down, hidden
+group looking: eyes, eyes_right, eyes_up, eyes_left, eyes_down
+
+on right: walking -> right now
+on right: looking -> eyes_right now
+on up: walking -> up now
+on up: looking -> eyes_up now
+on left: walking -> left now
+on left: looking -> eyes_left now
+on down: walking -> down now
+on down: looking -> eyes_down now
+on fright: walking -> fright now
+on fright: fright -> fright now
+on eaten: fright -> eyes now
+on home: looking -> walk now
+on hide: walking -> hidden now
+on hide: looking -> hidden now
+on hide: fright -> hidden now

@@ -1,0 +1,2050 @@
+{
+    "format": "dgx-ge-sprites",
+    "formatVersion": 1,
+    "name": "snake",
+    "masks": [],
+    "sets": [
+        {
+            "name": "SNAKE",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": -9,
+                "width": 10,
+                "height": 10
+            },
+            "frames": [
+                {
+                    "image": "body_3.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "body_5.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "body_6.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "body_9.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "body_10.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "body_12.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "dead_down.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "dead_left.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "dead_right.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "dead_up.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "head_down.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "head_left.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "head_right.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "head_up.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "tail_down.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "tail_left.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "tail_right.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "tail_up.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [],
+                "rules": []
+            }
+        },
+        {
+            "name": "FIELD",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": -9,
+                "width": 10,
+                "height": 10
+            },
+            "frames": [
+                {
+                    "image": "apple_0.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "apple_1.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "star.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "wall.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [],
+                "rules": []
+            }
+        },
+        {
+            "name": "SPARKLE",
+            "defaultMask": null,
+            "canvas": {
+                "left": -7,
+                "top": -7,
+                "width": 15,
+                "height": 15
+            },
+            "frames": [
+                {
+                    "image": "sparkle_1.png",
+                    "width": 15,
+                    "height": 15,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "sparkle_2.png",
+                    "width": 15,
+                    "height": 15,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "sparkle_3.png",
+                    "width": 15,
+                    "height": 15,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "sparkle_4.png",
+                    "width": 15,
+                    "height": 15,
+                    "origin": {
+                        "x": 7,
+                        "y": 7
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "pop",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "sparkle_1.png",
+                                "ms": 50
+                            },
+                            {
+                                "op": "frame",
+                                "image": "sparkle_2.png",
+                                "ms": 50
+                            },
+                            {
+                                "op": "frame",
+                                "image": "sparkle_3.png",
+                                "ms": 60
+                            },
+                            {
+                                "op": "frame",
+                                "image": "sparkle_4.png",
+                                "ms": 80
+                            },
+                            {
+                                "op": "vanish"
+                            },
+                            {
+                                "op": "label",
+                                "name": "gone"
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "gone"
+                            }
+                        ],
+                        "above": [
+                            " Where the snake ate: sparks fly out and are gone."
+                        ]
+                    }
+                ],
+                "rules": []
+            }
+        },
+        {
+            "name": "WORDS",
+            "defaultMask": null,
+            "canvas": {
+                "left": -73,
+                "top": -36,
+                "width": 147,
+                "height": 37
+            },
+            "frames": [
+                {
+                    "image": "best.png",
+                    "width": 23,
+                    "height": 7,
+                    "origin": {
+                        "x": 11,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "game_over.png",
+                    "width": 108,
+                    "height": 16,
+                    "origin": {
+                        "x": 54,
+                        "y": 15
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "logo.png",
+                    "width": 147,
+                    "height": 37,
+                    "origin": {
+                        "x": 73,
+                        "y": 36
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "press_start.png",
+                    "width": 65,
+                    "height": 7,
+                    "origin": {
+                        "x": 32,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "score.png",
+                    "width": 29,
+                    "height": 7,
+                    "origin": {
+                        "x": 14,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "blink",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "press_start.png",
+                                "ms": 500
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 300
+                            },
+                            {
+                                "op": "goto",
+                                "target": "blink"
+                            }
+                        ],
+                        "above": [
+                            " Words: the prompt of the title blinks, the logo sways."
+                        ]
+                    },
+                    {
+                        "name": "sway",
+                        "lines": [
+                            {
+                                "op": "path",
+                                "x": 0,
+                                "y": "4 * sin(t * 3)"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "logo.png",
+                                "ms": 2000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "sway"
+                            }
+                        ],
+                        "entry": true,
+                        "note": " entry: the title show starts it"
+                    }
+                ],
+                "rules": []
+            }
+        },
+        {
+            "name": "PLAY",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": 0,
+                "width": 1,
+                "height": 1
+            },
+            "frames": [],
+            "animation": {
+                "events": [
+                    "start",
+                    "ate",
+                    "star",
+                    "crash",
+                    "star_gone",
+                    "restart"
+                ],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [
+                    {
+                        "name": "score",
+                        "value": 0
+                    },
+                    {
+                        "name": "best",
+                        "value": 0
+                    },
+                    {
+                        "name": "length",
+                        "value": "START_LENGTH",
+                        "note": " the snake grows a cell a step until it is so long"
+                    },
+                    {
+                        "name": "speed",
+                        "value": "STEP_MS",
+                        "note": " ms a step"
+                    }
+                ],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "idle",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "new_game",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "score",
+                                "value": 0
+                            },
+                            {
+                                "op": "set",
+                                "param": "length",
+                                "value": "START_LENGTH"
+                            },
+                            {
+                                "op": "set",
+                                "param": "speed",
+                                "value": "STEP_MS"
+                            },
+                            {
+                                "op": "timer",
+                                "action": "stop",
+                                "name": "star"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NEW"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "apple",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "score",
+                                "value": "APPLE_SCORE"
+                            },
+                            {
+                                "op": "add",
+                                "param": "length",
+                                "value": "GROW"
+                            },
+                            {
+                                "op": "set",
+                                "param": "speed",
+                                "value": "max(FASTEST_MS, speed - FASTER_MS)"
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_EAT"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "star_comes",
+                                "cond": "(length - START_LENGTH) / GROW % STAR_EVERY == 0",
+                                "note": " every STAR_EVERY apples"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "counted"
+                            }
+                        ],
+                        "note": " each apple: longer and faster"
+                    },
+                    {
+                        "name": "star_comes",
+                        "lines": [
+                            {
+                                "op": "timer",
+                                "action": "start",
+                                "name": "star"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_STAR"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "counted"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "star_goes",
+                        "lines": [
+                            {
+                                "op": "signal",
+                                "value": "SIG_STAR_GONE"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "bonus",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "score",
+                                "value": "STAR_SCORE"
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_STAR"
+                            },
+                            {
+                                "op": "timer",
+                                "action": "stop",
+                                "name": "star"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "counted"
+                            }
+                        ],
+                        "note": " a star: only points"
+                    },
+                    {
+                        "name": "counted",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "best",
+                                "value": "max(best, score)"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "crashed",
+                        "lines": [
+                            {
+                                "op": "sound",
+                                "value": "SND_CRASH"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_OVER"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "start",
+                        "source": "idle",
+                        "to": "new_game",
+                        "when": "now"
+                    },
+                    {
+                        "event": "restart",
+                        "source": "idle",
+                        "to": "new_game",
+                        "when": "now"
+                    },
+                    {
+                        "event": "ate",
+                        "source": "idle",
+                        "to": "apple",
+                        "when": "now"
+                    },
+                    {
+                        "event": "star",
+                        "source": "idle",
+                        "to": "bonus",
+                        "when": "now"
+                    },
+                    {
+                        "event": "crash",
+                        "source": "idle",
+                        "to": "crashed",
+                        "when": "now"
+                    },
+                    {
+                        "event": "star_gone",
+                        "source": "idle",
+                        "to": "star_goes",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " The game itself as an actor: the score, the length the snake is to grow to, how fast it goes, when a star",
+                            " comes. The game moves the snake a cell every speed ms and tells this actor what the head found.",
+                            " Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over, SIG_STAR a star comes (a cell",
+                            " of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays the",
+                            " snake and an apple anew)."
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "screen": {
+        "width": 320,
+        "height": 240
+    },
+    "tilesets": [
+        {
+            "name": "SNAKE",
+            "cellWidth": 10,
+            "cellHeight": 10,
+            "fields": {},
+            "tiles": [
+                {
+                    "name": "wall",
+                    "kind": 1,
+                    "solid": {
+                        "top": true,
+                        "left": true,
+                        "right": true,
+                        "bottom": true
+                    },
+                    "pieces": [
+                        {
+                            "layer": "cells",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "set": "FIELD",
+                            "image": "wall.png"
+                        }
+                    ]
+                },
+                {
+                    "name": "apple",
+                    "kind": 2,
+                    "solid": {
+                        "top": false,
+                        "left": false,
+                        "right": false,
+                        "bottom": false
+                    },
+                    "pieces": [
+                        {
+                            "layer": "cells",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "cycle": [
+                                {
+                                    "set": "FIELD",
+                                    "image": "apple_0.png",
+                                    "ms": 900
+                                },
+                                {
+                                    "set": "FIELD",
+                                    "image": "apple_1.png",
+                                    "ms": 150
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "body",
+                    "kind": 3,
+                    "solid": {
+                        "top": false,
+                        "left": false,
+                        "right": false,
+                        "bottom": false
+                    },
+                    "pieces": [
+                        {
+                            "layer": "cells",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "by_mod": [
+                                null,
+                                null,
+                                null,
+                                {
+                                    "set": "SNAKE",
+                                    "image": "body_3.png"
+                                },
+                                null,
+                                {
+                                    "set": "SNAKE",
+                                    "image": "body_5.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "body_6.png"
+                                },
+                                null,
+                                null,
+                                {
+                                    "set": "SNAKE",
+                                    "image": "body_9.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "body_10.png"
+                                },
+                                null,
+                                {
+                                    "set": "SNAKE",
+                                    "image": "body_12.png"
+                                },
+                                null,
+                                null,
+                                null
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "head",
+                    "kind": 4,
+                    "solid": {
+                        "top": false,
+                        "left": false,
+                        "right": false,
+                        "bottom": false
+                    },
+                    "pieces": [
+                        {
+                            "layer": "cells",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "by_mod": [
+                                {
+                                    "set": "SNAKE",
+                                    "image": "head_up.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "head_right.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "head_down.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "head_left.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "dead_up.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "dead_right.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "dead_down.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "dead_left.png"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "tail",
+                    "kind": 5,
+                    "solid": {
+                        "top": false,
+                        "left": false,
+                        "right": false,
+                        "bottom": false
+                    },
+                    "pieces": [
+                        {
+                            "layer": "cells",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "by_mod": [
+                                {
+                                    "set": "SNAKE",
+                                    "image": "tail_up.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "tail_right.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "tail_down.png"
+                                },
+                                {
+                                    "set": "SNAKE",
+                                    "image": "tail_left.png"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "star",
+                    "kind": 6,
+                    "solid": {
+                        "top": false,
+                        "left": false,
+                        "right": false,
+                        "bottom": false
+                    },
+                    "pieces": [
+                        {
+                            "layer": "cells",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "set": "FIELD",
+                            "image": "star.png"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "scenes": [
+        {
+            "name": "field",
+            "width": 320,
+            "height": 240,
+            "background": "#60963c",
+            "layers": [
+                {
+                    "name": "cells",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": []
+                },
+                {
+                    "name": "actors",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": [
+                        {
+                            "type": "entry",
+                            "name": "start",
+                            "x": 100,
+                            "y": 139,
+                            "flip": false,
+                            "arrive": "",
+                            "fires": null
+                        }
+                    ]
+                },
+                {
+                    "name": "text",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": [
+                        {
+                            "type": "picture",
+                            "name": "score_words",
+                            "set": "WORDS",
+                            "image": "score.png",
+                            "x": 30,
+                            "y": 13,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "picture",
+                            "name": "best_words",
+                            "set": "WORDS",
+                            "image": "best.png",
+                            "x": 220,
+                            "y": 13,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "zone",
+                            "name": "score",
+                            "kind": "label",
+                            "x": 64,
+                            "y": 2,
+                            "width": 60,
+                            "height": 16
+                        },
+                        {
+                            "type": "zone",
+                            "name": "best",
+                            "kind": "label",
+                            "x": 246,
+                            "y": 2,
+                            "width": 60,
+                            "height": 16
+                        }
+                    ]
+                }
+            ],
+            "grids": [
+                {
+                    "name": "field",
+                    "tileset": "SNAKE",
+                    "x": 0,
+                    "y": 20,
+                    "cols": 32,
+                    "rows": 22,
+                    "cells": [
+                        [
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            6,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            5,
+                            3,
+                            3,
+                            3,
+                            4,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            2,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1
+                        ],
+                        [
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1
+                        ]
+                    ],
+                    "mods": {
+                        "6,11": 1,
+                        "7,11": 10,
+                        "8,11": 10,
+                        "9,11": 10,
+                        "10,11": 3
+                    },
+                    "variants": {}
+                }
+            ],
+            "exits": [],
+            "links": [],
+            "map": "",
+            "index": 0,
+            "kind": "room",
+            "onEnter": "",
+            "leave": {
+                "left": "",
+                "right": "",
+                "up": "",
+                "down": ""
+            }
+        }
+    ],
+    "styles": [
+        {
+            "name": "menu",
+            "frame": "fill",
+            "place": [
+                70,
+                88,
+                180,
+                64
+            ],
+            "padding": [
+                8,
+                6,
+                8,
+                6
+            ],
+            "font": "TerminusTTFMedium12",
+            "scale": [
+                1,
+                1
+            ],
+            "important": false,
+            "scrollMs": 1200,
+            "waitMs": 0,
+            "borderWidth": 2,
+            "showName": false,
+            "align": "middle",
+            "colors": {
+                "fill": [
+                    20,
+                    70,
+                    20
+                ],
+                "border": [
+                    150,
+                    220,
+                    90
+                ],
+                "text": [
+                    240,
+                    240,
+                    240
+                ],
+                "bar": [
+                    70,
+                    170,
+                    50
+                ],
+                "name": [
+                    240,
+                    240,
+                    240
+                ]
+            }
+        }
+    ],
+    "palettes": [
+        {
+            "name": "GRASS",
+            "colors": [
+                [
+                    96,
+                    150,
+                    60
+                ],
+                [
+                    86,
+                    140,
+                    52
+                ]
+            ]
+        }
+    ],
+    "dialogs": [
+        {
+            "name": "pause",
+            "text": "dialog pause\nroles play PLAY\ngame PLAY\nstyle menu\npause\n    say game \"PAUSE  Score {score}  Best {best}\"\nchoose play\n    \"Continue\" -> resume\n    \"New game\" -> restart\nlabel resume\n    end\nlabel restart\n    tell play restart\n    end\n"
+        }
+    ],
+    "game": [
+        {
+            "name": "start_col",
+            "value": 10
+        },
+        {
+            "name": "start_row",
+            "value": 11
+        }
+    ],
+    "constants": {
+        "START_LENGTH": 5,
+        "STEP_MS": 150,
+        "FASTEST_MS": 60,
+        "FASTER_MS": 4,
+        "GROW": 3,
+        "APPLE_SCORE": 10,
+        "STAR_SCORE": 50,
+        "STAR_EVERY": 5,
+        "SIG_NUMBERS": 1,
+        "SIG_OVER": 2,
+        "SIG_STAR": 3,
+        "SIG_STAR_GONE": 4,
+        "SIG_NEW": 5,
+        "SND_EAT": 0,
+        "SND_STAR": 1,
+        "SND_TURN": 2,
+        "SND_CRASH": 3
+    },
+    "timers": [
+        {
+            "name": "star",
+            "once": "6000ms",
+            "every": "",
+            "until": "",
+            "reset": "scene",
+            "event": "star_gone",
+            "start": ""
+        }
+    ],
+    "sounds": [
+        "eat",
+        "star",
+        "turn",
+        "crash"
+    ],
+    "shows": [
+        {
+            "name": "TITLE",
+            "pictures": [],
+            "actors": [
+                {
+                    "name": "logo",
+                    "kind": "WORDS",
+                    "script": "sway",
+                    "x": 160,
+                    "y": 110,
+                    "layer": 0,
+                    "flip": false,
+                    "color": 0
+                },
+                {
+                    "name": "prompt",
+                    "kind": "WORDS",
+                    "script": "blink",
+                    "x": 160,
+                    "y": 170,
+                    "layer": 1,
+                    "flip": false,
+                    "color": 0
+                }
+            ],
+            "cues": [
+                {
+                    "at": "6s",
+                    "role": "end",
+                    "event": ""
+                }
+            ]
+        }
+    ],
+    "chases": [],
+    "crops": []
+}

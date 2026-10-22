@@ -1,0 +1,9 @@
+# made by the builds (the lock of the dependencies too: it records where the engine lies on this machine)
+main/assets/
+build/
+build-*/
+managed_components/
+sdkconfig
+sdkconfig.old
+nvs/
+dependencies.lock.*

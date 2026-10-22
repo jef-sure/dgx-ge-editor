@@ -1,0 +1,314 @@
+{
+    "format": "dgx-ge-sprites",
+    "formatVersion": 1,
+    "name": "example",
+    "masks": [
+        {
+            "index": 1,
+            "name": "body",
+            "color": "#e04040"
+        },
+        {
+            "index": 2,
+            "name": "blade",
+            "color": "#3070e0"
+        }
+    ],
+    "sets": [
+        {
+            "name": "walk",
+            "defaultMask": 1,
+            "canvas": {
+                "left": -6,
+                "top": -15,
+                "width": 19,
+                "height": 16
+            },
+            "frames": [
+                {
+                    "image": "walk-1.png",
+                    "width": 8,
+                    "height": 14,
+                    "origin": {
+                        "x": 3,
+                        "y": 13
+                    },
+                    "masks": {
+                        "1": {
+                            "x": -3,
+                            "y": -13,
+                            "width": 7,
+                            "height": 14,
+                            "rows": [
+                                "38",
+                                "7c",
+                                "7c",
+                                "38",
+                                "7c",
+                                "fe",
+                                "fe",
+                                "fe",
+                                "38",
+                                "38",
+                                "28",
+                                "28",
+                                "28",
+                                "6c"
+                            ]
+                        }
+                    },
+                    "points": {
+                        "hand": {
+                            "x": 3,
+                            "y": -6
+                        }
+                    }
+                },
+                {
+                    "image": "walk-2.png",
+                    "width": 10,
+                    "height": 14,
+                    "origin": {
+                        "x": 4,
+                        "y": 13
+                    },
+                    "masks": {
+                        "1": {
+                            "x": -4,
+                            "y": -13,
+                            "width": 9,
+                            "height": 14,
+                            "rows": [
+                                "1c0",
+                                "3e0",
+                                "3e0",
+                                "1c0",
+                                "3e0",
+                                "7f0",
+                                "7f8",
+                                "fe0",
+                                "1c0",
+                                "1c0",
+                                "240",
+                                "420",
+                                "410",
+                                "c18"
+                            ]
+                        }
+                    },
+                    "points": {
+                        "hand": {
+                            "x": 4,
+                            "y": -7
+                        }
+                    }
+                },
+                {
+                    "image": "walk-3.png",
+                    "width": 14,
+                    "height": 14,
+                    "origin": {
+                        "x": 3,
+                        "y": 13
+                    },
+                    "masks": {
+                        "1": {
+                            "x": -3,
+                            "y": -13,
+                            "width": 14,
+                            "height": 14,
+                            "rows": [
+                                "3800",
+                                "7c00",
+                                "7c00",
+                                "3800",
+                                "7c00",
+                                "ffe4",
+                                "fff8",
+                                "fe30",
+                                "3800",
+                                "3800",
+                                "2800",
+                                "2400",
+                                "2400",
+                                "6600"
+                            ]
+                        },
+                        "2": {
+                            "x": 7,
+                            "y": -8,
+                            "width": 4,
+                            "height": 3,
+                            "rows": [
+                                "1",
+                                "6",
+                                "c"
+                            ]
+                        }
+                    },
+                    "points": {
+                        "hand": {
+                            "x": 7,
+                            "y": -7
+                        }
+                    }
+                }
+            ],
+            "animation": {
+                "events": [
+                    "walk",
+                    "stop",
+                    "turn"
+                ],
+                "params": [
+                    {
+                        "name": "action",
+                        "value": 0
+                    }
+                ],
+                "groups": [
+                    {
+                        "name": "still",
+                        "scripts": [
+                            "stand",
+                            "turn"
+                        ]
+                    }
+                ],
+                "scripts": [
+                    {
+                        "name": "stand",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "action",
+                                "value": 0
+                            },
+                            {
+                                "op": "frame",
+                                "image": "walk-1.png",
+                                "ms": 200
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "walk",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "action",
+                                "value": 1
+                            },
+                            {
+                                "op": "label",
+                                "name": "walkcycle"
+                            },
+                            {
+                                "op": "dx",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "walk-2.png",
+                                "ms": 120
+                            },
+                            {
+                                "op": "dx",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "walk-3.png",
+                                "ms": 120
+                            },
+                            {
+                                "op": "branch"
+                            },
+                            {
+                                "op": "dx",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "walk-2.png",
+                                "ms": 120
+                            },
+                            {
+                                "op": "dx",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "walk-1.png",
+                                "ms": 120
+                            },
+                            {
+                                "op": "branch"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "walkcycle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "turn",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "action",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "walk-1.png",
+                                "ms": 80
+                            },
+                            {
+                                "op": "flip"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "walk-1.png",
+                                "ms": 80
+                            },
+                            {
+                                "op": "goto",
+                                "target": "stand"
+                            }
+                        ]
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "walk",
+                        "source": "still",
+                        "to": "walk",
+                        "when": "end"
+                    },
+                    {
+                        "event": "stop",
+                        "source": "walk",
+                        "to": "stand",
+                        "when": "branch"
+                    },
+                    {
+                        "event": "turn",
+                        "source": "stand",
+                        "to": "turn",
+                        "when": "now"
+                    },
+                    {
+                        "event": "turn",
+                        "source": "walk",
+                        "to": "turn",
+                        "when": "branch"
+                    }
+                ]
+            }
+        }
+    ]
+}

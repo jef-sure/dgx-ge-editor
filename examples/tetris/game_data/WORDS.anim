@@ -1,0 +1,43 @@
+# Words in the well: the prompt of the title blinks, GAME OVER drops into the middle, PAUSED blinks.
+event over, paused, resume, restart
+
+script quiet
+    frame none 1000ms
+    hold
+
+script blink
+    frame WORDS_PRESS_START 500ms
+    frame none 300ms
+    goto blink
+
+script game_over
+    frame WORDS_GAME_OVER 30ms
+    dy -8
+    frame WORDS_GAME_OVER 30ms
+    dy -6
+    frame WORDS_GAME_OVER 30ms
+    dy -4
+    frame WORDS_GAME_OVER 30ms
+    dy -2
+    frame WORDS_GAME_OVER 30ms
+    dy 0
+    frame WORDS_GAME_OVER 30ms
+    dy 2
+    frame WORDS_GAME_OVER 30ms
+    dy 4
+    frame WORDS_GAME_OVER 30ms
+    dy 6
+    frame WORDS_GAME_OVER 30ms
+    dy 8
+    frame WORDS_GAME_OVER 1000ms
+    hold
+
+script paused
+    frame WORDS_PAUSED 600ms
+    frame none 300ms
+    goto paused
+
+on over: quiet -> game_over now
+on paused: quiet -> paused now
+on resume: paused -> quiet now
+on restart: game_over -> quiet now

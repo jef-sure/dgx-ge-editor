@@ -1,0 +1,102 @@
+# Pac-Man: chomping his way, still against a wall, dying, running on the title.
+# The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and tells him his way.
+event left, right, up, down, stop, die
+
+script whole
+    masks PAC
+    frame PAC_FULL 1000ms
+    hold
+
+script right
+    masks PAC
+label right_chomp
+    frame PAC_RIGHT_1 40ms
+    frame PAC_RIGHT_2 40ms
+    frame PAC_RIGHT_1 40ms
+    frame PAC_FULL 40ms
+    goto right_chomp
+
+script up
+    masks PAC
+label up_chomp
+    frame PAC_UP_1 40ms
+    frame PAC_UP_2 40ms
+    frame PAC_UP_1 40ms
+    frame PAC_FULL 40ms
+    goto up_chomp
+
+script left
+    masks PAC
+label left_chomp
+    frame PAC_LEFT_1 40ms
+    frame PAC_LEFT_2 40ms
+    frame PAC_LEFT_1 40ms
+    frame PAC_FULL 40ms
+    goto left_chomp
+
+script down
+    masks PAC
+label down_chomp
+    frame PAC_DOWN_1 40ms
+    frame PAC_DOWN_2 40ms
+    frame PAC_DOWN_1 40ms
+    frame PAC_FULL 40ms
+    goto down_chomp
+
+script still_right  # against a wall: his mouth stays as it was
+    frame PAC_RIGHT_1 1000ms
+    hold
+
+script still_up  # against a wall: his mouth stays as it was
+    frame PAC_UP_1 1000ms
+    hold
+
+script still_left  # against a wall: his mouth stays as it was
+    frame PAC_LEFT_1 1000ms
+    hold
+
+script still_down  # against a wall: his mouth stays as it was
+    frame PAC_DOWN_1 1000ms
+    hold
+
+script dying
+    masks
+    sound SND_DEATH
+    frame PAC_DIE_0 133ms
+    frame PAC_DIE_1 133ms
+    frame PAC_DIE_2 133ms
+    frame PAC_DIE_3 133ms
+    frame PAC_DIE_4 133ms
+    frame PAC_DIE_5 133ms
+    frame PAC_DIE_6 133ms
+    frame PAC_DIE_7 133ms
+    frame PAC_DIE_8 133ms
+    frame PAC_DIE_9 133ms
+    frame PAC_DIE_10 133ms
+    frame none 500ms
+    signal 1  # tell the game: he is gone
+label gone
+    frame none 1000ms
+    goto gone
+
+script parade  # entry: the title show starts it; he runs across, the ghost after him
+    masks
+    velocity 60 0
+label parade_chomp
+    frame PAC_RIGHT_1 40ms
+    frame PAC_RIGHT_2 40ms
+    frame PAC_RIGHT_1 40ms
+    frame PAC_FULL 40ms
+    goto parade_chomp
+
+group any: whole, right, up, left, down, still_right, still_up, still_left, still_down
+
+on right: any -> right now
+on up: any -> up now
+on left: any -> left now
+on down: any -> down now
+on stop: right -> still_right now
+on stop: up -> still_up now
+on stop: left -> still_left now
+on stop: down -> still_down now
+on die: any -> dying now

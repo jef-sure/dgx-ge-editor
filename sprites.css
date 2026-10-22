@@ -1,0 +1,1856 @@
+/* the workbench: one shell for every mode */
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+.bench {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr) 340px;
+    grid-template-rows: auto minmax(0, 1fr) var(--strip-h, 200px) auto;
+    grid-template-areas:
+        "top top top"
+        "tree main props"
+        "tree strip props"
+        "status status status";
+    height: 100vh;
+    gap: 3px;
+    padding: 3px;
+    box-sizing: border-box;
+    background: #e9ebef;
+    font-size: 0.95em;
+}
+
+.bench.bench-span {
+    grid-template-areas:
+        "top top top"
+        "tree wide wide"
+        "tree wide wide"
+        "status status status";
+}
+
+.bench.bench-nostrip {
+    grid-template-rows: auto minmax(0, 1fr) 0 auto;
+}
+
+.bench-top {
+    grid-area: top;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    padding: 2px 4px;
+    background: #f8f8f8;
+    border: 1px solid #c8c8c8;
+}
+
+.bench-name {
+    font-weight: bold;
+    border: 1px solid #c8c8c8;
+    border-radius: 3px;
+    padding: 0 4px;
+}
+
+.bench-mode-toolbar {
+    flex: 1;
+}
+
+.mode-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+}
+
+.mode-toolbar label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.bench-zoom {
+    padding: 0 4px !important;
+    font-size: 0.85em !important;
+}
+
+.toolbar-add {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.toolbar-message {
+    font-size: 0.85em;
+    background: #fffbe6;
+    padding: 0 6px;
+    border-radius: 3px;
+}
+
+.bench-right {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.bench-right label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.bench-problems {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.bench-message {
+    flex-basis: 100%;
+    background: #fffbe6;
+    border-top: 1px solid #e0c060;
+    padding: 1px 6px;
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anim-state-scroll {
+    overflow-x: auto;
+}
+
+.anim-props .anim-exits select {
+    max-width: 7.5em;
+    font-size: 0.85em;
+}
+
+.anim-props .anim-exits td {
+    padding: 1px 3px;
+}
+
+.bench-tree {
+    grid-area: tree;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #c8c8c8;
+    background: #f8f8f8;
+    font-size: 0.85em;
+    padding: 2px 4px;
+}
+
+.bench-main {
+    grid-area: main;
+    min-height: 0;
+    min-width: 0;
+    border: 1px solid #a0a0a0;
+    overflow: auto;
+    background: white;
+}
+
+.bench-main-frames {
+    display: flex;
+    background: #d8dade;
+}
+
+.bench-main-anim {
+    padding: 4px 6px;
+}
+
+.bench-props {
+    grid-area: props;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #c8c8c8;
+    background: #f8f8f8;
+    padding: 4px 6px;
+    font-size: 0.85em;
+    display: flex;
+    flex-direction: column;
+}
+
+.bench-props > :first-child {
+    flex: none;
+}
+
+.bench-strip {
+    grid-area: strip;
+    border: 1px solid #c8c8c8;
+    background: white;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.bench-strip > :last-child {
+    flex: 1;
+    min-height: 0;
+}
+
+.strip-grip {
+    flex: none;
+    height: 6px;
+    cursor: ns-resize;
+    background: linear-gradient(#e0e0e0, #c8c8c8);
+}
+
+.bench-spanned {
+    grid-area: wide;
+    min-height: 0;
+    min-width: 0;
+}
+
+.bench-status {
+    grid-area: status;
+    background: #2c3440;
+    color: #e8e8e8;
+    font-size: 0.85em;
+    padding: 2px 8px;
+}
+
+.bench-status-row {
+    display: flex;
+    gap: 1.5em;
+    align-items: baseline;
+}
+
+.status-extra {
+    white-space: nowrap;
+    color: #b8c0cc;
+}
+
+/* the tree of the project */
+.tree-filter {
+    display: flex;
+    gap: 3px;
+    margin: 2px 0 4px;
+}
+
+.tree-filter input {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95em;
+    padding: 0 4px;
+}
+
+.tree-head b {
+    cursor: default;
+}
+
+.tree-leafhead {
+    cursor: pointer;
+    padding: 0 2px;
+}
+
+.tree-leafhead.selected,
+.tree-item.selected {
+    outline: 1px solid #ff30ff;
+}
+
+.tree-kind {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.tree-kind .tree-name {
+    font-weight: 500;
+}
+
+.tree-count {
+    white-space: nowrap;
+}
+
+.tree-sub {
+    padding-left: 20px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.tree-twisty {
+    text-decoration: none;
+    margin-left: auto;
+}
+
+.tree-group {
+    padding-left: 30px;
+    display: flex;
+    gap: 4px;
+    cursor: pointer;
+    color: #606060;
+    font-style: italic;
+}
+
+.tree-script {
+    padding-left: 40px;
+    font-family: monospace;
+    display: flex;
+    gap: 4px;
+}
+
+.tree-leaf {
+    padding-left: 16px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.tree-nested {
+    padding-left: 14px;
+    border-left: 1px dotted #c0c0c0;
+    margin-left: 10px;
+}
+
+.tree-note {
+    padding-left: 16px;
+}
+
+.tree-select {
+    font-size: 0.9em;
+    max-width: 8em;
+}
+
+.tree-add.on {
+    background: #d8e4f4;
+}
+
+.tree-problems {
+    margin-top: 8px;
+    border-top: 1px solid #d8d8d8;
+    padding-top: 4px;
+}
+
+/* the frames mode */
+.frame-canvas-box {
+    margin: auto;
+    padding: 12px;
+}
+
+.frames-strip {
+    display: flex;
+    gap: 6px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.frames-strip-list {
+    flex: 1;
+    min-width: 0;
+    overflow: auto;
+}
+
+.frames-strip-preview {
+    flex: none;
+    overflow: auto;
+    border-left: 1px solid #d8d8d8;
+    padding-left: 6px;
+}
+
+.frames-props h6,
+.anim-props h6 {
+    margin: 8px 0 3px;
+    font-weight: bold;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+}
+
+.masks-compact td {
+    padding: 0 3px;
+    vertical-align: middle;
+    font-size: 0.95em;
+}
+
+.mask-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #808080;
+    vertical-align: middle;
+}
+
+.points-table td {
+    padding: 0 3px;
+    vertical-align: middle;
+}
+
+.palette-row {
+    margin: 3px 0;
+}
+
+/* the animations mode */
+.anim-main {
+    min-height: 0;
+}
+
+.anim-subtabs {
+    display: flex;
+    gap: 14px;
+    border-bottom: 1px solid #d8d8d8;
+    margin-bottom: 4px;
+    padding: 0 4px 2px;
+}
+
+.anim-subtabs a {
+    text-decoration: none;
+}
+
+.anim-subtabs a.active {
+    font-weight: bold;
+    border-bottom: 2px solid #0d6efd;
+}
+
+.anim-player {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 2px 4px;
+}
+
+.anim-player .view-toolbar {
+    margin-bottom: 2px;
+}
+
+.anim-player-body {
+    flex: 1;
+    display: flex;
+    gap: 6px;
+    min-height: 0;
+}
+
+.anim-stage-box {
+    flex: 1;
+    min-width: 160px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.anim-player-side {
+    flex: none;
+    width: 42%;
+    min-width: 0;
+    overflow: auto;
+}
+
+.anim-no-events {
+    margin-top: 0.4em;
+}
+
+.anim-matrix-table td.hidden {
+    color: #c0c0c0;
+}
+
+/* the help pane and the problems */
+.help-pane {
+    margin-top: auto;
+    border-top: 1px solid #c8c8c8;
+    padding-top: 4px;
+}
+
+.help-pane-head {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 2px;
+}
+
+.problems-view {
+    padding: 6px 10px;
+}
+
+.problem-line {
+    margin: 2px 0;
+    font-size: 0.9em;
+}
+
+/* the dialogs mode: its own grid of the view, the strip and the properties */
+.dialog-edit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-rows: minmax(0, 1fr) var(--strip-h, 280px);
+    grid-template-areas:
+        "main props"
+        "palette props";
+    gap: 3px;
+    height: 100%;
+    min-height: 0;
+}
+
+.dialog-edit .scene-palette {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.dialog-edit .scene-props {
+    display: flex;
+    flex-direction: column;
+}
+
+.edit-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 1em;
+}
+
+.edit-view {
+    flex: none;
+    max-width: 65vw;
+    overflow: auto;
+}
+
+.edit-panel {
+    flex: 1;
+    min-width: 30em;
+}
+
+.view-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4em 1em;
+    margin-bottom: 0.5em;
+}
+
+.view-toolbar label {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+}
+
+.frame-canvas {
+    display: block;
+    border: 1px solid black;
+    cursor: crosshair;
+    outline: none;
+}
+
+.cursor-text {
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.help-text {
+    font-size: 0.8em;
+    color: #606060;
+    max-width: 50em;
+}
+
+.coord {
+    width: 5ch;
+    padding: 0 !important;
+    border: gray solid 1px;
+    border-radius: 4px;
+}
+
+.btn-remove {
+    --bs-text-opacity: 1;
+    padding: 0.1rem 0.5rem !important;
+    border-radius: 3px !important;
+    color: rgba(var(--bs-light-rgb), var(--bs-text-opacity)) !important;
+    background-color: rgba(var(--bs-danger-rgb), var(--bs-text-opacity)) !important;
+}
+
+.error-text {
+    color: #dc3545;
+}
+
+.masks-table td {
+    vertical-align: middle;
+}
+
+.masks-table input[type=color] {
+    width: 2.5em;
+    height: 1.6em;
+    padding: 0;
+}
+
+.mask-buttons .btn {
+    padding: 0 0.3rem;
+}
+
+.mask-state {
+    white-space: nowrap;
+}
+
+.mask-current {
+    background-color: #fff3d0;
+}
+
+.frame-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    padding: 2px;
+}
+
+.frame-cell {
+    padding: 2px;
+    cursor: pointer;
+    border: 2px solid #0dcaf0;
+    font-size: 0.7em;
+}
+
+.frame-cell.frame-current {
+    border-color: #ff30ff;
+}
+
+.frame-cell.frame-missing {
+    border-color: #dc3545;
+    border-style: dashed;
+}
+
+.frame-cell canvas {
+    display: block;
+    background: repeating-conic-gradient(#eeeeee 0% 25%, white 0% 50%) 0 0 / 8px 8px;
+}
+
+.frame-marks {
+    color: #606060;
+    min-height: 1.2em;
+}
+
+.anim-preview {
+    margin-top: 0.5em;
+}
+
+.anim-canvas {
+    display: block;
+    border: 1px solid #a0a0a0;
+}
+
+.page-tabs {
+    margin-bottom: 0.5em;
+}
+
+.warning-text {
+    color: #b07000;
+}
+
+.anim-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4em 1em;
+    margin-bottom: 0.5em;
+}
+
+.anim-message {
+    margin-bottom: 0.5em;
+}
+
+.anim-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 1em;
+}
+
+.anim-left {
+    flex: none;
+    width: 490px;
+    position: sticky;
+    top: 0;
+}
+
+.anim-right {
+    flex: 1;
+    min-width: 0;
+}
+
+.anim-stage {
+    display: block;
+    border: 1px solid #a0a0a0;
+}
+
+.anim-state {
+    font-size: 0.9em;
+    margin-top: 0.3em;
+}
+
+.anim-log {
+    font-family: monospace;
+    font-size: 0.85em;
+    color: #606060;
+    min-height: 1.2em;
+}
+
+.anim-events {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 0.4em;
+    align-items: center;
+}
+
+.anim-events .btn {
+    padding: 0 0.4rem;
+}
+
+.anim-dead {
+    opacity: 0.5;
+}
+
+.anim-scripts {
+    display: flex;
+    gap: 1em;
+    align-items: flex-start;
+    margin-top: 0.5em;
+}
+
+.anim-script-list {
+    flex: none;
+    width: 13em;
+}
+
+.anim-list {
+    max-height: 70vh;
+    overflow-y: auto;
+    border: 1px solid #d0d0d0;
+    margin: 3px 0;
+}
+
+.anim-list-item {
+    padding: 0 0.4em;
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 0.9em;
+}
+
+.anim-list-item.current {
+    background-color: #fff3d0;
+    font-weight: bold;
+}
+
+.anim-mark {
+    color: #b07000;
+}
+
+.anim-script {
+    flex: 1;
+    min-width: 0;
+}
+
+.anim-script-head {
+    display: flex;
+    gap: 0.3em;
+    align-items: center;
+    margin-bottom: 0.3em;
+}
+
+.anim-script-name {
+    font-weight: bold;
+}
+
+.anim-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 0.4em;
+}
+
+.anim-step {
+    border: 2px solid #c8d8f0;
+    border-radius: 4px;
+    padding: 3px;
+    width: 13em;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.anim-step.current {
+    border-color: #ff30ff;
+}
+
+.anim-step.tail {
+    border-style: dashed;
+    width: auto;
+    min-width: 8em;
+}
+
+.anim-step-head {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.anim-step-buttons button {
+    border: none;
+    background: none;
+    padding: 0 2px;
+}
+
+.anim-lines {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin: 2px 0;
+}
+
+.anim-line {
+    max-width: 100%;
+    font-family: monospace;
+    font-size: 0.9em;
+    border: 1px solid #b0b0b0;
+    border-radius: 8px;
+    padding: 0 4px;
+    background: #f4f4f4;
+}
+
+.anim-line.op-label {
+    background: #fff0b0;
+    font-weight: bold;
+}
+
+.anim-line.op-goto,
+.anim-line.op-hold {
+    background: #e0f0ff;
+}
+
+.anim-add {
+    font-size: 0.85em;
+    width: 3.2em;
+}
+
+.anim-frame {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 2px;
+}
+
+.anim-thumb {
+    min-height: 2em;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.anim-thumb canvas {
+    max-width: 100%;
+    background: repeating-conic-gradient(#eeeeee 0% 25%, white 0% 50%) 0 0 / 8px 8px;
+}
+
+.anim-nopic {
+    font-family: monospace;
+    color: #606060;
+    padding: 1em 0;
+}
+
+.anim-picture {
+    max-width: 100%;
+    font-size: 0.9em;
+}
+
+.anim-step-problem {
+    font-size: 0.85em;
+}
+
+.anim-empty {
+    color: #808080;
+    margin: 0.5em 0;
+}
+
+.anim-events-edit {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 6px;
+    align-items: center;
+    margin: 0.5em 0;
+}
+
+.anim-event-chip input {
+    font-family: monospace;
+    font-size: 0.85em;
+}
+
+.anim-event-chip button,
+.anim-rule-buttons button,
+.anim-member button {
+    border: none;
+    background: none;
+    padding: 0 2px;
+}
+
+.anim-rule-table select {
+    font-size: 0.85em;
+    max-width: 11em;
+}
+
+.anim-rule-table td {
+    vertical-align: middle;
+    padding: 1px 4px;
+}
+
+.anim-drag {
+    cursor: grab;
+    white-space: nowrap;
+    color: #808080;
+}
+
+.rule-current {
+    background-color: #fff3d0;
+}
+
+.rule-conflict {
+    background-color: #f8e0e0;
+}
+
+.anim-group {
+    border: 1px solid #d8d8d8;
+    border-radius: 4px;
+    padding: 4px;
+    margin: 4px 0;
+}
+
+.anim-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 8px;
+    align-items: center;
+}
+
+.anim-member,
+.anim-chip-link {
+    font-family: monospace;
+    font-size: 0.9em;
+    margin-right: 6px;
+}
+
+.anim-rule-link {
+    font-family: monospace;
+    font-size: 0.9em;
+    margin-right: 8px;
+}
+
+.anim-view-table td {
+    padding: 1px 6px;
+}
+
+.anim-way {
+    border-left: 3px solid #c8d8f0;
+    padding-left: 6px;
+    margin: 6px 0;
+}
+
+.anim-matrix-scroll {
+    overflow: auto;
+    max-height: calc(100% - 40px);
+}
+
+.anim-matrix-table {
+    border-collapse: collapse;
+    font-size: 0.75em;
+    font-family: monospace;
+}
+
+.anim-matrix-table th,
+.anim-matrix-table td {
+    border: 1px solid #e0e0e0;
+    padding: 0 3px;
+    white-space: nowrap;
+}
+
+.anim-matrix-table thead th {
+    position: sticky;
+    top: 0;
+    background: white;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    text-align: left;
+}
+
+.anim-matrix-table tbody th {
+    position: sticky;
+    left: 0;
+    background: white;
+    text-align: left;
+}
+
+.anim-matrix-table td.filled {
+    background: #eef6ee;
+    cursor: pointer;
+}
+
+.anim-check {
+    margin: 2px 0;
+}
+
+.anim-matrix-table td.conflict {
+    background: #f8c8c8;
+}
+
+.anim-state-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 8px;
+    align-items: center;
+    margin: 0.3em 0;
+}
+
+.anim-preview-box {
+    display: inline-block;
+    background: #f4f8ff;
+    border: 1px solid #c8d8f0;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin: 3px 0;
+}
+
+.anim-exits td {
+    vertical-align: middle;
+    padding: 1px 6px;
+}
+
+.anim-exits select {
+    font-size: 0.9em;
+    max-width: 14em;
+}
+
+.exit-none td {
+    background: #fffbea;
+}
+
+.exit-none-text {
+    color: #b07000;
+    font-style: italic;
+    margin-right: 1em;
+}
+
+.exit-conflict td {
+    background: #fbe4e4;
+}
+
+.anim-source {
+    margin-right: 6px;
+}
+
+.anim-source button {
+    border: none;
+    background: none;
+    padding: 0 2px;
+}
+
+.anim-add-exit {
+    font-size: 0.85em;
+}
+
+.anim-graph-svg {
+    width: 100%;
+    max-height: 75vh;
+    border: 1px solid #d8d8d8;
+    background: white;
+    user-select: none;
+}
+
+.graph-node rect {
+    fill: #eef3fb;
+    stroke: #4060a0;
+}
+
+.graph-node.group rect {
+    fill: #fff3d0;
+    stroke: #b08000;
+}
+
+.graph-node.center rect {
+    stroke-width: 3;
+}
+
+.graph-node text {
+    font: 11px monospace;
+    text-anchor: middle;
+}
+
+.graph-node {
+    cursor: pointer;
+}
+
+.edge-rule {
+    stroke: #4060a0;
+    stroke-width: 1.2;
+}
+
+.edge-own {
+    stroke: #909090;
+    stroke-dasharray: 5 4;
+}
+
+.edge-member {
+    stroke: #b08000;
+    stroke-dasharray: 2 3;
+}
+
+.edge-drag {
+    stroke: #ff30ff;
+    stroke-width: 2;
+}
+
+.edge-label {
+    font: 10px sans-serif;
+    fill: #203060;
+    paint-order: stroke;
+    stroke: white;
+    stroke-width: 3px;
+    text-anchor: middle;
+}
+
+.edge-label-own {
+    fill: #707070;
+}
+
+.anim-add-wide {
+    font-size: 0.85em;
+}
+
+.anim-group-head {
+    display: flex;
+    gap: 0.8em;
+    align-items: center;
+}
+
+.anim-state .badge,
+.anim-state-view b {
+    margin-left: 0.3em;
+    margin-right: 0.3em;
+}
+
+.anim-params {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 10px;
+    align-items: center;
+    margin-bottom: 0.5em;
+}
+
+.anim-param input {
+    font-family: monospace;
+    font-size: 0.85em;
+}
+
+.anim-param button {
+    border: none;
+    background: none;
+    padding: 0 2px;
+}
+
+.help-box {
+    background: #f3f8ff;
+    border: 1px solid #c8daf3;
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin-bottom: 0.5em;
+    font-size: 0.9em;
+    max-width: 62em;
+}
+
+.help-box.closed {
+    background: none;
+    border-color: transparent;
+    padding: 0 2px;
+}
+
+.help-toggle {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.help-body p,
+.help-body ol,
+.help-body ul {
+    margin: 0.3em 0;
+}
+
+.help-body li {
+    margin: 0.15em 0;
+}
+
+.tool-hint {
+    background: #fffbe6;
+    border-left: 3px solid #f0c040;
+    padding: 2px 8px;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+    max-width: 62em;
+}
+
+.masks-columns td {
+    font-size: 0.75em;
+    color: #707070;
+    cursor: help;
+}
+
+/* the parts of the scenes mode */
+.scene-toolbar {
+    grid-area: toolbar;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: center;
+}
+
+.scene-toolbar label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.scene-tree {
+    grid-area: tree;
+    overflow-y: auto;
+    border: 1px solid #c8c8c8;
+    background: #f8f8f8;
+    font-size: 0.85em;
+    padding: 2px 4px;
+}
+
+.scene-main {
+    grid-area: main;
+    min-height: 0;
+    border: 1px solid #a0a0a0;
+    overflow: auto;
+}
+
+.scene-props {
+    grid-area: props;
+    overflow-y: auto;
+    border: 1px solid #c8c8c8;
+    background: #f8f8f8;
+    padding: 4px 6px;
+    font-size: 0.85em;
+}
+
+.scene-palette {
+    grid-area: palette;
+    border: 1px solid #c8c8c8;
+    overflow: hidden;
+}
+
+.scene-status {
+    grid-area: status;
+    display: flex;
+    gap: 1.5em;
+    background: #2c3440;
+    color: #e8e8e8;
+    font-size: 0.85em;
+    padding: 2px 8px;
+}
+
+.status-prompt {
+    flex: 1;
+}
+
+.status-where {
+    font-family: monospace;
+}
+
+.scene-canvas-box {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.scene-canvas {
+    display: block;
+    outline: none;
+    cursor: crosshair;
+}
+
+.scene-canvas.tool-select {
+    cursor: default;
+}
+
+.scene-canvas.tool-pan {
+    cursor: grab;
+}
+
+.scene-canvas.tool-camera {
+    cursor: move;
+}
+
+.tree-head {
+    margin-top: 6px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.tree-head a {
+    text-decoration: none;
+}
+
+.tree-add {
+    border: 1px solid #a0a0a0;
+    background: white;
+    border-radius: 3px;
+    padding: 0 5px;
+    line-height: 1.2;
+}
+
+.tree-item {
+    padding: 0 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tree-item.current {
+    font-weight: bold;
+    background: #fff3d0;
+}
+
+.tree-item.selected {
+    outline: 1px solid #ff30ff;
+}
+
+.tree-object {
+    padding-left: 22px;
+    font-family: monospace;
+}
+
+.layer-item {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.tree-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tree-lock {
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.tree-lock.locked {
+    opacity: 1;
+}
+
+.tree-move button {
+    border: none;
+    background: none;
+    padding: 0 1px;
+}
+
+.tree-problem {
+    font-size: 0.85em;
+    white-space: normal;
+}
+
+.scene-props h6 {
+    margin: 8px 0 3px;
+    font-weight: bold;
+}
+
+.prop {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin: 2px 0;
+}
+
+.prop input:not([type=checkbox]):not([type=color]),
+.prop select {
+    flex: 1;
+    min-width: 0;
+}
+
+.prop input.num {
+    flex: none;
+    width: 6em;
+}
+
+.prop-row input.num,
+.piece input.num {
+    width: 4.5em;
+}
+
+.prop-buttons {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+
+.piece {
+    border: 1px solid #d8d8d8;
+    border-radius: 4px;
+    padding: 3px;
+    margin: 3px 0;
+}
+
+.piece select {
+    max-width: 100%;
+}
+
+.tile-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.tile-cell {
+    border: 1px solid #c8c8c8;
+    padding: 2px;
+    cursor: pointer;
+    font-size: 0.8em;
+    text-align: center;
+}
+
+.tile-thumb {
+    display: block;
+    background: repeating-conic-gradient(#eeeeee 0% 25%, white 0% 50%) 0 0 / 8px 8px;
+}
+
+.palette {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.palette-tabs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 2px 6px;
+    background: #eef0f4;
+    font-size: 0.85em;
+}
+
+.palette-tabs a {
+    text-decoration: none;
+}
+
+.palette-tabs a.active {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.palette-items {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 3px;
+    overflow-y: auto;
+    padding: 3px;
+}
+
+.palette-cell {
+    border: 2px solid transparent;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    background: repeating-conic-gradient(#eeeeee 0% 25%, white 0% 50%) 0 0 / 8px 8px;
+}
+
+.palette-cell.picked {
+    border-color: #ff30ff;
+}
+
+.palette-label {
+    font-size: 0.7em;
+    background: white;
+}
+
+.scene-map {
+    padding: 6px;
+}
+
+.scene-map-svg .graph-node text.map-size {
+    font-size: 9px;
+    fill: #707070;
+}
+
+.anim-expr {
+    font-family: monospace;
+    font-size: 0.85em;
+    width: 6em;
+    padding: 0 2px;
+    border: gray solid 1px;
+    border-radius: 4px;
+}
+
+.anim-add-cmd {
+    font-size: 0.85em;
+    width: 7.5em;
+}
+
+.point-z {
+    font-size: 0.8em;
+}
+
+.piece-head {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.piece-ref {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.piece-ref button {
+    border: none;
+    background: none;
+    padding: 0 2px;
+}
+
+.around {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 3px;
+}
+
+.around input {
+    width: 100%;
+    font-size: 0.8em;
+    min-width: 0;
+}
+
+.around-center {
+    text-align: center;
+    font-size: 0.8em;
+    background: #e8eef8;
+    border-radius: 3px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.meets-table td {
+    vertical-align: middle;
+}
+
+.meets-state {
+    font-weight: normal;
+    font-size: 0.85em;
+    color: #6c757d;
+    margin: 0 0.5em;
+}
+
+.meets-grid th,
+.meets-grid td {
+    padding: 0 0.15em;
+    text-align: center;
+    font-size: 0.85em;
+}
+
+.meets-grid .meets-row {
+    text-align: left;
+    white-space: nowrap;
+}
+
+.meets-diagonal {
+    background-color: #f0f0f0;
+}
+
+/* the engine defaults: no text yet, the grid only shows them */
+.meets-default {
+    opacity: 0.5;
+}
+
+.meets-text {
+    width: 100%;
+    font-family: monospace;
+    font-size: 0.85em;
+}
+
+.dialog-canvas {
+    display: block;
+    image-rendering: pixelated;
+}
+
+.dialog-sample {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: flex-start;
+    padding: 4px;
+    overflow: auto;
+}
+
+.dialog-sample textarea {
+    flex: 1 1 400px;
+    font-size: 0.9em;
+}
+
+.check-line {
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.anim-numbers-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin: 4px 0;
+}
+
+.anim-numbers-import textarea {
+    width: 100%;
+    font-family: monospace;
+    font-size: 0.85em;
+}
+
+.anim-numbers-table td {
+    vertical-align: middle;
+    padding: 1px 4px;
+}
+
+.anim-number-used td:first-child {
+    font-weight: bold;
+}
+
+.anim-numbers-table {
+    width: auto;
+}
+
+.anim-numbers-table input.num {
+    width: 4em;
+}
+
+.palette-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+}
+
+.palette-swatch {
+    width: 22px;
+    height: 22px;
+    border: 1px solid #888;
+    font-size: 9px;
+    line-height: 22px;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 0 2px #000;
+    cursor: pointer;
+}
+
+.palette-swatch.transparent {
+    background: repeating-conic-gradient(#ccc 0 25%, #fff 0 50%) 50% / 8px 8px;
+    color: #000;
+    text-shadow: none;
+}
+
+.palette-swatch.current {
+    outline: 2px solid #ff6000;
+    outline-offset: 1px;
+}
+
+.palette-edit {
+    margin: 4px 0;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.dialog-play {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    overflow: auto;
+}
+
+.dialog-text {
+    flex: 1 1 60%;
+    font-family: monospace;
+    font-size: 0.85em;
+    white-space: pre;
+    min-height: 140px;
+}
+
+.dialog-controls {
+    flex: 1 1 40%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-content: flex-start;
+}
+
+.dialog-state {
+    width: 100%;
+    font-size: 0.85em;
+}
+
+.palette-color {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid #888;
+}
+
+/* the game as a whole */
+.game-main {
+    padding: 0 2px;
+}
+
+.game-table {
+    width: auto;
+}
+
+.game-table td {
+    vertical-align: middle;
+    padding: 1px 4px;
+}
+
+.game-table input.num {
+    width: 5.5em;
+}
+
+.game-table input.game-near {
+    width: 4em;
+    margin-right: 2px;
+}
+
+.game-table td button {
+    margin-right: 2px;
+}
+
+.game-side {
+    margin-right: 6px;
+    white-space: nowrap;
+}
+
+.game-problems {
+    margin-top: 8px;
+    font-size: 0.9em;
+}
+
+/* the graph of scenes */
+.maps-main {
+    padding: 0 2px;
+}
+
+.maps-main h6 {
+    margin: 10px 0 4px;
+    font-weight: bold;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.maps-name {
+    font-family: monospace;
+    margin-right: 10px;
+}
+
+.prop-indent {
+    padding-left: 1.5em;
+}
+
+.tree-scripts .tree-name {
+    font-weight: 600;
+}
+
+.tree-scripts .tree-add {
+    margin-left: auto;
+}
+
+.bench-ghosts {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.bench-ghosts label {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.tree-script.tree-in-group {
+    padding-left: 52px;
+}
+
+.anim-frame-field {
+    white-space: nowrap;
+}
+
+.anim-expr.anim-at {
+    width: 3.5em;
+}
+
+/* the line as wide as its text, where the browser can */
+@supports (field-sizing: content) {
+    .anim-line {
+        field-sizing: content;
+        width: auto !important;
+        min-width: 4ch;
+    }
+}
+
+.bench-lang {
+    font-size: 0.85em;
+    margin-left: 6px;
+}
+
+/* the scripts as text (AnimText.js): the editor fills the middle */
+.anim-text {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+.anim-text-state {
+    font-size: 12px;
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.anim-text-box {
+    flex: 1;
+    min-height: 0;
+    border: 1px solid var(--bs-border-color, #ccc);
+}
+.anim-text-box .CodeMirror {
+    height: 100%;
+    font-family: ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+}
+.anim-text-box .CodeMirror-gutter.anim-marks {
+    width: 16px;
+}
+.anim-text-mark {
+    cursor: help;
+    font-size: 11px;
+}
+.anim-line-error {
+    background: #fde8e8;
+}
+.anim-line-warning {
+    background: #fff6dc;
+}
+.anim-text-box .cm-keyword {
+    color: #7a1fa2;
+    font-weight: bold;
+}
+.anim-text-box .cm-builtin {
+    color: #0b5cad;
+    font-weight: bold;
+}
+.anim-text-box .cm-atom {
+    color: #8a5a00;
+}
+.anim-text-box .cm-number {
+    color: #116611;
+}
+.anim-text-box .cm-variable-2 {
+    color: #a0306a;
+}
+.anim-text-box .cm-comment {
+    color: #6b7785;
+    font-style: italic;
+}

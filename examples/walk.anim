@@ -1,0 +1,40 @@
+# Stands, walks, turns round: the animations of the set walk of walk.json.
+# Pictures are named as the pack of the engine names them: <SET>_<FILE>, WALK_WALK_1 is walk-1.png of set walk.
+
+event walk, stop, turn
+
+# what the actor is doing, for the game: 0 stands, 1 walks, 2 turns
+param action 0
+
+script stand
+    set action 0
+    frame WALK_WALK_1 200ms
+    hold
+script walk
+    set action 1
+label walkcycle
+    dx 2
+    frame WALK_WALK_2 120ms
+    dx 2
+    frame WALK_WALK_3 120ms
+    branch
+    dx 2
+    frame WALK_WALK_2 120ms
+    dx 2
+    frame WALK_WALK_1 120ms
+    branch
+    goto walkcycle
+script turn
+    set action 2
+    frame WALK_WALK_1 80ms
+    flip
+    frame WALK_WALK_1 80ms
+    goto stand
+
+# standing still or turning on the spot
+group still: stand, turn
+
+on walk: still -> walk end
+on stop: walk -> stand branch
+on turn: stand -> turn now
+on turn: walk -> turn branch

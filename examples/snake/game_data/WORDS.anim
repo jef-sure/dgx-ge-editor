@@ -1,0 +1,10 @@
+# Words: the prompt of the title blinks, the logo sways.
+script blink
+    frame WORDS_PRESS_START 500ms
+    frame none 300ms
+    goto blink
+
+script sway  # entry: the title show starts it
+    path x: 0, y: 4 * sin(t * 3)
+    frame WORDS_LOGO 2000ms
+    goto sway

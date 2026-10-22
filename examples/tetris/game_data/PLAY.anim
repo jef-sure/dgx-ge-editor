@@ -1,0 +1,88 @@
+# The game itself as an actor: the score, the lines, the level and how fast the pieces fall, worked out
+# here, and the waits of the game. The game tells it: landed (a piece lies on something: it locks after a
+# while), lifted (it moved off), full (lines are full: they flash a while), taken with given set (the lines
+# it took away at once), dropped with given set (cells a piece was dropped by hand), topped (no room).
+# Its signals: SIG_NUMBERS the numbers changed, SIG_LEVEL a new level (a row falls as the game's fall_<level> says),
+# SIG_OVER the game is over, SIG_LOCK the piece is locked, SIG_CLEAR the full lines go, SIG_NEW a new game
+# (the game empties the well).
+event start, landed, lifted, lock, full, cleared, taken, dropped, topped, restart
+
+table line_points 0 40 100 300 1200
+
+param score 0
+param lines 0
+param level 1
+param given 0  # what the game gives with its event: the lines taken, the cells dropped
+
+script idle
+    frame none 1000ms
+    hold
+
+script new_game
+    set score 0
+    set lines 0
+    set level 1
+    signal SIG_NEW
+    signal SIG_NUMBERS
+    signal SIG_LEVEL
+    goto idle
+
+script landing
+    timer start lock
+    goto idle
+
+script lifting
+    timer stop lock
+    goto idle
+
+script locking
+    signal SIG_LOCK
+    goto idle
+
+script flashing
+    timer start clear
+    goto idle
+
+script clearing
+    signal SIG_CLEAR
+    goto idle
+
+script count_lines
+    add score line_points[given] * level
+    add lines given
+    sound SND_LINE
+    goto four if given == 4
+    goto counted
+
+script four
+    sound SND_FOUR
+    goto counted
+
+script counted
+    signal SIG_NUMBERS
+    goto idle if lines < level * LINES_PER_LEVEL or level >= TOP_LEVEL
+    add level 1
+    sound SND_LEVEL_UP
+    signal SIG_LEVEL
+    goto idle
+
+script count_drop
+    add score given
+    signal SIG_NUMBERS
+    goto idle
+
+script over
+    sound SND_GAME_OVER
+    signal SIG_OVER
+    goto idle
+
+on start: idle -> new_game now
+on restart: idle -> new_game now
+on taken: idle -> count_lines now
+on dropped: idle -> count_drop now
+on topped: idle -> over now
+on landed: idle -> landing now
+on lifted: idle -> lifting now
+on lock: idle -> locking now
+on full: idle -> flashing now
+on cleared: idle -> clearing now

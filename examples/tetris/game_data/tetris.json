@@ -1,0 +1,3072 @@
+{
+    "format": "dgx-ge-sprites",
+    "formatVersion": 1,
+    "name": "tetris",
+    "masks": [],
+    "sets": [
+        {
+            "name": "BLOCKS",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": -9,
+                "width": 10,
+                "height": 10
+            },
+            "frames": [
+                {
+                    "image": "flash_dim.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "flash.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "i.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "j.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "l.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "o.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "s.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "shadow_i.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "shadow_j.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "shadow_l.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "shadow_o.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "shadow_s.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "shadow_t.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "shadow_z.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "t.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "z.png",
+                    "width": 10,
+                    "height": 10,
+                    "origin": {
+                        "x": 0,
+                        "y": 9
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [],
+                "rules": []
+            }
+        },
+        {
+            "name": "WELL",
+            "defaultMask": null,
+            "canvas": {
+                "left": -4,
+                "top": 0,
+                "width": 108,
+                "height": 204
+            },
+            "frames": [
+                {
+                    "image": "box.png",
+                    "width": 84,
+                    "height": 40,
+                    "origin": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "well.png",
+                    "width": 108,
+                    "height": 204,
+                    "origin": {
+                        "x": 4,
+                        "y": 0
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [],
+                "rules": []
+            }
+        },
+        {
+            "name": "WORDS",
+            "defaultMask": null,
+            "canvas": {
+                "left": -54,
+                "top": -15,
+                "width": 108,
+                "height": 16
+            },
+            "frames": [
+                {
+                    "image": "game_over.png",
+                    "width": 108,
+                    "height": 16,
+                    "origin": {
+                        "x": 54,
+                        "y": 15
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "level.png",
+                    "width": 29,
+                    "height": 7,
+                    "origin": {
+                        "x": 14,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "lines.png",
+                    "width": 29,
+                    "height": 7,
+                    "origin": {
+                        "x": 14,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "next.png",
+                    "width": 23,
+                    "height": 7,
+                    "origin": {
+                        "x": 11,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "paused.png",
+                    "width": 72,
+                    "height": 16,
+                    "origin": {
+                        "x": 36,
+                        "y": 15
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "press_start.png",
+                    "width": 65,
+                    "height": 7,
+                    "origin": {
+                        "x": 32,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "score.png",
+                    "width": 29,
+                    "height": 7,
+                    "origin": {
+                        "x": 14,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [
+                    "over",
+                    "paused",
+                    "resume",
+                    "restart"
+                ],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "quiet",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "blink",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "press_start.png",
+                                "ms": 500
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 300
+                            },
+                            {
+                                "op": "goto",
+                                "target": "blink"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "game_over",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 30
+                            },
+                            {
+                                "op": "dy",
+                                "value": -8
+                            },
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 30
+                            },
+                            {
+                                "op": "dy",
+                                "value": -6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 30
+                            },
+                            {
+                                "op": "dy",
+                                "value": -4
+                            },
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 30
+                            },
+                            {
+                                "op": "dy",
+                                "value": -2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 30
+                            },
+                            {
+                                "op": "dy",
+                                "value": 0
+                            },
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 30
+                            },
+                            {
+                                "op": "dy",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 30
+                            },
+                            {
+                                "op": "dy",
+                                "value": 4
+                            },
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 30
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 30
+                            },
+                            {
+                                "op": "dy",
+                                "value": 8
+                            },
+                            {
+                                "op": "frame",
+                                "image": "game_over.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "paused",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "image": "paused.png",
+                                "ms": 600
+                            },
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 300
+                            },
+                            {
+                                "op": "goto",
+                                "target": "paused"
+                            }
+                        ]
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "over",
+                        "source": "quiet",
+                        "to": "game_over",
+                        "when": "now"
+                    },
+                    {
+                        "event": "paused",
+                        "source": "quiet",
+                        "to": "paused",
+                        "when": "now"
+                    },
+                    {
+                        "event": "resume",
+                        "source": "paused",
+                        "to": "quiet",
+                        "when": "now"
+                    },
+                    {
+                        "event": "restart",
+                        "source": "game_over",
+                        "to": "quiet",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " Words in the well: the prompt of the title blinks, GAME OVER drops into the middle, PAUSED blinks."
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "name": "LOGO",
+            "defaultMask": null,
+            "canvas": {
+                "left": -13,
+                "top": -36,
+                "width": 27,
+                "height": 37
+            },
+            "frames": [
+                {
+                    "image": "letter_1.png",
+                    "width": 27,
+                    "height": 37,
+                    "origin": {
+                        "x": 13,
+                        "y": 36
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "letter_2.png",
+                    "width": 27,
+                    "height": 37,
+                    "origin": {
+                        "x": 13,
+                        "y": 36
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "letter_3.png",
+                    "width": 27,
+                    "height": 37,
+                    "origin": {
+                        "x": 13,
+                        "y": 36
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "letter_4.png",
+                    "width": 27,
+                    "height": 37,
+                    "origin": {
+                        "x": 13,
+                        "y": 36
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "letter_5.png",
+                    "width": 27,
+                    "height": 37,
+                    "origin": {
+                        "x": 13,
+                        "y": 36
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "letter_6.png",
+                    "width": 27,
+                    "height": 37,
+                    "origin": {
+                        "x": 13,
+                        "y": 36
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "letter_1",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1
+                            },
+                            {
+                                "op": "dy",
+                                "value": -120
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 5
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 9
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 11
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 13
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 16
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 17
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 20
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 21
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "label",
+                                "name": "landed_1"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_1.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "landed_1"
+                            }
+                        ],
+                        "above": [
+                            " The title: each letter falls in after the one before and bounces."
+                        ]
+                    },
+                    {
+                        "name": "letter_2",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 151
+                            },
+                            {
+                                "op": "dy",
+                                "value": -120
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 5
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 9
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 11
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 13
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 16
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 17
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 20
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 21
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "label",
+                                "name": "landed_2"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_2.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "landed_2"
+                            }
+                        ],
+                        "entry": true,
+                        "note": " entry: the title show starts it"
+                    },
+                    {
+                        "name": "letter_3",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 301
+                            },
+                            {
+                                "op": "dy",
+                                "value": -120
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 5
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 9
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 11
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 13
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 16
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 17
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 20
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 21
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "label",
+                                "name": "landed_3"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_3.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "landed_3"
+                            }
+                        ],
+                        "entry": true,
+                        "note": " entry: the title show starts it"
+                    },
+                    {
+                        "name": "letter_4",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 451
+                            },
+                            {
+                                "op": "dy",
+                                "value": -120
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 5
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 9
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 11
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 13
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 16
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 17
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 20
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 21
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "label",
+                                "name": "landed_4"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_4.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "landed_4"
+                            }
+                        ],
+                        "entry": true,
+                        "note": " entry: the title show starts it"
+                    },
+                    {
+                        "name": "letter_5",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 601
+                            },
+                            {
+                                "op": "dy",
+                                "value": -120
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 5
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 9
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 11
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 13
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 16
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 17
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 20
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 21
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "label",
+                                "name": "landed_5"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_5.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "landed_5"
+                            }
+                        ],
+                        "entry": true,
+                        "note": " entry: the title show starts it"
+                    },
+                    {
+                        "name": "letter_6",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 751
+                            },
+                            {
+                                "op": "dy",
+                                "value": -120
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 2
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 5
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 9
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 11
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 13
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 16
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 17
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 20
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 21
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -6
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": -1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 1
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 3
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 25
+                            },
+                            {
+                                "op": "dy",
+                                "value": 6
+                            },
+                            {
+                                "op": "label",
+                                "name": "landed_6"
+                            },
+                            {
+                                "op": "frame",
+                                "image": "letter_6.png",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "goto",
+                                "target": "landed_6"
+                            }
+                        ],
+                        "entry": true,
+                        "note": " entry: the title show starts it"
+                    }
+                ],
+                "rules": []
+            }
+        },
+        {
+            "name": "PLAY",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": 0,
+                "width": 1,
+                "height": 1
+            },
+            "frames": [],
+            "animation": {
+                "events": [
+                    "start",
+                    "landed",
+                    "lifted",
+                    "lock",
+                    "full",
+                    "cleared",
+                    "taken",
+                    "dropped",
+                    "topped",
+                    "restart"
+                ],
+                "defines": [],
+                "tables": [
+                    {
+                        "name": "line_points",
+                        "values": [
+                            0,
+                            40,
+                            100,
+                            300,
+                            1200
+                        ]
+                    }
+                ],
+                "questions": [],
+                "params": [
+                    {
+                        "name": "score",
+                        "value": 0
+                    },
+                    {
+                        "name": "lines",
+                        "value": 0
+                    },
+                    {
+                        "name": "level",
+                        "value": 1
+                    },
+                    {
+                        "name": "given",
+                        "value": 0,
+                        "note": " what the game gives with its event: the lines taken, the cells dropped"
+                    }
+                ],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "idle",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "new_game",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "score",
+                                "value": 0
+                            },
+                            {
+                                "op": "set",
+                                "param": "lines",
+                                "value": 0
+                            },
+                            {
+                                "op": "set",
+                                "param": "level",
+                                "value": 1
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NEW"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_LEVEL"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "landing",
+                        "lines": [
+                            {
+                                "op": "timer",
+                                "action": "start",
+                                "name": "lock"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "lifting",
+                        "lines": [
+                            {
+                                "op": "timer",
+                                "action": "stop",
+                                "name": "lock"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "locking",
+                        "lines": [
+                            {
+                                "op": "signal",
+                                "value": "SIG_LOCK"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "flashing",
+                        "lines": [
+                            {
+                                "op": "timer",
+                                "action": "start",
+                                "name": "clear"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "clearing",
+                        "lines": [
+                            {
+                                "op": "signal",
+                                "value": "SIG_CLEAR"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "count_lines",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "score",
+                                "value": "line_points[given] * level"
+                            },
+                            {
+                                "op": "add",
+                                "param": "lines",
+                                "value": "given"
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_LINE"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "four",
+                                "cond": "given == 4"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "counted"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "four",
+                        "lines": [
+                            {
+                                "op": "sound",
+                                "value": "SND_FOUR"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "counted"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "counted",
+                        "lines": [
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle",
+                                "cond": "lines < level * LINES_PER_LEVEL or level >= TOP_LEVEL"
+                            },
+                            {
+                                "op": "add",
+                                "param": "level",
+                                "value": 1
+                            },
+                            {
+                                "op": "sound",
+                                "value": "SND_LEVEL_UP"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_LEVEL"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "count_drop",
+                        "lines": [
+                            {
+                                "op": "add",
+                                "param": "score",
+                                "value": "given"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_NUMBERS"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "over",
+                        "lines": [
+                            {
+                                "op": "sound",
+                                "value": "SND_GAME_OVER"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_OVER"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "start",
+                        "source": "idle",
+                        "to": "new_game",
+                        "when": "now"
+                    },
+                    {
+                        "event": "restart",
+                        "source": "idle",
+                        "to": "new_game",
+                        "when": "now"
+                    },
+                    {
+                        "event": "taken",
+                        "source": "idle",
+                        "to": "count_lines",
+                        "when": "now"
+                    },
+                    {
+                        "event": "dropped",
+                        "source": "idle",
+                        "to": "count_drop",
+                        "when": "now"
+                    },
+                    {
+                        "event": "topped",
+                        "source": "idle",
+                        "to": "over",
+                        "when": "now"
+                    },
+                    {
+                        "event": "landed",
+                        "source": "idle",
+                        "to": "landing",
+                        "when": "now"
+                    },
+                    {
+                        "event": "lifted",
+                        "source": "idle",
+                        "to": "lifting",
+                        "when": "now"
+                    },
+                    {
+                        "event": "lock",
+                        "source": "idle",
+                        "to": "locking",
+                        "when": "now"
+                    },
+                    {
+                        "event": "full",
+                        "source": "idle",
+                        "to": "flashing",
+                        "when": "now"
+                    },
+                    {
+                        "event": "cleared",
+                        "source": "idle",
+                        "to": "clearing",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " The game itself as an actor: the score, the lines, the level and how fast the pieces fall, worked out",
+                            " here, and the waits of the game. The game tells it: landed (a piece lies on something: it locks after a",
+                            " while), lifted (it moved off), full (lines are full: they flash a while), taken with given set (the lines",
+                            " it took away at once), dropped with given set (cells a piece was dropped by hand), topped (no room).",
+                            " Its signals: SIG_NUMBERS the numbers changed, SIG_LEVEL a new level (a row falls as the game's fall_<level> says),",
+                            " SIG_OVER the game is over, SIG_LOCK the piece is locked, SIG_CLEAR the full lines go, SIG_NEW a new game",
+                            " (the game empties the well)."
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "screen": {
+        "width": 320,
+        "height": 240
+    },
+    "tilesets": [
+        {
+            "name": "TETRIS",
+            "cellWidth": 10,
+            "cellHeight": 10,
+            "fields": {},
+            "tiles": [
+                {
+                    "name": "block",
+                    "kind": 1,
+                    "solid": {
+                        "top": true,
+                        "left": true,
+                        "right": true,
+                        "bottom": true
+                    },
+                    "pieces": [
+                        {
+                            "layer": "blocks",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "by_mod": [
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "i.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "o.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "t.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "s.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "z.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "j.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "l.png"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "shadow",
+                    "kind": 2,
+                    "solid": {
+                        "top": false,
+                        "left": false,
+                        "right": false,
+                        "bottom": false
+                    },
+                    "pieces": [
+                        {
+                            "layer": "blocks",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "by_mod": [
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "shadow_i.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "shadow_o.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "shadow_t.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "shadow_s.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "shadow_z.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "shadow_j.png"
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "shadow_l.png"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "going",
+                    "kind": 3,
+                    "solid": {
+                        "top": false,
+                        "left": false,
+                        "right": false,
+                        "bottom": false
+                    },
+                    "pieces": [
+                        {
+                            "layer": "blocks",
+                            "key": 0,
+                            "dx": 0,
+                            "dy": 0,
+                            "cycle": [
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "flash.png",
+                                    "ms": 60
+                                },
+                                {
+                                    "set": "BLOCKS",
+                                    "image": "flash_dim.png",
+                                    "ms": 60
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "scenes": [
+        {
+            "name": "well",
+            "width": 320,
+            "height": 240,
+            "background": "#14142a",
+            "layers": [
+                {
+                    "name": "back",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": [
+                        {
+                            "type": "picture",
+                            "name": "well",
+                            "set": "WELL",
+                            "image": "well.png",
+                            "x": 110,
+                            "y": 20,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "picture",
+                            "name": "next_box",
+                            "set": "WELL",
+                            "image": "box.png",
+                            "x": 226,
+                            "y": 20,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "picture",
+                            "name": "score_box",
+                            "set": "WELL",
+                            "image": "box.png",
+                            "x": 226,
+                            "y": 70,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "picture",
+                            "name": "lines_box",
+                            "set": "WELL",
+                            "image": "box.png",
+                            "x": 226,
+                            "y": 120,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "picture",
+                            "name": "level_box",
+                            "set": "WELL",
+                            "image": "box.png",
+                            "x": 226,
+                            "y": 170,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "picture",
+                            "name": "next_words",
+                            "set": "WORDS",
+                            "image": "next.png",
+                            "x": 268,
+                            "y": 30,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "picture",
+                            "name": "score_words",
+                            "set": "WORDS",
+                            "image": "score.png",
+                            "x": 268,
+                            "y": 80,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "picture",
+                            "name": "lines_words",
+                            "set": "WORDS",
+                            "image": "lines.png",
+                            "x": 268,
+                            "y": 130,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        },
+                        {
+                            "type": "picture",
+                            "name": "level_words",
+                            "set": "WORDS",
+                            "image": "level.png",
+                            "x": 268,
+                            "y": 180,
+                            "key": 0,
+                            "flip": false,
+                            "clip": null
+                        }
+                    ]
+                },
+                {
+                    "name": "blocks",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": []
+                },
+                {
+                    "name": "text",
+                    "factor": 256,
+                    "order": "added",
+                    "visible": true,
+                    "locked": false,
+                    "objects": [
+                        {
+                            "type": "zone",
+                            "name": "score",
+                            "kind": "label",
+                            "x": 232,
+                            "y": 86,
+                            "width": 72,
+                            "height": 16
+                        },
+                        {
+                            "type": "zone",
+                            "name": "lines",
+                            "kind": "label",
+                            "x": 232,
+                            "y": 136,
+                            "width": 72,
+                            "height": 16
+                        },
+                        {
+                            "type": "zone",
+                            "name": "level",
+                            "kind": "label",
+                            "x": 232,
+                            "y": 186,
+                            "width": 72,
+                            "height": 16
+                        },
+                        {
+                            "type": "zone",
+                            "name": "message",
+                            "kind": "message",
+                            "x": 110,
+                            "y": 100,
+                            "width": 100,
+                            "height": 30
+                        },
+                        {
+                            "type": "entry",
+                            "name": "spawn",
+                            "x": 140,
+                            "y": 20,
+                            "flip": false,
+                            "arrive": "",
+                            "fires": null
+                        }
+                    ]
+                }
+            ],
+            "grids": [
+                {
+                    "name": "well",
+                    "tileset": "TETRIS",
+                    "x": 110,
+                    "y": 20,
+                    "cols": 10,
+                    "rows": 20,
+                    "cells": [
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            1,
+                            1,
+                            1,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            2,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            2,
+                            2,
+                            2,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        [
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1,
+                            1,
+                            0,
+                            0
+                        ],
+                        [
+                            1,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1,
+                            1,
+                            1,
+                            1
+                        ],
+                        [
+                            1,
+                            1,
+                            0,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            0
+                        ],
+                        [
+                            0,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1
+                        ],
+                        [
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1,
+                            1
+                        ]
+                    ],
+                    "mods": {
+                        "6,15": 6,
+                        "7,15": 6,
+                        "0,16": 4,
+                        "6,16": 6,
+                        "8,16": 5,
+                        "9,16": 5,
+                        "0,17": 4,
+                        "1,17": 4,
+                        "3,17": 1,
+                        "4,17": 1,
+                        "5,17": 2,
+                        "6,17": 2,
+                        "8,17": 5,
+                        "1,18": 4,
+                        "2,18": 3,
+                        "3,18": 1,
+                        "4,18": 1,
+                        "5,18": 3,
+                        "6,18": 2,
+                        "8,18": 5,
+                        "9,18": 5,
+                        "0,19": 3,
+                        "1,19": 3,
+                        "2,19": 3,
+                        "3,19": 3,
+                        "4,19": 3,
+                        "5,19": 3,
+                        "6,19": 3,
+                        "8,19": 1,
+                        "9,19": 1,
+                        "4,1": 2,
+                        "4,13": 2,
+                        "3,2": 2,
+                        "3,14": 2,
+                        "4,2": 2,
+                        "4,14": 2,
+                        "5,2": 2,
+                        "5,14": 2
+                    },
+                    "variants": {}
+                },
+                {
+                    "name": "next",
+                    "tileset": "TETRIS",
+                    "x": 248,
+                    "y": 36,
+                    "cols": 4,
+                    "rows": 2,
+                    "cells": [
+                        [
+                            0,
+                            1,
+                            1,
+                            0
+                        ],
+                        [
+                            1,
+                            1,
+                            0,
+                            0
+                        ]
+                    ],
+                    "mods": {
+                        "1,0": 3,
+                        "2,0": 3,
+                        "0,1": 3,
+                        "1,1": 3
+                    },
+                    "variants": {}
+                }
+            ],
+            "exits": [],
+            "links": [],
+            "map": "",
+            "index": 0,
+            "kind": "room",
+            "onEnter": "",
+            "leave": {
+                "left": "",
+                "right": "",
+                "up": "",
+                "down": ""
+            }
+        }
+    ],
+    "styles": [
+        {
+            "name": "menu",
+            "frame": "fill",
+            "place": [
+                70,
+                88,
+                180,
+                64
+            ],
+            "padding": [
+                8,
+                6,
+                8,
+                6
+            ],
+            "font": "TerminusTTFMedium12",
+            "scale": [
+                1,
+                1
+            ],
+            "important": false,
+            "scrollMs": 1200,
+            "waitMs": 0,
+            "borderWidth": 2,
+            "showName": false,
+            "align": "middle",
+            "colors": {
+                "fill": [
+                    20,
+                    20,
+                    40
+                ],
+                "border": [
+                    190,
+                    190,
+                    210
+                ],
+                "text": [
+                    240,
+                    240,
+                    250
+                ],
+                "bar": [
+                    50,
+                    90,
+                    240
+                ],
+                "name": [
+                    240,
+                    240,
+                    250
+                ]
+            }
+        }
+    ],
+    "palettes": [],
+    "dialogs": [
+        {
+            "name": "pause",
+            "text": "dialog pause\nroles play PLAY\ngame PLAY\nstyle menu\npause\n    say game \"PAUSED  Score {score}  Lines {lines}\"\nchoose play\n    \"Continue\" -> resume\n    \"New game\" -> restart\nlabel resume\n    end\nlabel restart\n    tell play restart\n    end\n"
+        }
+    ],
+    "game": [
+        {
+            "name": "I_0",
+            "value": 3840
+        },
+        {
+            "name": "I_1",
+            "value": 8738
+        },
+        {
+            "name": "I_2",
+            "value": 240
+        },
+        {
+            "name": "I_3",
+            "value": 17476
+        },
+        {
+            "name": "O_0",
+            "value": 26112
+        },
+        {
+            "name": "O_1",
+            "value": 26112
+        },
+        {
+            "name": "O_2",
+            "value": 26112
+        },
+        {
+            "name": "O_3",
+            "value": 26112
+        },
+        {
+            "name": "T_0",
+            "value": 19968
+        },
+        {
+            "name": "T_1",
+            "value": 17984
+        },
+        {
+            "name": "T_2",
+            "value": 3648
+        },
+        {
+            "name": "T_3",
+            "value": 19520
+        },
+        {
+            "name": "S_0",
+            "value": 27648
+        },
+        {
+            "name": "S_1",
+            "value": 17952
+        },
+        {
+            "name": "S_2",
+            "value": 1728
+        },
+        {
+            "name": "S_3",
+            "value": 35904
+        },
+        {
+            "name": "Z_0",
+            "value": 50688
+        },
+        {
+            "name": "Z_1",
+            "value": 9792
+        },
+        {
+            "name": "Z_2",
+            "value": 3168
+        },
+        {
+            "name": "Z_3",
+            "value": 19584
+        },
+        {
+            "name": "J_0",
+            "value": 36352
+        },
+        {
+            "name": "J_1",
+            "value": 25664
+        },
+        {
+            "name": "J_2",
+            "value": 3616
+        },
+        {
+            "name": "J_3",
+            "value": 17600
+        },
+        {
+            "name": "L_0",
+            "value": 11776
+        },
+        {
+            "name": "L_1",
+            "value": 17504
+        },
+        {
+            "name": "L_2",
+            "value": 3712
+        },
+        {
+            "name": "L_3",
+            "value": 50240
+        },
+        {
+            "name": "fall_1",
+            "value": 800
+        },
+        {
+            "name": "fall_2",
+            "value": 717
+        },
+        {
+            "name": "fall_3",
+            "value": 633
+        },
+        {
+            "name": "fall_4",
+            "value": 550
+        },
+        {
+            "name": "fall_5",
+            "value": 467
+        },
+        {
+            "name": "fall_6",
+            "value": 383
+        },
+        {
+            "name": "fall_7",
+            "value": 300
+        },
+        {
+            "name": "fall_8",
+            "value": 217
+        },
+        {
+            "name": "fall_9",
+            "value": 133
+        },
+        {
+            "name": "fall_10",
+            "value": 100
+        },
+        {
+            "name": "fall_11",
+            "value": 83
+        },
+        {
+            "name": "fall_12",
+            "value": 83
+        },
+        {
+            "name": "fall_13",
+            "value": 83
+        },
+        {
+            "name": "fall_14",
+            "value": 67
+        },
+        {
+            "name": "fall_15",
+            "value": 67
+        },
+        {
+            "name": "cols",
+            "value": 10
+        },
+        {
+            "name": "rows",
+            "value": 20
+        },
+        {
+            "name": "spawn_col",
+            "value": 3
+        },
+        {
+            "name": "lock_ms",
+            "value": 500
+        },
+        {
+            "name": "repeat_after_ms",
+            "value": 170
+        },
+        {
+            "name": "repeat_ms",
+            "value": 50
+        },
+        {
+            "name": "soft_drop_ms",
+            "value": 40
+        }
+    ],
+    "constants": {
+        "LINES_PER_LEVEL": 10,
+        "TOP_LEVEL": 15,
+        "SIG_NUMBERS": 1,
+        "SIG_LEVEL": 2,
+        "SIG_OVER": 3,
+        "SIG_LOCK": 4,
+        "SIG_CLEAR": 5,
+        "SIG_NEW": 6,
+        "SND_MOVE": 0,
+        "SND_TURN": 1,
+        "SND_LOCK": 2,
+        "SND_LINE": 3,
+        "SND_FOUR": 4,
+        "SND_LEVEL_UP": 5,
+        "SND_GAME_OVER": 6
+    },
+    "timers": [
+        {
+            "name": "lock",
+            "once": "500ms",
+            "every": "",
+            "until": "",
+            "reset": "scene",
+            "event": "lock",
+            "start": ""
+        },
+        {
+            "name": "clear",
+            "once": "360ms",
+            "every": "",
+            "until": "",
+            "reset": "scene",
+            "event": "cleared",
+            "start": ""
+        }
+    ],
+    "sounds": [
+        "move",
+        "turn",
+        "lock",
+        "line",
+        "four",
+        "level_up",
+        "game_over"
+    ],
+    "shows": [
+        {
+            "name": "TITLE",
+            "pictures": [],
+            "actors": [
+                {
+                    "name": "letter_1",
+                    "kind": "LOGO",
+                    "script": "letter_1",
+                    "x": 85,
+                    "y": 110,
+                    "layer": 0,
+                    "flip": false,
+                    "color": 0
+                },
+                {
+                    "name": "letter_2",
+                    "kind": "LOGO",
+                    "script": "letter_2",
+                    "x": 115,
+                    "y": 110,
+                    "layer": 0,
+                    "flip": false,
+                    "color": 0
+                },
+                {
+                    "name": "letter_3",
+                    "kind": "LOGO",
+                    "script": "letter_3",
+                    "x": 145,
+                    "y": 110,
+                    "layer": 0,
+                    "flip": false,
+                    "color": 0
+                },
+                {
+                    "name": "letter_4",
+                    "kind": "LOGO",
+                    "script": "letter_4",
+                    "x": 175,
+                    "y": 110,
+                    "layer": 0,
+                    "flip": false,
+                    "color": 0
+                },
+                {
+                    "name": "letter_5",
+                    "kind": "LOGO",
+                    "script": "letter_5",
+                    "x": 205,
+                    "y": 110,
+                    "layer": 0,
+                    "flip": false,
+                    "color": 0
+                },
+                {
+                    "name": "letter_6",
+                    "kind": "LOGO",
+                    "script": "letter_6",
+                    "x": 235,
+                    "y": 110,
+                    "layer": 0,
+                    "flip": false,
+                    "color": 0
+                },
+                {
+                    "name": "prompt",
+                    "kind": "WORDS",
+                    "script": "blink",
+                    "x": 160,
+                    "y": 180,
+                    "layer": 1,
+                    "flip": false,
+                    "color": 0
+                }
+            ],
+            "cues": [
+                {
+                    "at": "6s",
+                    "role": "end",
+                    "event": ""
+                }
+            ]
+        }
+    ],
+    "chases": [],
+    "crops": []
+}
