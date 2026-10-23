@@ -107,10 +107,10 @@ The least each part must be for the examples to build and play, and what they we
 
 | Part | At least | Why | Checked with |
 | --- | --- | --- | --- |
-| DGX-GE | 0.3.0 | Pac-Man: `game.*` told who asks, the constants in the pack's header, a walker bound to an actor, hits from the registry of bodies. Snake and Tetris need 0.2.0 (boards as directories, the computer's board) | 0.3.0 |
+| DGX-GE | 0.4.0 | the three games: music by notes on the chip's, the NES's and FM's synthesizers, the game's variables (the volumes the pause dialog's sliders set), a frame's time by an expression (the snake's clock, the tetris piece's fall), the events of one step in a queue, Pac-Man turned by quarters, the common glue (`dgx_ge_frame_fit`, `board_sound_open`…), a talk's two clocks, `dgx_ge_grid_play`, the scene's paper and music in its blob | 0.4.0 |
 | DGX | 0.8.0 | DGX-GE asks for `^0.8.0` | 0.8.1 |
 | DGX-DI | 0.1.2 | the games' `idf_component.yml` | 0.1.2 |
-| ESP-IDF | 5.3 | DGX-GE's least | 6.0.1, with DGX-GE 0.2.0; with 0.3.0 only the computer's build |
+| ESP-IDF | 5.3 | DGX-GE's least | 6.0.1, with DGX-GE 0.2.0; with 0.3.0 and 0.4.0 only the computer's build |
 | `atanisoft/esp_lcd_touch_xpt2046` (the CYD) | 1.0 | the games' `idf_component.yml` | — |
 | `espressif/esp_codec_dev`, `espressif/esp_lcd_touch_gt911` (the P4 boards) | 1.6.2, 1.0 | the games' `idf_component.yml` | — |
 | python3, Pillow | — | the packer | Python 3.14, Pillow 12.1 |
@@ -119,7 +119,8 @@ The least each part must be for the examples to build and play, and what they we
 | node | — | `examples/editor_check.js`, `make_games.py`, `check_games.py` only | 24 |
 
 A dash: nothing older is known not to work, but nothing older was tried. The games' `main/idf_component.yml` ask
-for these DGX-GE versions too (`^0.3.0` Pac-Man, `>=0.2.0` the others).
+for this DGX-GE too (`^0.4.0`); their `main/CMakeLists.txt` carry the synthesizer of their music
+(`dgx_ge_synths(chip)` Pac-Man, `nes` Tetris, `fm` Snake) and their Makefiles say the same (`DGX_GE_SYNTH_<NAME>=1`).
 
 ## The CYD's touch
 

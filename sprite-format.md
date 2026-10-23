@@ -224,6 +224,7 @@ the lines of a deleted mask.
 | `frames` | The frames, sorted by file name (numbers in names compare as numbers: `walk-2` comes before `walk-10`) |
 | `animation` | Optional. The set's animations: frame scripts, events, groups, transition rules; see "Animations of a set". No field — no animations |
 | `facesLeft` | Optional, `true`: the set's pictures face left ("forward" is to the left); only affects display in the editor |
+| `palette` | Optional (DGX-GE 0.4.0): a ready palette of the set in the pack — `nes`, `gameboy`, `pico8` (the engine's, `tools/palettes/`) or the `name` of one of the file's `palettes`. The packer brings every color of the set's pictures to the palette's nearest (CIE76, the distance in CIELAB) and gives the set only the colors taken, in the palette's order; so the frames need not share their color numbers. It warns once a set how many colors were not the palette's and the farthest one. A name of no palette is refused, naming those there are |
 | `frameTable` | Optional: a table of frames by number for `frame N` — `[{set, image, dx, dy} | null, …]`, the array index is the number; the picture may come from any set, `dx` is forward and `dy` is down from the actor; `null` is a number with no picture. Used only by the editor's player: a game that draws numbered frames itself (PoP) keeps its own table |
 
 The canvas covers everything in the set's frames: the base point pixel,
@@ -429,7 +430,7 @@ same order:
 
 | `op` | Fields | In `.anim` text |
 | --- | --- | --- |
-| `frame` | a picture (see below), `ms` 1…65535, `at` `{x, y}` −128…127 — optional; or `expr` — the picture as an expression, plus `ms`; or `none: true` — show nothing for this time (the packer writes picture 0xFFFF, the actor's picture is −1: hidden; a script without a frame keeps the previous picture) | `frame WALK_WALK_1 200ms at 2, -1`, `frame (DAGGERS_1 + min(amount, 10) - 1) 1000ms`, `frame none 100ms` |
+| `frame` | a picture (see below), `ms` 1…65535, `at` `{x, y}` −128…127 — optional; or `expr` — the picture as an expression, plus `ms`; or `none: true` — show nothing for this time (the packer writes picture 0xFFFF, the actor's picture is −1: hidden; a script without a frame keeps the previous picture). `ms` may be an expression of the actor (a string: `"speed"`, `"(speed * 2)"`): it is worked out as the frame begins (below 1 — 1 ms, above 65535 — 65535; step `FRAME_MS` 44, DGX-GE 0.4.0); one of constants is a number as before and gives the same bytes. The unit `ms` may be left out; it is read off only as a unit (`fall_ms` is a name) | `frame WALK_WALK_1 200ms at 2, -1`, `frame (DAGGERS_1 + min(amount, 10) - 1) 1000ms`, `frame none 100ms`, `frame STEP (speed)ms`, `frame none speed` |
 | `keep` | nothing: the world keeps the actor while it is in this script | `keep` |
 | `timer` | `action`: `start`, `stop`, `hold` (pause), `go` (resume); `name` — a game timer (the same names as in `timer(NAME)`); the game is told what was done | `timer start clock` |
 | `draw` | `point` — a point, as in `carry`; `kind` — the item's kind, as in `shoot`: from the pockets into the hand | `draw hand SWORD` |
@@ -437,6 +438,9 @@ same order:
 | `dx`, `dy` | `value` −128…127 | `dx 2` |
 | `set` | `param` — the parameter name, `value`: assign. A constant −32768…32767 is stored in the step; beyond that, up to ±2²⁴ (exact as a float), as an expression; an expression is rounded, a non-number gives 0 | `set action 1` |
 | `add` | `param`, `value` (as in `set`): add; the value is clamped to 32 bits | `add hp -1` |
+| `set`, `add` (variable) | `variable` — a variable of the game (the file's `variables`, see "The game as a whole") instead of `param`; `value` — always written as an expression (a constant within ±2²⁴); the result is kept within 32 bits, the game is told when it changes (`DGX_GE_ANIM_VAR`; steps `SET_VAR` 47, `ADD_VAR` 48) | `set game_var.volume 3`, `add game_var.score 10` |
+| `rotate` | `value` — degrees clockwise (anticlockwise below zero), a number or an expression of the actor worked out at the step; `to: true` — into that turn, not by it. To the nearest multiple of 90 (a half away from zero: 45 is 90, −45 is −90), round the circle (−90 is 270). The picture is drawn turned (after the mirror: the eight orientations of DGX), and everything said in the actor's axes turns with it: `dx`, `dy`, `velocity`, `accel`, `path`, the frame's `at`, points and what is held, masks, `front`/`back` of `contact`, `release`, `shoot`, `steer`, `sense`. The scene does not turn. A constant is kept in quarter turns (step `ROTATE` 49, 2 bytes), an expression as `ROTATE_X` 50 (DGAN 11) | `rotate 90`, `rotate to 180`, `rotate to (dir * 90)`, `rotate to game_var.facing` |
+| `music` | `name` — a music of the pack (the file's `music`; a name the file has not is a name only: the packer numbers it, it plays nothing, and the editor warns) or `stop`; or `volume` 0…100 — the music's level by design, percent of the player's volume; `ms` — the fade (the one playing fades out, then this one comes in as long) or the time the level is reached over, 0…65535 (written `500ms` or `2s`; none — 0, at once). The same music already playing goes on. Steps `MUSIC` 45 and `MUSIC_LEVEL` 46, 4 bytes | `music theme`, `music theme 500ms`, `music stop 1s`, `music volume 30% 500ms` |
 | `signal`, `sound` | `value` 0…255 | `signal 3` |
 | `velocity`, `accel` | `x`, `y` −32768…32767 | `velocity 40 0`, `velocity 40, -power + 10` |
 | `path` | `x`, `y` — expressions of `t`: position by formula, see below | `path x: 40*t, y: 3*sin(t*6)` |
@@ -465,7 +469,15 @@ the language, exactly as written in the `.anim` text: numbers (fractional
 too), `+ - * /`, parentheses, unary minus, `min(a, b)`, `max(a, b)`, `abs`,
 `sin`, `cos`, `sqrt`, `exp`, `smoothstep(x)` (0 below 0, 1 above 1, smooth
 in between: `smoothstep((t - t0) / d)`), `its.<name>` — what a `sense` step
-found (only in its `where` and copies); `game.<name>` — the game's answer to
+found (only in its `where` and copies; `its.rotation` too: its turn);
+`game_var.<name>` — a variable of the game as the game's store has it at the
+moment of the step (the file's `variables`; scripts and dialog conditions, not
+tiles and not `path`; the editor's player keeps its own store from the
+starting values); `rotation` — the actor's turn now, 0, 90, 180 or 270 (not in
+constants, not in `path`, not in tiles); `music` — the number of the music
+playing, −1 none (`goto wait if music >= 0`: wait for one to end; the
+player says what the scripts asked and keeps that number); `rotation` and
+`music` are words only where no `define` or parameter has that name; `game.<name>` — the game's answer to
 a question declared with a `game name …` line (at the moment of the step;
 without the game's function — 0; not in `path` and not in tiles); integer
 bit operations (32 bits, negatives in two's complement): `xor(a, b)`,
@@ -482,10 +494,11 @@ strongest: `or`, `and`, `not`, comparison, `+ -`, `* /`. Comparisons don't
 chain: `0 < x < 5` is an error; write `0 < x and x < 5`. What is allowed
 where:
 
-- `ms`, `at`, `dx`, `dy`, `signal`, `sound`, `masks` and initial parameter
+- `at`, `dx`, `dy`, `signal`, `sound`, `masks` and initial parameter
   values take only numbers and `define`s: the assembler evaluates them right
   away and rounds to an integer (halves away from zero, as the engine does:
-  −2.5 → −3);
+  −2.5 → −3); so does a frame's `ms` of constants — one that reads the
+  actor (`frame A (speed)ms`) is worked out as the frame begins;
 - **pack constants** (the file's `constants` field, see "The game as a
   whole") can stand anywhere a number can, like a `define` given before the
   first line (`frame A TICK_MS ms`, `signal CLOCK_OUT`,
@@ -526,15 +539,17 @@ where:
   hides the function. The editor's player has no gamepad, so it gets 0;
 - `velocity`, `accel`, `set`, `add`, `release` can also use the actor's
   parameters, `vx` and `vy` — its current velocity in scene points per
-  second, x forward (taking flipping into account) — and `now`, the moment of
+  second, x forward (in its axes: the mirror and the turn taken into
+  account) — and `now`, the moment of
   the step in seconds of the game clock (fractional): such expressions are
   evaluated on the board at the moment of the step (`set drunk now + 10`);
 - `path` can use parameters and `t`, but not `vx`, `vy`: the path formula
   sets the velocity itself, and otherwise the position would depend on the
   frame rate.
 
-The names `t`, `vx`, `vy`, `and`, `or`, `not` and function names can't be
-used for `define`s and parameters. An evaluated expression must fit the
+The names `t`, `vx`, `vy`, `and`, `or`, `not`, `its`, `game`, `game_var` and
+function names can't be used for `define`s and parameters. A `game <name>`
+question can't be named as a variable of the game. An evaluated expression must fit the
 range of its field. A line keeps its text as is, so `"accel 0 gravity"`
 stays `{"op": "accel", "x": 0, "y": "gravity"}`, not `432`.
 
@@ -741,8 +756,12 @@ fields are optional: a file without them is a file without scenes
 
 **Scene.** `width`, `height` — the size in pixels (up to 32767); a scene the
 size of the screen is a room, a larger one scrolls. `background` — the
-background color in the editor. Scene coordinates are pixels from the
-scene's top-left corner.
+background color in the editor (and the paper of the frame in the game).
+`music` — optional (DGX-GE 0.4.0): the music the game plays as it enters the
+scene, a name of the file's `music` (another name is a name only and plays
+nothing; the editor warns) or `stop` for silence; none — what plays goes on.
+`musicFade` — optional, how many ms the change fades over, 0…65535 (500 when
+not given). Scene coordinates are pixels from the scene's top-left corner.
 
 **Layer.** Layers are drawn in list order, the first being the farthest;
 there are at most 8 of them (`DGX_GE_SCENE_MAX_LAYERS`). `factor` — how the
@@ -766,8 +785,8 @@ below.
 
 | `type` | Fields | Meaning |
 | --- | --- | --- |
-| `picture` | `set`, `image`, `x`, `y`, `key`, `flip`, `clip` | A picture: a frame of a set, with its base point at `x`, `y`. `flip` mirrors it around the base column. `key` is for a layer ordered by `key`. `clip` is a scene rectangle `{x, y, width, height}` outside which the picture isn't drawn, or `null` |
-| `actor` | `set`, `script`, `x`, `y`, `flip`, `params` | An actor: where it appears (by its base point), the set with the animations, the script it starts with, and `params` — its initial parameters, overriding those given in the set's animations |
+| `picture` | `set`, `image`, `x`, `y`, `key`, `flip`, `rotation`, `clip` | A picture: a frame of a set, with its base point at `x`, `y`. `flip` mirrors it around the base column. `rotation` — optional (DGX-GE 0.4.0): degrees clockwise about the base point, after the mirror, 0, 90, 180 or 270 (any multiple of 90; −90 is 270; another is refused). `key` is for a layer ordered by `key`. `clip` is a scene rectangle `{x, y, width, height}` outside which the picture isn't drawn, or `null` |
+| `actor` | `set`, `script`, `x`, `y`, `flip`, `rotation`, `params` | An actor: where it appears (by its base point), the set with the animations, the script it starts with, and `params` — its initial parameters, overriding those given in the set's animations. `rotation` as for a picture: the actor begins turned so, its axes with it (as after `rotate to`) |
 | `zone` | `kind`, `x`, `y`, `width`, `height` | A rectangle for the game logic; `kind` is a word the game understands (`exit`, `trap`…) |
 | `entry` | `x`, `y`, `flip` | An entry point: where an actor ends up when it comes into the scene, and which way it faces |
 
@@ -963,12 +982,15 @@ that the scene doesn't have is a warning.
 
 The packer (`add_sprites`) reads `screen` and
 `scenes` from the file: each scene becomes a blob `SCENE_<NAME>` in the
-DGSC format, version 2 (the engine's `include/dgx_ge_layout.h`; the engine
-won't open version 1): layers (`factor`, `order`), pictures
-(`set`/`image`, x, y, `key`, `flip`, `clip`), zones (`kind` — the game's
-word), entries (x, y, `flip`), actors (a set with an animation; `script` —
-an empty string means the first script; x, y, `flip`; `params` by the
-animation's parameter names), grids (`tileset`, x, y, `cols`, `rows`,
+DGSC format, version 5 (DGX-GE 0.4.0, the engine's `include/dgx_ge_layout.h`;
+the engine refuses older versions: repack): a head of 36 bytes with the paper
+(`background`, which `dgx_ge_layout_scene` makes colour 0 of the frame) and
+the scene's music (`music`, `musicFade`: `dgx_ge_layout_music` asks it of the
+output as the game enters the scene), layers (`factor`, `order`), pictures
+(`set`/`image`, x, y, `key`, `flip` and `rotation` in one byte of flags,
+`clip`), zones (`kind` — the game's word), entries (x, y, `flip`), actors (a
+set with an animation; `script` — an empty string means the first script; x,
+y, `flip`, `rotation`; `params` by the animation's parameter names), grids (`tileset`, x, y, `cols`, `rows`,
 `cells`, `mods`, `variants`; the tileset's slots map to the scene's layers
 by the pieces' layer names; a grid also gets the number of its first cell in
 the map), and the scene's table of link sources (a cell, an actor or a zone,
@@ -992,8 +1014,11 @@ kind), or with a script or parameter that doesn't exist; cells that aren't
 `rows × cols`; a tile number outside the tileset; two layers, two objects of
 the same type or two grids with the same name in the header; not 1…8
 layers; a number that doesn't fit in 16 bits (a position, `key`, `clip`, a
-zone size, an actor parameter), a modifier outside 0…255; a scene's layers,
-pictures, zones, entries and actors taking more than 64 KB; two pack blobs
+zone size, an actor parameter), a modifier outside 0…255; a `rotation`
+that is not a multiple of 90; a `music` that is no name (nor `stop`), a
+`musicFade` outside 0…65535; a scene's layers, pictures, zones, entries and
+actors taking more than 64 KB (36 bytes of head, 4 a layer, 18 a picture, 10
+a zone, 6 an entry, 6 a source of links, 12 an actor and 4 a parameter of it); two pack blobs
 with the same name (`SCENE_<NAME>`, a graph, a dialog, a set animation, a
 tileset, map links); a link from a picture or an entry, a link to an object,
 a link to a cell outside the grid, links in a scene that isn't in a graph
@@ -1073,7 +1098,9 @@ styles; the header calls it `<PREFIX>_SET_<NAME>`.
 The editor can also show a picture set in a palette's colors (Frames,
 "Preview in"): the pictures' color numbers stay the same and the files
 themselves don't change; it is a viewing setting and is not saved to the
-markup file.
+markup file. A set with a ready `palette` can be shown as the packer will
+take it ("the pack: …"): every color of its pictures as its nearest of that
+palette by CIE76, the packer's own reckoning.
 
 ## Dialogs
 
@@ -1087,7 +1114,16 @@ of them; a translation (`.po`) shows the same `{names}` in any order of its
 own (the packer stores them as `{i}` — the number's position in the line),
 and a name that isn't in the line is an error; `.po` files and dialog texts
 are read in NFC, a BOM is skipped; answer conditions may name pack constants
-— the `constants` field: `"Gamepad" if board & BOARD_PAD …`). `pause` is a
+— the `constants` field: `"Gamepad" if board & BOARD_PAD …`). The game's
+variables (the `variables` field, DGX-GE 0.4.0, DGDL version 7): a condition
+reads one (`"Quieter" if game_var.volume > 0 -> menu`), a control edits one
+(`"Volume" control SLIDER game_var.volume` — instead of a parameter of the
+one choosing), a line shows them (`say game "Score: {game_var.score}"`; a
+line shows either the speaker's parameters or variables, not both, and a
+translation shows the same `{game_var.<name>}`); a name that is no variable
+of the file is an error. The editor's playback keeps its own copies of the
+variables from their starting values: a control changes them, conditions and
+lines read them. `pause` is a
 header line, on its own with nothing after it: while the dialog is open the
 game stands still (the world, time, timers, actors), but time runs for the
 conversation itself; its `tell`, `give` and conditions happen at the instant
@@ -1124,6 +1160,9 @@ pack).
     {"name": "button", "every": "500ms", "until": "10s", "reset": "scene", "event": "release", "start": ""}
 ],
 "sounds": ["step", "sword"],
+"variables": [{"name": "score", "value": 0}, {"name": "volume", "value": 80}],
+"synth": "nes",
+"music": ["theme", "boss"],
 "shows": [{
     "name": "TITLE",
     "pictures": [{"picture": "TITLE_BACK", "x": 0, "y": 199, "layer": 0, "flip": false, "color": 0}],
@@ -1137,15 +1176,21 @@ pack).
 | Field | Meaning | Packer |
 | --- | --- | --- |
 | `game` | A list of `{name, value}`: the game's numbers, 32-bit, in this order; they are stored in the pack (the GAME blob), and the header calls them `<PREFIX>_GAME_<NAME>`. In the editor — **Numbers** | `add_game(**{name: value})` |
+| `variables` | A list of `{name, value}` (DGX-GE 0.4.0): the game's variables — numbers that change as the game plays and belong to no actor (settings, a score, the state of the rules), numbered in this order; `value` — the whole 32-bit number it begins with (0 when not given; the blob `VARIABLES`). Scripts read `game_var.<name>` and write it (`set`, `add game_var.<name>`), dialogs read it in conditions, edit it by a control and show it in lines. The header: `<PREFIX>_GAME_VAR_<NAME>`, `<PREFIX>_GAME_VAR_COUNT`. Refused: a name twice (alike in upper case), named as a constant, a number of the game (`game`) or a question of a kind (`game <name>`), more than 256, a name of the header another thing has; a script or a dialog naming one the file has not. In the editor — **Variables**; renaming one renames it in the scripts | `add_variable(name, value)` in order |
+| `synth` | `fm` (when not given), `chip` or `nes` (DGX-GE 0.4.0): the synthesizer the musics play on, unless a song says its own (`#synth`); another word is refused. The firmware carries those its build names (`dgx_ge_synths(...)`) | `set_music_synth(synth)` |
+| `music` | A list of names (DGX-GE 0.4.0): musics by notes; the notes of each are the file `music/<name>.mml` beside the document (MML, `tools/dgx_ge_music.py`; sets of instruments the songs name — `music/sets/<name>.mml`); without the file — a name only, it plays nothing (the packer warns). A name as scripts write it (a letter or `_`, then letters, digits, `_`), not `stop` or `volume`, once; 255 at most, counting the names scripts and scenes give. The header: `<PREFIX>_MUSIC_<NAME>`, `<PREFIX>_MUSIC_COUNT` (the names scripts give are numbered first: the animations are made before the game's parts) | `add_music(name, text, path)` |
+| `musicTexts` | An object `{name: text}`: the notes of the musics as the editor keeps them (the editor's own; the packer reads `music/<name>.mml`). The editor reads them from the project folder and writes them there; a music of `music` without them is told as a name only. In the editor — **Music**: the list, `synth` and the text of the chosen music's notes | — |
 | `constants` | An object `{name: number}`: pack constants — names for numbers that script texts and dialog answer conditions use instead of the numbers themselves (`{"TICK_MS": 83, "TILE_FLOOR": 2}`); names are `[A-Za-z_][A-Za-z0-9_]*`, numbers are 32-bit. The packer replaces them with numbers at build time; they go into no blob (this is not `game`), but the header gives them to C as `#define PREFIX_NAME number` (DGX-GE 0.3.0), so a name must not be another name of the header. The packer applies them before building the animations (after `meets`). In the editor — **Constants**; renaming one also renames it in scripts | `add_constants(**constants)` |
 | `timers` | A list of timers: `name`; exactly one of `once` (fire once after that long) and `every` (fire every that long); `until` only with `every` (no longer than that from the start, no shorter than the period); `reset` — `never`, `scene` or `map`; `event` — a pack event for the owner when it fires, or an empty string; `start` — `game` (runs from the start of the game, the owner is the game) or an empty string. At most 255 | `add_timer(name, once=, every=, until=, reset=, event=, start=)` |
 | `sounds` | A list of names; a sound's number is its position in the list, from 0 | `add_sound(name)` in order |
-| `shows` | A list of shows: `name` — the blob name (must not match a set name); `pictures` — `{picture, x, y, layer, flip, color}`: a pack picture name, the base point position, layer 0…7, mirroring, the color of a one-bit picture; `actors` — `{name, kind, script, x, y, layer, flip, color}`: a role (not `end`, unique), a set with an animation, a script (empty — the first one), a position; `cues` — `{at, role, event}`: the time from the start, a role or `end`, a pack event. At least one `end` cue | `add_show(name, pictures, actors, cues)`; `cues` as `(at, role, event)` |
+| `shows` | A list of shows: `name` — the blob name (must not match a set name); `pictures` — `{picture, x, y, layer, flip, rotation, color}`: a pack picture name, the base point position, layer 0…7, mirroring, the turn (optional: 0, 90, 180, 270 degrees clockwise after the mirror; DGSH version 2), the color of a one-bit picture; `actors` — `{name, kind, script, x, y, layer, flip, rotation, color}`: a role (not `end`, unique), a set with an animation, a script (empty — the first one), a position; `cues` — `{at, role, event}`: the time from the start, a role or `end`, a pack event. At least one `end` cue | `add_show(name, pictures, actors, cues)`; `cues` as `(at, role, event)` |
 | `crops` | A list of `{name, set, image, x, y, width, height, originX, originY}`: a part of the frame picture `set/image` (from its top-left corner) as a pack picture of its own, `name`, with the same color set, with its base point at `originX, originY` in crop pixels | `add_crop(name, picture, x, y, width, height, origin)` |
 | `chases` | A list of `{kind, sense, sides, hearing, near, steps, calm}`: a set with an animation (once only); `sense` — `none`, `sight`, `hearing`, `always`; `sides` — a subset of `left`, `right`, `up`, `down`, `doors`; `hearing` — 16-bit; `near` — an object with keys from `left`, `right`, `up`, `down` (a missing key — anywhere); `steps` 0…255; `calm` — a time up to 65535 ms or an empty string (never) | `add_chase(kind, sense=, sides=, hearing=, near=, steps=, calm=)` |
 
 The editor writes empty lists as `[]`; older files without these fields are
-read as empty.
+read as empty. `variables`, `synth`, `music` and `musicTexts` are written
+only when the file has them or they are made in the editor, so a document of
+an older engine is saved as it was.
 
 ## Scene graph
 
@@ -1191,6 +1236,14 @@ blob, in the order described in "Scenes".
 A flipped sprite is mirrored around the base column; the baseline doesn't
 change. Pixel (x, y) becomes (−x, y): column 0 stays in place, so a flipped
 actor stands exactly where it stood.
+
+A turned one (`rotation`, a script's `rotate`; DGX-GE 0.4.0) is turned
+clockwise by quarters about its base pixel after the mirror: the eight
+orientations of DGX (`dgx_ge_orient(flip, quarters)`). Pixel (x, y) after the
+mirror becomes (−y, x) for 90°, (−x, −y) for 180°, (y, −x) for 270°; a
+quarter turn swaps the width and the height of the picture's box. A vector of
+the actor's axes (x forward, y down) — a velocity, `at`, a point, a mask —
+goes into the scene the same way.
 
 | What | How it is mirrored |
 | --- | --- |

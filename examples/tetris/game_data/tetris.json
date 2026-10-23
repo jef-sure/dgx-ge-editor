@@ -1657,6 +1657,231 @@
             }
         },
         {
+            "name": "SLIDER",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": -6,
+                "width": 43,
+                "height": 7
+            },
+            "frames": [
+                {
+                    "image": "bar_0.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_1.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_2.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_3.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_4.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_5.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_6.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_7.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_8.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_9.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_10.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [
+                    "more",
+                    "less"
+                ],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [
+                    {
+                        "name": "value",
+                        "value": 0
+                    },
+                    {
+                        "name": "least",
+                        "value": 0
+                    },
+                    {
+                        "name": "most",
+                        "value": 10
+                    },
+                    {
+                        "name": "step",
+                        "value": 1
+                    }
+                ],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "rest",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "expr": "SLIDER_BAR_0 + value",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "up",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "value",
+                                "value": "min(value + step, most)"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "rest"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "down",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "value",
+                                "value": "max(value - step, least)"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "rest"
+                            }
+                        ]
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "more",
+                        "source": "rest",
+                        "to": "up",
+                        "when": "now"
+                    },
+                    {
+                        "event": "less",
+                        "source": "rest",
+                        "to": "down",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " A slider of the pause dialog: its value, 0..10, as a bar; more and less (right, left) move it a step."
+                        ]
+                    }
+                }
+            }
+        },
+        {
             "name": "PLAY",
             "defaultMask": null,
             "canvas": {
@@ -1734,11 +1959,6 @@
                         "value": 1
                     },
                     {
-                        "name": "fall",
-                        "value": 800,
-                        "note": " ms a row falls at this level"
-                    },
-                    {
                         "name": "given",
                         "value": 0,
                         "note": " what the game gives with its event: the lines taken, the cells dropped"
@@ -1807,7 +2027,7 @@
                             },
                             {
                                 "op": "set",
-                                "param": "fall",
+                                "variable": "fall",
                                 "value": "fall_ms[0]"
                             },
                             {
@@ -1968,7 +2188,7 @@
                             },
                             {
                                 "op": "set",
-                                "param": "fall",
+                                "variable": "fall",
                                 "value": "fall_ms[level - 1]"
                             },
                             {
@@ -2041,6 +2261,11 @@
                                 "op": "timer",
                                 "action": "stop",
                                 "name": "lock"
+                            },
+                            {
+                                "op": "music",
+                                "name": "stop",
+                                "ms": 600
                             },
                             {
                                 "op": "sound",
@@ -2140,6 +2365,63 @@
                             " flash a while), taken with given set (the lines it took away at once), dropped with given set (cells a piece was",
                             " dropped by hand), topped (no room). Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over, SIG_LOCK",
                             " the piece is locked, SIG_CLEAR the full lines go, SIG_NEW a new game (the game empties the well)."
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "name": "FALL",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": 0,
+                "width": 1,
+                "height": 1
+            },
+            "frames": [],
+            "animation": {
+                "events": [
+                    "hurry"
+                ],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "falling",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": "(game_var.soft ? SOFT_DROP_MS : game_var.fall)"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_FALL"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "falling"
+                            }
+                        ]
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "hurry",
+                        "source": "falling",
+                        "to": "falling",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " The fall of the piece: a row every game_var.fall ms, every SOFT_DROP_MS while down is held (game_var.soft); the game",
+                            " moves the piece down and starts it anew (hurry) as a piece comes or down is pressed."
                         ]
                     }
                 }
@@ -2797,7 +3079,9 @@
                 "right": "",
                 "up": "",
                 "down": ""
-            }
+            },
+            "music": "theme",
+            "musicFade": 500
         }
     ],
     "styles": [
@@ -2806,9 +3090,9 @@
             "frame": "fill",
             "place": [
                 70,
-                88,
+                70,
                 180,
-                64
+                100
             ],
             "padding": [
                 8,
@@ -2860,7 +3144,7 @@
     "dialogs": [
         {
             "name": "pause",
-            "text": "dialog pause\nroles play PLAY\ngame PLAY\nstyle menu\npause\n    say game \"PAUSED  Score {score}  Lines {lines}\"\nchoose play\n    \"Continue\" -> resume\n    \"New game\" -> restart\nlabel resume\n    end\nlabel restart\n    tell play restart\n    end\n"
+            "text": "dialog pause\nroles play PLAY\ngame PLAY\nstyle menu\npause\n    say game \"PAUSED  Score {score}  Lines {lines}\"\nchoose play\n    \"Continue\" -> resume\n    \"Music\" control SLIDER game_var.music_volume\n    \"Effects\" control SLIDER game_var.effects_volume\n    \"New game\" -> restart\nlabel resume\n    end\nlabel restart\n    tell play restart\n    end\n"
         }
     ],
     "game": [
@@ -2989,10 +3273,6 @@
             "value": 50
         },
         {
-            "name": "soft_drop_ms",
-            "value": 40
-        },
-        {
             "name": "voices",
             "value": 4
         }
@@ -3000,6 +3280,8 @@
     "constants": {
         "LINES_PER_LEVEL": 10,
         "TOP_LEVEL": 15,
+        "SOFT_DROP_MS": 40,
+        "SIG_FALL": 7,
         "PH_TITLE": 0,
         "PH_PLAYING": 1,
         "PH_CLEARING": 2,
@@ -3132,5 +3414,27 @@
         }
     ],
     "chases": [],
-    "crops": []
+    "crops": [],
+    "variables": [
+        {
+            "name": "music_volume",
+            "value": 8
+        },
+        {
+            "name": "effects_volume",
+            "value": 10
+        },
+        {
+            "name": "fall",
+            "value": 800
+        },
+        {
+            "name": "soft",
+            "value": 0
+        }
+    ],
+    "synth": "nes",
+    "music": [
+        "theme"
+    ]
 }

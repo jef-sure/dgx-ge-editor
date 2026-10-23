@@ -22,11 +22,13 @@
 #include "dgx_ge_dialog.h"
 #include "dgx_ge_frame.h"
 #include "dgx_ge_game.h"
+#include "dgx_ge_glue.h"
 #include "dgx_ge_input.h"
 #include "dgx_ge_label.h"
 #include "dgx_ge_layout.h"
 #include "dgx_ge_mixer.h"
 #include "dgx_ge_pack.h"
+#include "dgx_ge_save.h"
 #include "dgx_ge_pockets.h"
 #include "dgx_ge_scene.h"
 #include "dgx_ge_show.h"
@@ -36,8 +38,6 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "fonts/TerminusTTFMedium12.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "nvs_flash.h"
 #ifdef GAME_CYD
 #include "cyd_touch.h"
@@ -57,8 +57,8 @@ enum { MAX_CELLS = 32 * 24 }; /* the field of the editor: 32 x 22 */
 static const int DX[4] = {0, 1, 0, -1}, DY[4] = {-1, 0, 1, 0};
 
 static dgx_ge_pack_t      pack;
-static uint8_t            maps[SNAKE_SET_COUNT][16];
-static const uint8_t     *map_of[SNAKE_SET_COUNT];
+static uint8_t            maps[SNAKE_SET_COLOR_COUNT]; /* the colors of the sets: indices of the frame, a byte a color */
+static const uint8_t     *map_of[SNAKE_SET_COUNT];     /* where the map of each set begins in maps */
 static dgx_ge_frame_t    *frame;
 static dgx_ge_scene_t    *scene;
 static dgx_ge_kinds_t     kinds;
@@ -73,6 +73,7 @@ static const uint16_t    *field_cells; /* the field as laid in the editor: its w
 static const uint8_t     *field_mods;
 static int                cols, rows;
 static dgx_ge_actor_t     play;   /* the game's own actor: PLAY, shown in the zone message */
+static dgx_ge_actor_t     ticker; /* the snake's clock: CLOCK, a step every game_var.speed ms */
 static dgx_ge_actor_t     sparks; /* where the snake ate */
 static bool               sparkling;
 static dgx_ge_actor_t     prompt; /* PRESS START, blinking under GAME OVER */
@@ -87,10 +88,11 @@ static dgx_font_t        *fonts[SNAKE_FONT_COUNT];
 static dgx_ge_sounds_t    sounds;
 static dgx_ge_mixer_t     mixer;
 static dgx_ge_sound_t     sound; /* the mixer as the game's output; none: nothing plays */
+static dgx_ge_vars_t      vars;  /* the game's variables: the player's settings, the volumes of the music and the effects */
+static int32_t            heard[2] = {-1, -1};
 
 static bool     paused;
 static uint32_t clock_ms;     /* the game's time: it stands while the pause dialog is open */
-static uint32_t next_step_ms; /* when the snake goes on */
 static bool     relay_all;    /* a cell laid more or fewer pieces: the set is laid anew */
 static uint32_t seed = 1;
 static uint32_t best_kept;
@@ -135,15 +137,14 @@ static int side_to(int a, int b)
     return br < ar ? SIDE_UP : bc > ac ? SIDE_RIGHT : br > ar ? SIDE_DOWN : SIDE_LEFT;
 }
 
-/* The set of the scene laid anew (its pictures as laid in the editor, the pieces of the grid), drawn anew where it changed: the places, or all (n < 0). */
-static void lay_set(const dgx_ge_rect_t *places, int n)
+/* The set of the scene laid anew (its paper, its pictures as laid in the editor, the pieces of the grid); all of it drawn anew, or only where cells changed (marked as they did). */
+static void lay_set(bool all)
 {
     dgx_ge_scene_set_begin(scene);
     dgx_ge_layout_scene(&layout, scene, &pack, map_of, layout_images);
     dgx_ge_grid_add(&grid, scene);
     dgx_ge_scene_set_end(scene);
-    if (n < 0) dgx_ge_scene_invalidate(scene, 0, dgx_ge_rect(0, 0, dgx_ge_frame_width(frame), dgx_ge_frame_height(frame)));
-    for (int i = 0; i < n; ++i) dgx_ge_scene_invalidate(scene, 0, places[i]);
+    if (all) dgx_ge_scene_invalidate(scene, 0, dgx_ge_rect(0, 0, dgx_ge_frame_width(frame), dgx_ge_frame_height(frame)));
     relay_all = false;
 }
 
@@ -152,9 +153,12 @@ static void put(int cell, int tile, int mod)
 {
     const bool kind = cells[cell] != tile;
     if (!kind && mods[cell] == mod) return;
+    const int c = cell % cols, r = cell / cols;
+    if (relay_all) dgx_ge_scene_invalidate(scene, 0, dgx_ge_grid_change_box(&grid, c, r)); /* the set is laid anew: its place marked, as it was */
     cells[cell] = (uint16_t)tile;
     mods[cell]  = (uint8_t)mod;
-    if (!relay_all && !dgx_ge_grid_relay(&grid, scene, cell % cols, cell / cols, kind)) relay_all = true;
+    if (relay_all) dgx_ge_scene_invalidate(scene, 0, dgx_ge_grid_change_box(&grid, c, r)); /* and as it is */
+    else if (!dgx_ge_grid_relay(&grid, scene, c, r, kind)) relay_all = true; /* its place marked all the same */
 }
 
 static int random_empty(void)
@@ -167,6 +171,7 @@ static int random_empty(void)
 }
 
 static void say(dgx_ge_actor_t *actor, dgx_ge_anim_say_t what, uint8_t value, uint32_t at_ms, void *ctx);
+static void step(uint32_t at_ms);
 
 /* The field as the editor laid it, but the star (the timer brings it): the snake its tiles say, followed from its head to its tail. */
 static void new_field(void)
@@ -193,7 +198,7 @@ static void new_field(void)
     tail_at = 0;
     way = want = h >= 0 ? (mods[h] % DEAD + 2) % 4 : SIDE_RIGHT; /* away from its body */
     star       = -1;
-    lay_set(NULL, -1);
+    lay_set(true);
 }
 
 static void numbers(void)
@@ -227,25 +232,69 @@ static void best_keep(void)
     best_kept = best;
 }
 
+/* The player's settings, the game's variables the pause dialog's sliders edit (0..10), as the mixer's volumes of its buses. */
+static void volumes(void)
+{
+    const int32_t m = dgx_ge_var(&vars, SNAKE_GAME_VAR_MUSIC_VOLUME), e = dgx_ge_var(&vars, SNAKE_GAME_VAR_EFFECTS_VOLUME);
+    if (!sound.play || (m == heard[0] && e == heard[1])) return;
+    heard[0] = m, heard[1] = e;
+    dgx_ge_mixer_music_volume(&mixer, (uint8_t)((m < 0 ? 0 : m > 10 ? 10 : m) * 255 / 10));
+    dgx_ge_mixer_effects_volume(&mixer, (uint8_t)((e < 0 ? 0 : e > 10 ? 10 : e) * 255 / 10));
+}
+
+/*
+ * The settings over a restart: the variables as the engine saves them (a chunk VARS), in NVS (on the computer: a file,
+ * the engine's boards/host/host_nvs.c). A save names the pack it was made of: a pack made anew begins with its own.
+ */
+static void settings_load(void)
+{
+    uint8_t      buf[128];
+    size_t       n = sizeof buf;
+    nvs_handle_t h;
+    if (nvs_flash_init() != ESP_OK || nvs_open("snake", NVS_READONLY, &h) != ESP_OK) return;
+    if (nvs_get_blob(h, "settings", buf, &n) == ESP_OK) {
+        dgx_ge_load_t l;
+        uint32_t      saved_ms;
+        if (dgx_ge_load_open(&l, buf, n, dgx_ge_pack_id(&pack), &saved_ms)) dgx_ge_vars_load(&vars, &l);
+    }
+    nvs_close(h);
+}
+
+static void settings_keep(void)
+{
+    uint8_t       buf[128];
+    dgx_ge_save_t s;
+    nvs_handle_t  h;
+    dgx_ge_save_begin(&s, buf, sizeof buf, dgx_ge_pack_id(&pack), 0);
+    dgx_ge_vars_save(&vars, &s);
+    const size_t n = dgx_ge_save_end(&s);
+    if (!n || nvs_open("snake", NVS_READWRITE, &h) != ESP_OK) return;
+    nvs_set_blob(h, "settings", buf, n);
+    nvs_commit(h);
+    nvs_close(h);
+}
+
 /* What PLAY (and the dialog's tell to it) says: its sounds, its timer, its signals. */
 static void say(dgx_ge_actor_t *actor, dgx_ge_anim_say_t what, uint8_t value, uint32_t at_ms, void *ctx)
 {
     (void)ctx;
-    if (what == DGX_GE_ANIM_SOUND) {
-        dgx_ge_sound_play(&sound, value);
-        return;
-    }
+    if (dgx_ge_anim_said_sound(&sound, what, value)) return; /* a sound, a music, its level */
     if (what >= DGX_GE_ANIM_TIMER_START && what <= DGX_GE_ANIM_TIMER_GO) {
         dgx_ge_timers_said(&timers, what, value, DGX_GE_OWNER_ACTOR, 0, 0, 0, at_ms);
         return;
     }
     if (what == DGX_GE_ANIM_VANISH && actor == &sparks) sparkling = false;
+    if (actor == &ticker) {
+        if (what == DGX_GE_ANIM_SIGNAL && value == SNAKE_SIG_STEP && phase() == SNAKE_PH_PLAYING) step(at_ms);
+        return;
+    }
     if (what != DGX_GE_ANIM_SIGNAL || actor != &play) return;
     if (value == SNAKE_SIG_NUMBERS) numbers();
     if (value == SNAKE_SIG_NEW) {
         if (title.cast) dgx_ge_show_stop(&title);
         new_field();
-        next_step_ms = at_ms + (uint32_t)play.params[SNAKE_PLAY_PARAM_SPEED];
+        dgx_ge_layout_music(&layout, &sound); /* the field's music */
+        dgx_ge_actor_start(&ticker, dgx_ge_kind(&kinds, SNAKE_BLOB_CLOCK), SNAKE_CLOCK_SCRIPT_TICKING, 0, 0, at_ms);
     }
     if (value == SNAKE_SIG_OVER) best_keep();
     if (value == SNAKE_SIG_STAR && star < 0) {
@@ -320,24 +369,6 @@ static void step(uint32_t at_ms)
     }
 }
 
-/* A picture of the pack as an item of the scene, in the colors of its set. */
-static bool item_of(int id, dgx_image_t *image, dgx_ge_item_t *item)
-{
-    if (id < 0 || !dgx_ge_pack_image(&pack, id, image)) return false;
-    item->image = image;
-    item->map   = maps[dgx_ge_pack_image_set(&pack, id)];
-    return true;
-}
-
-static void show_actor(const dgx_ge_actor_t *a, dgx_image_t *image, int layer)
-{
-    dgx_ge_item_t it = {.x     = (int16_t)(dgx_ge_actor_x(a) + (a->flip ? -a->image_dx : a->image_dx)),
-                        .y     = (int16_t)(dgx_ge_actor_y(a) + a->image_dy),
-                        .layer = (uint8_t)layer,
-                        .flags = a->flip ? DGX_GE_BLIT_FLIP_X : 0};
-    if (a->image >= 0 && item_of(a->image, image, &it)) dgx_ge_scene_actor(scene, &it);
-}
-
 static void start_title(uint32_t now)
 {
     dgx_ge_scene_reset(scene, 0);
@@ -393,12 +424,14 @@ static void control(dgx_ge_input_t *input, uint32_t real)
     const bool tap    = touch.released && !steered && !touch.told;
     const bool go     = input->pressed & (DGX_GE_KEY_START | DGX_GE_KEY_A);
     if (paused) {
-        talk.ahead_ms = real - clock_ms; /* the game stands, the talk goes on: what it tells lands at the game's moment */
-        if (input->pressed & DGX_GE_KEY_UP) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_PREV, real);
-        if (input->pressed & DGX_GE_KEY_DOWN) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_NEXT, real);
-        if (go) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_ACTIVATE, real);
-        if (input->pressed & (DGX_GE_KEY_B | DGX_GE_KEY_BACK)) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_BACK, real);
-        if (!steered || !(touch.down || touch.released)) dgx_ge_talk_view_pointer(&view, &talk, &input->pointer, real); /* not the finger that paused */
+        /* the talk goes by real time, what it tells lands at the game's moment (it stands) */
+        if (input->pressed & DGX_GE_KEY_UP) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_PREV, real, clock_ms);
+        if (input->pressed & DGX_GE_KEY_DOWN) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_NEXT, real, clock_ms);
+        if (go) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_ACTIVATE, real, clock_ms);
+        if (input->pressed & DGX_GE_KEY_LEFT) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_LESS, real, clock_ms);
+        if (input->pressed & DGX_GE_KEY_RIGHT) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_MORE, real, clock_ms);
+        if (input->pressed & (DGX_GE_KEY_B | DGX_GE_KEY_BACK)) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_BACK, real, clock_ms);
+        if (!steered || !(touch.down || touch.released)) dgx_ge_talk_view_pointer(&view, &talk, &input->pointer, real, clock_ms); /* not the finger that paused */
         dgx_ge_input_spend(input, input->pressed); /* what the dialog took moves nothing */
         return;
     }
@@ -410,9 +443,9 @@ static void control(dgx_ge_input_t *input, uint32_t real)
     if ((input->pressed & (DGX_GE_KEY_START | DGX_GE_KEY_BACK)) || held) {
         steered = true; /* the finger that paused does not answer the dialog as it goes up */
         dgx_ge_actor_t *roles[] = {&play};
-        dgx_ge_cast_t   cast    = {.roles = roles, .game = &play};
-        dgx_ge_talk_start(&talk, &pause_dialog, &cast, SNAKE_STYLE_MENU, real, say, NULL);
-        talk.ahead_ms = real - clock_ms;
+        dgx_ge_cast_t   cast    = {.roles = roles, .game = &play, .kinds = &kinds}; /* kinds: the sliders */
+        dgx_ge_talk_start(&talk, &pause_dialog, &cast, SNAKE_STYLE_MENU, real, clock_ms, say, NULL);
+        if (sound.play) dgx_ge_mixer_music_level(&mixer, 40, 300); /* the music lower under the dialog */
         paused        = true;
         dgx_ge_input_spend(input, input->pressed);
         return;
@@ -452,11 +485,7 @@ void app_main(void)
     /* the game's screen, the editor's: as large as the display lets it be, in its middle */
     dgx_screen_t *lcd = board.lcd;
     const int     w = SNAKE_SCREEN_WIDTH, h = SNAKE_SCREEN_HEIGHT;
-    int           scale = lcd->width / w < lcd->height / h ? lcd->width / w : lcd->height / h;
-    scale               = scale < 1 ? 1 : scale;
-    frame               = dgx_ge_frame_create(lcd, (lcd->width - w * scale) / 2, (lcd->height - h * scale) / 2, w, h);
-    if (frame && scale > 1 && !dgx_ge_frame_scale(frame, scale)) frame = NULL;
-    if (frame && board_band) dgx_ge_frame_band(frame, board_band);
+    frame               = dgx_ge_frame_fit(lcd, w, h, 0, board_band);
     dgx_ge_layout_grid_t lg;
     if (!dgx_ge_layout_grid(&layout, SNAKE_SCENE_FIELD_GRID_FIELD, &lg) || lg.cols * lg.rows > MAX_CELLS) {
         ESP_LOGE(TAG, "no grid field");
@@ -467,14 +496,8 @@ void app_main(void)
         ESP_LOGE(TAG, "no memory for the frame");
         return;
     }
-    /* the colors of every set; the paper of the frame the grass of the palette GRASS */
-    for (int set = 0; set < SNAKE_SET_COUNT; ++set) {
-        const uint8_t (*rgb)[3];
-        const int n = dgx_ge_pack_set_colors(&pack, set, &rgb);
-        if (n) dgx_ge_frame_add_colors(frame, rgb, n, maps[set]);
-        map_of[set] = maps[set];
-        if (set == SNAKE_SET_GRASS && n) dgx_ge_frame_set_color(frame, 0, rgb[0][0], rgb[0][1], rgb[0][2]);
-    }
+    /* the colors of every set (the paper of the frame is the scene's, laid with it) */
+    dgx_ge_frame_pack_colors(frame, &pack, maps, sizeof maps, map_of);
     dgx_ge_scene_reset(scene, 0);
 
     /* the grid of the field: its set of tiles, its cells the game's own copy */
@@ -504,7 +527,7 @@ void app_main(void)
     blob = dgx_ge_pack_blob(&pack, SNAKE_BLOB_TIMERS, &size);
     if (blob) dgx_ge_timers_define(&timers, blob, size);
     fonts[SNAKE_FONT_TERMINUSTTFMEDIUM12] = TerminusTTFMedium12();
-    const uint8_t ink = maps[SNAKE_SET_WORDS][1]; /* its second color, white: a map is by color, from 0 */
+    const uint8_t ink = map_of[SNAKE_SET_WORDS][1]; /* its second color, white: a map is by color, from 0 */
     if (dgx_ge_layout_zone(&layout, SNAKE_SCENE_FIELD_ZONE_SCORE, &place, &kind))
         dgx_ge_label_init(&score_label, frame, fonts[0], place.x, place.y, place.w, place.h, DGX_GE_ALIGN_LEFT, SNAKE_SCENE_FIELD_LAYER_TEXT, ink);
     if (dgx_ge_layout_zone(&layout, SNAKE_SCENE_FIELD_ZONE_BEST, &place, &kind))
@@ -520,13 +543,12 @@ void app_main(void)
 
     /* the sound, where the board has it: the mixer at the board's rate, the board's task (on the computer, SDL) pulls it */
     blob = dgx_ge_pack_blob(&pack, SNAKE_BLOB_SOUNDS, &size);
-    if (board_sound_rate && blob && dgx_ge_sounds_open(&sounds, blob, size) &&
-        dgx_ge_mixer_init(&mixer, &sounds, dgx_ge_game_value(&game, SNAKE_GAME_VOICES, 2), board_sound_rate, 1)) {
-        if (board_sound_start(&mixer)) {
-            sound = dgx_ge_mixer_output(&mixer);
-            dgx_ge_mixer_volume(&mixer, board_sound_volume);
-        } else dgx_ge_mixer_free(&mixer);
-    }
+    sound = board_sound_open(&mixer, &sounds, blob, size, dgx_ge_game_value(&game, SNAKE_GAME_VOICES, 2));
+    dgx_ge_expr_sound = &sound; /* the music a script waits for (music in expressions) */
+    blob              = dgx_ge_pack_blob(&pack, SNAKE_BLOB_VARIABLES, &size);
+    if (blob && dgx_ge_vars_open(&vars, blob, size)) dgx_ge_game_vars = &vars;
+    settings_load();
+    volumes();
 
     /* the touch: the board's (the mouse on the computer), else the CYD's own; its gestures by the display's size */
     bool pointing = board_pointer_start(lcd);
@@ -541,9 +563,10 @@ void app_main(void)
     /* the pad of DGX-DI on the display where the board can show one and has no buttons of its own */
     const bool padded = pointing && board_pad_able && !board_buttons_able &&
                         board_pad_show(lcd, dgx_di_pad_layout_classic, dgx_di_pad_layout_classic_size, 120);
-    ESP_LOGI(TAG, "a frame of %dx%d, x%d, on a display of %dx%d; %s%s%s", w, h, scale, lcd->width, lcd->height, sound.play ? "sound, " : "",
+    ESP_LOGI(TAG, "a frame of %dx%d, x%d, on a display of %dx%d; %s%s%s", w, h, frame->scale, lcd->width, lcd->height, sound.play ? "sound, " : "",
              padded ? "a pad" : board_buttons_able ? "buttons" : pointing ? "a pointer" : "no input", cyd ? " (the CYD's touch)" : "");
 
+    lay_set(true); /* the scene's paper, the title on it */
     start_title(now);
     dgx_ge_input_t     input = {0};
     uint32_t           last  = now;
@@ -568,29 +591,27 @@ void app_main(void)
         control(&input, real);
 
         if (paused) {
-            talk.ahead_ms = real - clock_ms;
-            dgx_ge_talk_view_play(&view, &talk, &strings, real);
-            if (talk.state == DGX_GE_TALK_OVER) paused = false;
+            dgx_ge_talk_view_play(&view, &talk, &strings, real, clock_ms);
+            volumes();
+            if (talk.state == DGX_GE_TALK_OVER) {
+                paused = false;
+                settings_keep();
+                if (sound.play) dgx_ge_mixer_music_level(&mixer, 100, 300);
+            }
         } else {
             dgx_ge_timers_play(&timers, clock_ms);
             dgx_ge_actor_advance(&play, clock_ms, say, NULL);
-            while (phase() == SNAKE_PH_PLAYING && (int32_t)(clock_ms - next_step_ms) >= 0) {
-                const uint32_t at = next_step_ms;
-                next_step_ms += (uint32_t)play.params[SNAKE_PLAY_PARAM_SPEED];
-                step(at);
-            }
+            if (phase() == SNAKE_PH_PLAYING) dgx_ge_actor_advance(&ticker, clock_ms, say, NULL); /* the snake's steps, each at its moment */
             if (sparkling) dgx_ge_actor_advance(&sparks, clock_ms, say, NULL);
             if (phase() == SNAKE_PH_TITLE && dgx_ge_show_play(&title, clock_ms, say, NULL)) {
                 dgx_ge_show_stop(&title);
                 start_title(clock_ms); /* the title goes round */
             }
             if (phase() == SNAKE_PH_OVER) dgx_ge_actor_advance(&prompt, clock_ms, say, NULL);
-            /* the apple shines: the set laid anew, drawn anew where it changed */
-            dgx_ge_rect_t places[8];
-            const int     changed = phase() != SNAKE_PH_TITLE ? dgx_ge_grid_animate(&grid, clock_ms, places, 8) : 0;
-            if (changed && !relay_all) lay_set(places, changed > 8 ? -1 : changed);
+            /* the apple shines: its cells laid again, drawn anew where they changed */
+            if (phase() != SNAKE_PH_TITLE && !dgx_ge_grid_play(&grid, scene, clock_ms)) relay_all = true;
         }
-        if (relay_all) lay_set(NULL, -1);
+        if (relay_all) lay_set(false);
 
         /* what moves in this frame */
         dgx_ge_scene_actors_begin(scene);
@@ -600,14 +621,13 @@ void app_main(void)
         } else {
             dgx_ge_label_show(&score_label, scene);
             dgx_ge_label_show(&best_label, scene);
-            if (sparkling) show_actor(&sparks, &pictures[p++], SNAKE_SCENE_FIELD_LAYER_ACTORS);
-            show_actor(&play, &pictures[p++], SNAKE_SCENE_FIELD_LAYER_TEXT); /* its words: GAME OVER */
-            if (phase() == SNAKE_PH_OVER) show_actor(&prompt, &pictures[p++], SNAKE_SCENE_FIELD_LAYER_TEXT);
+            if (sparkling) dgx_ge_scene_show_actor(scene, &sparks, SNAKE_SCENE_FIELD_LAYER_ACTORS, &pack, map_of, &pictures[p++]);
+            dgx_ge_scene_show_actor(scene, &play, SNAKE_SCENE_FIELD_LAYER_TEXT, &pack, map_of, &pictures[p++]); /* its words: GAME OVER */
+            if (phase() == SNAKE_PH_OVER) dgx_ge_scene_show_actor(scene, &prompt, SNAKE_SCENE_FIELD_LAYER_TEXT, &pack, map_of, &pictures[p++]);
             if (paused) dgx_ge_talk_view_show(&view, &talk, scene, SNAKE_SCENE_FIELD_LAYER_TEXT);
         }
         dgx_ge_scene_render(scene);
 
-        const int64_t spent = esp_timer_get_time() - t0;
-        vTaskDelay(spent < STEP_US ? pdMS_TO_TICKS((STEP_US - spent) / 1000) + 1 : 1);
+        board_pace(t0, STEP_US); /* the rest of the step waited, a tick given up at least */
     }
 }

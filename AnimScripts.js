@@ -68,7 +68,7 @@ const AnimScripts = {
             return t;
         },
         addable() {
-            return ['set', 'add', 'dx', 'dy', 'flip', 'velocity', 'accel', 'path', 'contact', 'hit', 'carry', 'release', 'shoot', 'draw', 'stow', 'keep', 'timer', 'tell', 'press', 'clear', 'appear', 'vanish', 'sense', 'steer', 'signal', 'sound', 'masks', 'branch', 'hold', 'goto', 'label'];
+            return ['set', 'add', 'dx', 'dy', 'flip', 'rotate', 'velocity', 'accel', 'path', 'contact', 'hit', 'carry', 'release', 'shoot', 'draw', 'stow', 'keep', 'timer', 'tell', 'press', 'clear', 'appear', 'vanish', 'sense', 'steer', 'signal', 'sound', 'music', 'masks', 'branch', 'hold', 'goto', 'label'];
         },
     },
     methods: {
@@ -192,6 +192,13 @@ const AnimScripts = {
                 s.y = 0;
             }
             if (op === 'contact') s.on = true;
+            if (op === 'rotate') s.value = 90;
+            if (op === 'music') {
+                // the first music of the document, else silence
+                const music = this.spritesStore.sprites.music || [];
+                s.name = music.length ? music[0] : 'stop';
+                s.ms = 0;
+            }
             if (op === 'tell') {
                 s.target = 'holder';
                 s.event = this.animation.events[0] || 'told';
@@ -298,10 +305,11 @@ const AnimScripts = {
             }
             l[key] = v;
         },
-        // the time of a frame: a number or an expression of numbers and defines
+        // the time of a frame: a number, an expression of numbers and defines, or of the actor (worked out as the
+        // frame begins); its unit ms may be written or not
         setMs(l, event) {
             try {
-                l.ms = Anim.operand(event.target.value, Anim.contextOf(this.animation), 1, 65535, 'const');
+                l.ms = Anim.frameTime(event.target.value, Anim.contextOf(this.animation));
                 this.message = '';
             } catch (e) {
                 this.message = event.target.value + ': ' + e.message;
@@ -458,7 +466,7 @@ const AnimScripts = {
                             </select>
                             <input v-if="frameOf(step).number !== undefined" class="coord" :value="frameOf(step).number" @change="setNumber(frameOf(step), 'number', $event, 0, 65535)" @click.stop :title="T('The number the game draws by', 'Номер, по которому рисует игра')">
                             <input v-if="frameOf(step).name !== undefined" :value="frameOf(step).name" size="10" @change="setName(frameOf(step), $event)" @click.stop :title="T('A picture of the pack', 'Картинка пакета')">
-                            <div class="anim-frame-field" :title="T('How many milliseconds to show the frame: a number or an expression of numbers and defines (for example, tick)', 'Сколько миллисекунд показывать кадр: число или выражение из чисел и define (например, tick)')">
+                            <div class="anim-frame-field" :title="T('How many milliseconds to show the frame: a number or an expression of numbers and defines (for example, tick), or of params and what the actor is (speed, game_var.pace): then worked out as the frame begins, below 1 it is 1 ms, above 65535 it is 65535', 'Сколько миллисекунд показывать кадр: число или выражение из чисел и define (например, tick), или из параметров и того, что есть у персонажа (speed, game_var.pace): тогда считается в начале кадра, меньше 1 — 1 мс, больше 65535 — 65535')">
                                 {{T('time', 'время')}} <input class="anim-expr" :value="frameOf(step).ms" @change="setMs(frameOf(step), $event)" @click.stop> ms
                             </div>
                             <div class="anim-frame-field" :title="T('The shift of the picture from the place of the actor, pixels (at in the .anim text): x forward, y down (up is below zero). Empty: no shift', 'Сдвиг картинки от места персонажа, пикселей (at в тексте .anim): x — вперёд, y — вниз (вверх — меньше нуля). Пусто — без сдвига')">

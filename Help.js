@@ -30,7 +30,7 @@ const HelpTextsRu = {
     kind: {
         title: 'Свойства справа',
         text: `
-<p><b>Вид</b>: его имя (из него и имени файла складывается имя картинки в движке), <b>маска по умолчанию</b> — какой маской считать кадр, в котором маски не нарисованы, <b>смотреть в</b> — показать картинки в цветах палитры файла, <b>смотрит влево</b> — картинки смотрят влево, <b>холст</b> — общий прямоугольник всех кадров (сетка на холсте), растёт сам, <b>Вписать</b> подгоняет.</p>
+<p><b>Вид</b>: его имя (из него и имени файла складывается имя картинки в движке), <b>маска по умолчанию</b> — какой маской считать кадр, в котором маски не нарисованы, <b>смотреть в</b> — показать картинки в цветах палитры файла, <b>палитра в пакете</b> — готовая палитра набора (nes, gameboy, pico8 или палитра файла): упаковщик приводит каждый цвет картинок к ближайшему цвету палитры (CIE76), и кадрам не нужно делить номера цветов, <b>смотрит влево</b> — картинки смотрят влево, <b>холст</b> — общий прямоугольник всех кадров (сетка на холсте), растёт сам, <b>Вписать</b> подгоняет.</p>
 <p><b>Кадр</b> — текущий кадр, его базовая точка в пикселях картинки и имя в пакете. <b>Палитра</b> — цвета картинки, ими рисуют карандаш и заливка. <b>Маски</b> — маски в этом кадре: кружок — какую рисуют, флажок — показывать ли. <b>Точки</b> — точки привязки кадра.</p>`
     },
     masks: {
@@ -73,7 +73,7 @@ const HelpTextsRu = {
         text: `
 <p>В середине — шаги выбранного скрипта. <b>Шаг</b> — карточка: команды сверху и кадр снизу. Сначала делаются команды, потом кадр показывается указанное время.</p>
 <ul>
-<li><b>Кадр</b>: выберите картинку в списке, время в миллисекундах (ms), сдвиг картинки <b>at x, y</b> можно не задавать.</li>
+<li><b>Кадр</b>: выберите картинку в списке, время в миллисекундах (ms), сдвиг картинки <b>at x, y</b> можно не задавать. Время может быть выражением из параметров (<code>speed</code>, <code>game_var.pace</code>): тогда оно считается в начале кадра — шаг змейки, ускоряющийся по ходу игры.</li>
 <li><b>Команды</b> — серые поля с текстом, например <code>dx 3</code> (сдвинуться вперёд на 3 пикселя). Наведите — увидите, что она делает. Поправьте текст и нажмите Enter; сотрите — команда удалится. <b>+ команда</b> — новая команда перед кадром.</li>
 <li><b>← →</b> переставить шаг, <b>⧉</b> копия, <b>×</b> удалить. <b>+ шаг</b> сверху — новый шаг после выбранного.</li>
 <li>Вместо числа можно писать <b>выражение</b>: <code>1000 / 12</code>, <code>-power + 10</code>, <code>min(t, 0.5)*80</code>. Есть и сравнения с <code>and</code>, <code>or</code>, <code>not</code>: они дают 1 или 0.</li>
@@ -111,9 +111,10 @@ const HelpTextsRu = {
 <li>В дереве <b>Сцены +</b> — новая сцена размером с экран (размер — справа в свойствах). Под выбранной сценой — её слои, сетки, выходы и связи.</li>
 <li>Картинки: внизу в палитре <b>Картинки</b> щёлкните картинку, потом место на сцене. Слой — тот, что выделен в дереве (жирный).</li>
 <li>Плитки: в дереве <b>Наборы плиток +</b>, справа размер клетки и <b>+ плитка</b>; потом <b>Сетки +</b>, в палитре <b>Плитки</b> выберите плитку и красьте.</li>
-<li>Персонаж: палитра <b>Персонажи</b>, щелчок по сцене. Справа — с какого скрипта он начинает и его параметры.</li>
+<li>Персонаж: палитра <b>Персонажи</b>, щелчок по сцене. Справа — с какого скрипта он начинает и его параметры. Картинку и персонажа можно повернуть: <b>поворот</b> 90°, 180°, 270° по часовой (после отражения); у повёрнутого персонажа поворачиваются и его оси — вперёд, вниз, скорость.</li>
 <li>Инструменты сверху; что делать дальше — пишет строка внизу. Колёсико — масштаб, средняя кнопка — двигать вид, F — вся сцена, Ctrl+Z — отменить.</li>
 </ol>
+<p><b>Музыка сцены</b> (свойства сцены): какую музыку игра включает, когда входит в сцену (<b>stop</b> — тишина, пусто — что играет, то и играет), и за сколько мс прежняя затихает (<b>переход</b>, по умолчанию 500).</p>
 <p><b>Параллакс:</b> у слоя factor 256 — едет вместе с экраном, 128 — вдвое медленнее (даль), 0 — стоит (небо). Инструментом <b>Камера</b> таскайте жёлтую рамку экрана и смотрите. <b>Карта</b> сверху — все сцены и выходы между ними.</p>`
     },
     dialogs: {
@@ -125,19 +126,22 @@ const HelpTextsRu = {
 <li><b>Стили +</b> — стиль со значениями движка, <b>+ шаблон…</b> — из готового (речь, сообщение, меню, субтитры, записка-свиток); справа правьте поля. Рамку на показе можно тащить мышью и растягивать за правый и нижний край.</li>
 <li>Выбран стиль — внизу пример реплики (<b>Реплика</b>) или ответов (<b>Ответы</b>), переключатель сверху. Текст раскладывается точно как в движке: перенос по словам, самый крупный масштаб, что влезает; не влезла важная — прокрутка, неважная — «...». <b>▶ пуск</b> и поле <b>t</b> — реплика во времени.</li>
 <li>Выбран диалог (<b>Диалоги</b> в дереве: +, «Импорт…», ⭳ — выгрузить) — внизу его текст и проигрывание: <b>▶ сначала</b>, <b>next</b> (кнопка игрока), ▲▼ — выбор ответа, <b>less / more</b> — контролу; справа параметры и карманы ролей и журнал. Переводы — <b>Загрузить .po…</b> у узла <b>Переводы</b> и язык сверху.</li>
+<li>Переменные игры (Игра → Переменные) диалог читает в условиях (<code>"Тише" if game_var.volume > 0 -> menu</code>), меняет контролом (<code>"Громкость" control SLIDER game_var.volume</code>) и показывает в реплике (<code>say game "Очки: {game_var.score}"</code>; в одной реплике — либо параметры, либо переменные). Проигрывание держит их копии с начальных значений.</li>
 <li><b>showName</b> — имя говорящего строкой над текстом (пример имени — внизу, <b>имя</b>); <b>portrait</b> — портрет сбоку (пример — внизу, <b>face</b>).</li>
 </ol>`
     },
     game: {
         title: 'Игра целиком',
         text: `
-<p>То, что игра даёт пакету помимо видов, сцен и диалогов. Упаковщик читает это из JSON (необязательные поля <code>game</code>, <code>constants</code>, <code>timers</code>, <code>sounds</code>, <code>shows</code>, <code>chases</code>, <code>crops</code>) и делает то же, что вызовы <code>add_game</code>, <code>add_constants</code>, <code>add_timer</code>, <code>add_sound</code>, <code>add_show</code>, <code>add_chase</code>.</p>
+<p>То, что игра даёт пакету помимо видов, сцен и диалогов. Упаковщик читает это из JSON (необязательные поля <code>game</code>, <code>constants</code>, <code>variables</code>, <code>timers</code>, <code>sounds</code>, <code>synth</code>, <code>music</code>, <code>shows</code>, <code>chases</code>, <code>crops</code>) и делает то же, что вызовы <code>add_game</code>, <code>add_constants</code>, <code>add_variable</code>, <code>add_timer</code>, <code>add_sound</code>, <code>add_music</code>, <code>add_show</code>, <code>add_chase</code>.</p>
 <ul>
 <li><b>Числа</b> игры: сколько видов, жизней, записей мира… Лежат в пакете; в заголовке — <code>PREFIX_GAME_ИМЯ</code>, в этом порядке.</li>
 <li><b>Константы</b> пакета: имена чисел для текстов скриптов (<code>frame A TICK_MS ms</code>, <code>signal CLOCK_OUT</code>) — везде, где может стоять число, — и для условий ответов диалогов (<code>if board &amp; BOARD_PAD</code>). Числами их делает упаковщик, в пакет и заголовок они не идут. <code>define</code> с таким именем — ошибка; переименование меняет имя и в скриптах.</li>
 <li><b>Таймеры</b>: <b>once</b> — раз через столько; <b>every</b> — каждые столько; <b>until</b> — не дольше предела. <b>сброс</b> — когда останавливается сам (уход со сцены, с карты). <b>событие</b> — что послать владельцу. <b>game</b> — идёт с начала игры (часы). В скриптах: <code>timer(ИМЯ)</code>, <code>timer start ИМЯ</code>.</li>
+<li><b>Переменные</b> игры (DGX-GE 0.4.0): числа, которые меняются по ходу игры и не принадлежат ни одному актёру — настройки, счёт, состояние правил. Скрипты читают <code>game_var.ИМЯ</code> в выражениях и пишут его (<code>set game_var.score 0</code>, <code>add game_var.score 10</code>); диалоги читают в условиях, меняют контролом (<code>control SLIDER game_var.volume</code>) и показывают в репликах (<code>{game_var.score}</code>). Номер — место в списке, в заголовке <code>PREFIX_GAME_VAR_ИМЯ</code>; <b>значение</b> — с какого переменная начинает. Нельзя назвать её как константу, число игры или вопрос вида. Проигрыватель держит свои копии с начальных значений.</li>
 <li><b>Звуки</b> — имена звуков; номер — место в списке (<code>sound N</code>).</li>
-<li><b>Показы</b>: заставка, история, титры. Картинки фона на своих местах, актёры видов со скриптами, и <b>реплики</b>: в такой-то момент роль получает событие; роль <b>end</b> — конец показа.</li>
+<li><b>Музыка</b> (DGX-GE 0.4.0): песни нотами на MML; ноты — файл <code>music/ИМЯ.mml</code> рядом с документом (редактор читает и пишет его вместе с папкой проекта, текст правится здесь же). <b>synth</b> — синтезатор: <code>fm</code> (по умолчанию), <code>chip</code>, <code>nes</code>. Скрипты: <code>music ИМЯ 500ms</code>, <code>music stop</code>, <code>music volume 30% 500ms</code>, в выражениях <code>music</code> — номер той, что играет (−1 — никакой); у сцены своя музыка (свойства сцены). Музыка без нот — только имя, она молчит (предупреждение).</li>
+<li><b>Показы</b>: заставка, история, титры. Картинки фона на своих местах, актёры видов со скриптами, и <b>реплики</b>: в такой-то момент роль получает событие; роль <b>end</b> — конец показа. Картинку и актёра можно повернуть (<b>поворот</b> 90°, 180°, 270° по часовой, после отражения).</li>
 <li><b>Погоня</b> вида за героем между сценами: чем чует, через какие стороны идёт, как далеко от дома, когда успокаивается.</li>
 <li><b>Вырезки</b>: часть картинки кадра как своя картинка пакета (портрет из кадра для face в диалогах), со своей базовой точкой.</li>
 </ul>
@@ -211,9 +215,11 @@ const HelpPane = {
 
 // what the statements of scripts do, for hints: OpHelpEn, OpHelpRu; opHelp(op) in the language chosen
 const OpHelpRu = {
-    frame: 'показать картинку столько-то миллисекунд; кадр выражением: frame (DAGGERS_1 + min(amount, 10) - 1) 1000ms — картинка вычисляется в момент шага, имена картинок пакета — числа; amount — сколько вещей в этом персонаже (стопка на полу); frame none 100ms — ничего не показывать это время (персонаж спрятан, картинка -1)',
-    set: 'присвоить параметру значение: set action 1; set drunk now + 10 — now: момент шага, секунды часов игры; set k axis(rt) — ось геймпада (lx ly rx ry −1…1, lt rt 0…1; в просмотре 0). Когда значение меняется, игре об этом сообщается',
-    add: 'прибавить к параметру: add hp -1',
+    frame: 'показать картинку столько-то миллисекунд; кадр выражением: frame (DAGGERS_1 + min(amount, 10) - 1) 1000ms — картинка вычисляется в момент шага, имена картинок пакета — числа; amount — сколько вещей в этом персонаже (стопка на полу); frame none 100ms — ничего не показывать это время (персонаж спрятан, картинка -1). Время тоже может быть выражением персонажа: frame A (speed)ms, frame none speed — считается в начале кадра (меньше 1 — 1 мс, больше 65535 — 65535); ms можно не писать (fall_ms — это имя)',
+    rotate: 'повернуться: rotate 90 — на столько градусов по часовой (против — меньше нуля), rotate to 180 — в такой поворот; градусы — выражение (rotate to game_var.facing), до ближайшего кратного 90, по кругу. Картинка рисуется повёрнутой, и всё, что сказано в осях персонажа, поворачивается с ней: dx, dy, скорость, ускорение, path, сдвиг картинки, точки, маски. rotation в выражениях — поворот сейчас: 0, 90, 180, 270',
+    music: 'музыка: music theme — игра играет музыку пакета (Игра → Музыка; та же, что играет, продолжается); music theme 500ms — прежняя затихает за 500 мс, эта входит столько же; music stop [1s] — тишина; music volume 30% 500ms — уровень музыки по замыслу, за это время. В выражениях music — номер той, что играет (−1 — никакой): goto wait if music >= 0',
+    set: 'присвоить параметру значение: set action 1; set drunk now + 10 — now: момент шага, секунды часов игры; set k axis(rt) — ось геймпада (lx ly rx ry −1…1, lt rt 0…1; в просмотре 0). Когда значение меняется, игре об этом сообщается. set game_var.volume 3 — переменной игры (Игра → Переменные)',
+    add: 'прибавить к параметру: add hp -1; к переменной игры: add game_var.score 10',
     dx: 'сдвинуть персонажа вперёд на столько пикселей (назад, если меньше нуля): dx 3',
     dy: 'сдвинуть персонажа вниз (вверх, если меньше нуля): dy -2',
     flip: 'развернуться в другую сторону',
@@ -277,7 +283,7 @@ const HelpTextsEn = {
     kind: {
         title: 'Properties on the right',
         text: `
-<p><b>Kind</b> — its name (together with the file name it makes the picture’s name in the engine), <b>Default mask</b> — which mask a frame with no masks drawn counts as, <b>Preview in</b> — show the pictures in the colors of a palette of the file, <b>Faces left</b> — the pictures look left, <b>Canvas</b> — the common rectangle of all frames (the grid on the canvas), grows by itself, <b>Fit</b> fits it.</p>
+<p><b>Kind</b> — its name (together with the file name it makes the picture’s name in the engine), <b>Default mask</b> — which mask a frame with no masks drawn counts as, <b>Preview in</b> — show the pictures in the colors of a palette of the file, <b>Palette in the pack</b> — a ready palette of the set (nes, gameboy, pico8 or a palette of the file): the packer brings every color of the pictures to the palette’s nearest (CIE76), so the frames need not share their color numbers, <b>Faces left</b> — the pictures look left, <b>Canvas</b> — the common rectangle of all frames (the grid on the canvas), grows by itself, <b>Fit</b> fits it.</p>
 <p><b>Frame</b> — the current frame, its base point in the picture’s pixels and its name in the package. <b>Palette</b> — the colors of the picture, the pencil and the fill draw with them. <b>Masks</b> — the masks in this frame: the circle — which one is drawn, the checkbox — whether to show it. <b>Points</b> — the frame’s attachment points.</p>`
     },
     masks: {
@@ -320,7 +326,7 @@ const HelpTextsEn = {
         text: `
 <p>In the middle are the steps of the selected script. A <b>step</b> is a card: commands at the top and a frame at the bottom. First the commands are done, then the frame is shown for the given time.</p>
 <ul>
-<li><b>Frame</b>: choose a picture in the list, the time in milliseconds (ms); the picture offset <b>at x, y</b> is optional.</li>
+<li><b>Frame</b>: choose a picture in the list, the time in milliseconds (ms); the picture offset <b>at x, y</b> is optional. The time may be an expression of params (<code>speed</code>, <code>game_var.pace</code>): it is then worked out as the frame begins — a snake’s step that speeds up as the game goes.</li>
 <li><b>Commands</b> — grey fields with text, for example <code>dx 3</code> (move forward 3 pixels). Hover to see what it does. Edit the text and press Enter; erase it and the command is removed. <b>+ command</b> — a new command before the frame.</li>
 <li><b>← →</b> move the step, <b>⧉</b> copy, <b>×</b> delete. <b>+ step</b> at the top — a new step after the selected one.</li>
 <li>Instead of a number you can write an <b>expression</b>: <code>1000 / 12</code>, <code>-power + 10</code>, <code>min(t, 0.5)*80</code>. There are comparisons too, with <code>and</code>, <code>or</code>, <code>not</code>: they give 1 or 0.</li>
@@ -358,9 +364,10 @@ const HelpTextsEn = {
 <li>In the tree <b>Scenes +</b> — a new scene the size of the screen (the size is in the properties on the right). Under the selected scene are its layers, grids, exits and links.</li>
 <li>Pictures: in the <b>Pictures</b> palette at the bottom click a picture, then a place in the scene. The layer is the one selected in the tree (bold).</li>
 <li>Tiles: in the tree <b>Tilesets +</b>, the cell size and <b>+ tile</b> on the right; then <b>Grids +</b>, choose a tile in the <b>Tiles</b> palette and paint.</li>
-<li>An actor: the <b>Actors</b> palette, a click on the scene. On the right — which script it starts with and its params.</li>
+<li>An actor: the <b>Actors</b> palette, a click on the scene. On the right — which script it starts with and its params. A picture and an actor can be turned: <b>rotation</b> 90°, 180°, 270° clockwise (after the mirror); a turned actor’s axes turn too — forward, down, its velocity.</li>
 <li>The tools are at the top; the line at the bottom says what to do next. Wheel — zoom, middle button — pan the view, F — the whole scene, Ctrl+Z — undo.</li>
 </ol>
+<p><b>A scene’s music</b> (the scene’s properties): which music the game starts as it enters the scene (<b>stop</b> — silence, empty — what plays goes on), and over how many ms the one before fades out (<b>fade</b>, 500 by default).</p>
 <p><b>Parallax:</b> a layer with factor 256 moves with the screen, 128 — half as fast (the distance), 0 — stands still (the sky). Drag the yellow screen frame with the <b>Camera</b> tool and watch. <b>Map</b> at the top — all scenes and the exits between them.</p>`
     },
     dialogs: {
@@ -372,19 +379,22 @@ const HelpTextsEn = {
 <li><b>Styles +</b> — a style with the engine’s values, <b>+ template…</b> — from a ready one (speech, message, menu, subtitles, scroll note); edit the fields on the right. The frame in the preview can be dragged with the mouse and stretched by its right and bottom edges.</li>
 <li>With a style selected — at the bottom an example of a line (<b>Line</b>) or of answers (<b>Answers</b>), switched at the top. The text is laid out exactly as in the engine: word wrap, the largest scale that fits; if an important line doesn’t fit — scrolling, an unimportant one — “...”. <b>▶ play</b> and the <b>t</b> field — the line over time.</li>
 <li>With a dialog selected (<b>Dialogs</b> in the tree: +, Import .dlg, ⭳ — export) — at the bottom its text and playback: <b>▶ start</b>, <b>next</b> (the player’s button), ▲▼ — choosing an answer, <b>less / more</b> — for a control; on the right the params and pockets of the roles, and the log. Translations — <b>Translations: Load .po</b> and the language at the top.</li>
+<li>A dialog reads the game’s variables (Game → Variables) in conditions (<code>"Quieter" if game_var.volume > 0 -> menu</code>), edits one with a control (<code>"Volume" control SLIDER game_var.volume</code>) and shows them in a line (<code>say game "Score: {game_var.score}"</code>; a line shows either params or variables). The playback keeps copies of them from their starting values.</li>
 <li><b>showName</b> — the speaker’s name as a line above the text (an example name at the bottom, <b>name</b>); <b>portrait</b> — a portrait at the side (an example at the bottom, <b>face</b>).</li>
 </ol>`
     },
     game: {
         title: 'The whole game',
         text: `
-<p>What the game gives the package besides kinds, scenes and dialogs. The packer reads it from the JSON (the optional fields <code>game</code>, <code>constants</code>, <code>timers</code>, <code>sounds</code>, <code>shows</code>, <code>chases</code>, <code>crops</code>) and does the same as the calls <code>add_game</code>, <code>add_constants</code>, <code>add_timer</code>, <code>add_sound</code>, <code>add_show</code>, <code>add_chase</code>.</p>
+<p>What the game gives the package besides kinds, scenes and dialogs. The packer reads it from the JSON (the optional fields <code>game</code>, <code>constants</code>, <code>variables</code>, <code>timers</code>, <code>sounds</code>, <code>synth</code>, <code>music</code>, <code>shows</code>, <code>chases</code>, <code>crops</code>) and does the same as the calls <code>add_game</code>, <code>add_constants</code>, <code>add_variable</code>, <code>add_timer</code>, <code>add_sound</code>, <code>add_music</code>, <code>add_show</code>, <code>add_chase</code>.</p>
 <ul>
 <li><b>Numbers</b> — the game’s numbers: how many kinds, lives, world records… They are kept in the package; in the header — <code>PREFIX_GAME_NAME</code>, in this order.</li>
 <li><b>Constants</b> — the package’s constants: names of numbers for script texts (<code>frame A TICK_MS ms</code>, <code>signal CLOCK_OUT</code>) — anywhere a number can be — and for the conditions of dialog answers (<code>if board &amp; BOARD_PAD</code>). The packer turns them into numbers; they go neither into the package nor into the header. A <code>define</code> with such a name is an error; renaming changes the name in the scripts too.</li>
 <li><b>Timers</b> — <b>once</b> — once after so long; <b>every</b> — every so long; <b>until</b> — no longer than a limit. <b>reset</b> — when it stops by itself (leaving the scene, the map). <b>event</b> — what to send to the owner. <b>game</b> — runs from the start of the game (a clock). In scripts: <code>timer(NAME)</code>, <code>timer start NAME</code>.</li>
+<li><b>Variables</b> of the game (DGX-GE 0.4.0): numbers that change as the game plays and belong to no actor — settings, a score, the state of the rules. Scripts read <code>game_var.NAME</code> in expressions and write it (<code>set game_var.score 0</code>, <code>add game_var.score 10</code>); dialogs read it in conditions, edit it with a control (<code>control SLIDER game_var.volume</code>) and show it in lines (<code>{game_var.score}</code>). The number is the place in the list, the header has <code>PREFIX_GAME_VAR_NAME</code>; the <b>value</b> is what it starts with. It can’t share a name with a constant, a number of the game or a kind’s question. The player keeps its own copies from the starting values.</li>
 <li><b>Sounds</b> — the names of sounds; the number is the place in the list (<code>sound N</code>).</li>
-<li><b>Shows</b> — a splash screen, a story, credits. Background pictures in their places, actors of kinds with scripts, and cues (<b>cues</b>): at such a moment a role gets an event; the role <b>end</b> is the end of the show.</li>
+<li><b>Music</b> (DGX-GE 0.4.0): songs written as notes in MML; the notes are a file <code>music/NAME.mml</code> next to the document (the editor reads and writes it with the project folder, and the text is edited right here). <b>synth</b> — the synthesizer: <code>fm</code> (the default), <code>chip</code>, <code>nes</code>. Scripts: <code>music NAME 500ms</code>, <code>music stop</code>, <code>music volume 30% 500ms</code>, and in expressions <code>music</code> is the number of the one playing (−1 — none); a scene has its own music (the scene’s properties). A music without notes is only a name and stays silent (a warning).</li>
+<li><b>Shows</b> — a splash screen, a story, credits. Background pictures in their places, actors of kinds with scripts, and cues (<b>cues</b>): at such a moment a role gets an event; the role <b>end</b> is the end of the show. A picture and an actor can be turned (<b>rotation</b> 90°, 180°, 270° clockwise, after the mirror).</li>
 <li><b>Chase</b> — a kind chasing the hero between scenes: what it senses with, which sides it goes through, how far from home, when it calms down.</li>
 <li><b>Crops</b> — a part of a frame’s picture as a picture of the package of its own (a portrait from a frame for face in dialogs), with its own base point.</li>
 </ul>
@@ -416,9 +426,11 @@ const HelpTextsEn = {
 
 // the statements of scripts in English: as OpHelpRu
 const OpHelpEn = {
-    frame: 'show a picture for so many milliseconds; a frame by expression: frame (DAGGERS_1 + min(amount, 10) - 1) 1000ms — the picture is computed at the moment of the step, the package’s picture names are numbers; amount — how many things this character is (a stack on the floor); frame none 100ms — show nothing for this time (the character is hidden, picture -1)',
-    set: 'give a param a value: set action 1; set drunk now + 10 — now: the moment of the step, seconds of the game clock; set k axis(rt) — a gamepad axis (lx ly rx ry −1…1, lt rt 0…1; 0 in the preview). When the value changes, the game is told',
-    add: 'add to a param: add hp -1',
+    frame: 'show a picture for so many milliseconds; a frame by expression: frame (DAGGERS_1 + min(amount, 10) - 1) 1000ms — the picture is computed at the moment of the step, the package’s picture names are numbers; amount — how many things this character is (a stack on the floor); frame none 100ms — show nothing for this time (the character is hidden, picture -1). The time may be an expression of the character too: frame A (speed)ms, frame none speed — worked out as the frame begins (below 1 it is 1 ms, above 65535 it is 65535); the ms may be left out (fall_ms is a name)',
+    rotate: 'turn: rotate 90 — by so many degrees clockwise (anticlockwise below zero), rotate to 180 — into that turn; the degrees are an expression (rotate to game_var.facing), to the nearest multiple of 90, round the circle. The picture is drawn turned, and everything said in the character’s axes turns with it: dx, dy, velocity, accel, path, the picture’s shift, points, masks. rotation in expressions — the turn now: 0, 90, 180, 270',
+    music: 'music: music theme — the game plays a music of the package (Game → Music; the same one playing goes on); music theme 500ms — the one before fades out over 500 ms, this one comes in as long; music stop [1s] — silence; music volume 30% 500ms — the music’s level by design, over that time. In expressions music is the number of the one playing (−1 — none): goto wait if music >= 0',
+    set: 'give a param a value: set action 1; set drunk now + 10 — now: the moment of the step, seconds of the game clock; set k axis(rt) — a gamepad axis (lx ly rx ry −1…1, lt rt 0…1; 0 in the preview). When the value changes, the game is told. set game_var.volume 3 — a variable of the game (Game → Variables)',
+    add: 'add to a param: add hp -1; to a variable of the game: add game_var.score 10',
     dx: 'move the character forward by so many pixels (back if less than zero): dx 3',
     dy: 'move the character down (up if less than zero): dy -2',
     flip: 'turn around to the other side',

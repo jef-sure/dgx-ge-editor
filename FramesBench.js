@@ -206,6 +206,9 @@ const FramesProps = {
         page() {
             return this.edit.page;
         },
+        Game() {
+            return Game;
+        },
         // which masks meet, read from the text as the packer reads it
         meets() {
             return Meets.parse(this.sprites.meets, this.sprites.masks);
@@ -408,7 +411,14 @@ const FramesProps = {
                 </div>
                 <div class="prop" :title="T('Show the pictures of the kind in the colors of a palette of the file (preview only: the color numbers stay, the pictures do not change): a guard in the colors of the level', 'Показать картинки вида в цветах палитры файла (только просмотр: номера цветов те же, сами картинки не меняются) — стражник в цветах уровня')">{{T('preview in', 'смотреть в')}}
                     <select :value="edit.previewPalette[set.name] || ''" @change="spritesStore.setPreviewPalette(set.name, $event.target.value)">
-                        <option value="">{{T('its own colors', 'своих цветах')}}</option><option v-for="p in sprites.palettes" :value="p.name">{{p.name}}</option></select>
+                        <option value="">{{T('its own colors', 'своих цветах')}}</option><option v-for="p in sprites.palettes" :value="p.name">{{p.name}}</option>
+                        <option v-if="set.palette !== undefined" value="@pack" :title="T('Every color of the pictures as its nearest of the palette (CIE76), as the packer takes it', 'Каждый цвет картинок — ближайший цвет палитры (CIE76), как берёт упаковщик')">{{T('the pack: ', 'пакета: ')}}{{set.palette}}</option></select>
+                </div>
+                <div class="prop" :title="T('A ready palette of the set in the pack (palette, DGX-GE 0.4.0): the packer brings every color of its pictures to the palette’s nearest (CIE76, as the eye sees it) and the set gets the colors taken, in the palette’s order — the frames need not share their values. nes, gameboy, pico8 — the engine’s; or a palette of the file. None: the colors of the pictures as they are', 'Готовая палитра набора в пакете (palette, DGX-GE 0.4.0): упаковщик приводит каждый цвет картинок к ближайшему цвету палитры (CIE76, как видит глаз), и набор получает взятые цвета в порядке палитры — кадрам не обязательно делить номера цветов. nes, gameboy, pico8 — палитры движка; или палитра файла. Нет — цвета картинок как есть')">{{T('palette in the pack', 'палитра в пакете')}}
+                    <select :value="set.palette === undefined ? '' : set.palette" @change="$event.target.value ? set.palette = $event.target.value : delete set.palette">
+                        <option value="">{{T('none: the pictures’ colors', 'нет: цвета картинок')}}</option><option v-for="n in Game.palettes" :value="n">{{n}}</option>
+                        <option v-for="p in sprites.palettes" :value="p.name">{{p.name}}</option>
+                        <option v-if="set.palette !== undefined && !Game.palettes.includes(set.palette) && !sprites.palettes.some(p => p.name === set.palette)" :value="set.palette">{{set.palette}} ✖</option></select>
                 </div>
                 <label class="prop" :title="T('The pictures of the kind look left (as in PoP): “forward” is left. The player shows them so', 'Картинки вида смотрят влево (как в PoP): «вперёд» — влево. Проигрыватель показывает их так')"><input type="checkbox" :checked="!!set.facesLeft" @change="$event.target.checked ? set.facesLeft = true : delete set.facesLeft"> {{T('faces left', 'смотрит влево')}}</label>
                 <div class="prop prop-row" :title="T('The canvas is the common rectangle of the kind (the grid in the middle): all frames stand on it by their base points in one place. Masks are drawn only inside it', 'Холст — общий прямоугольник вида (сетка в середине): все кадры стоят на нём базовыми точками в одном месте. Маски рисуются только внутри него')">{{T('canvas', 'холст')}}

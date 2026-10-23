@@ -368,8 +368,8 @@ const AnimPlayer = {
             const z = this.zoom;
             const statement = state.frame;
             if (!statement) return;
-            const turned = state.flip;
-            const forward = turned ? -1 : 1;
+            // the orientation of the actor: mirrored, then turned by quarters (rotate); what is of its axes turns with it
+            const o = AnimRunner.orient(state.flip, state.turn || 0);
             const at = statement.at ? {
                 x: Anim.constValue(statement.at.x, Anim.defineValues(this.animation)),
                 y: Anim.constValue(statement.at.y, Anim.defineValues(this.animation))
@@ -381,28 +381,28 @@ const AnimPlayer = {
             // a frame of the game's table stands so far forward and down of the actor
             if (found && found.dx) at.x += found.dx;
             if (found && found.dy) at.y += found.dy;
-            const bx = state.x + forward * at.x; // the base point of the picture in the world
-            const by = state.y + at.y;
+            const [ax, ay] = AnimRunner.apply(o, at.x, at.y);
+            const bx = state.x + ax; // the base point of the picture in the world
+            const by = state.y + ay;
             const dir = this.faceLeft ? -1 : 1;
+            // where a step along x and y of a picture goes on the screen, whole pixels: its forward (to the left when
+            // the pictures look left) and down, turned as the actor, the screen mirrored when forward is to the left
+            const screen = (u, v) => {
+                const [wx, wy] = AnimRunner.apply(o, this.faceLeft ? -u : u, v);
+                return [dir * wx, wy];
+            };
+            const s1 = screen(1, 0),
+                s2 = screen(0, 1);
             const picture = found ? FrameImages.get(found.setName, found.frame.image) : null;
             ctx.globalAlpha = alpha;
-            // the column of the base point on the screen, its left edge. A picture is drawn as it looks
-            // and mirrored around this column when the actor is turned
+            // the column of the base point on the screen, its left edge. A picture is drawn around it as the actor lies
             const colX = Math.round(sx(bx) - (dir < 0 ? z : 0));
             const rowY = Math.round(sy(by));
             // what the actor carries (carry), as the engine holds it: the point of the child of the same name, or its
-            // base point, stands at the point of the carrier; mirrored with it; behind the body when the point's z < 0
+            // base point, stands at the point of the carrier; turned with it; behind the body when the point's z < 0
             const drawFound = (f, col, row) => {
                 const pic = FrameImages.get(f.setName, f.frame.image);
-                if (!pic) return;
-                const o = f.frame.origin;
-                ctx.save();
-                if (turned) {
-                    ctx.translate(col + (o.x + 1) * z, row - o.y * z);
-                    ctx.scale(-1, 1);
-                } else ctx.translate(col - o.x * z, row - o.y * z);
-                ctx.drawImage(pic.canvas, 0, 0, pic.width * z, pic.height * z);
-                ctx.restore();
+                if (pic) Scene.drawOriented(ctx, pic.canvas, f.frame.origin, col, row, z, s1, s2);
             };
             const pointOf = (frame, name) => {
                 const ps = frame.points || {};
@@ -419,27 +419,20 @@ const AnimPlayer = {
                     x: 0,
                     y: 0
                 };
+                const dx = p.x - a.x,
+                    dy = p.y - a.y;
                 held.push({
                     child: child,
-                    col: colX + (turned ? a.x - p.x : p.x - a.x) * z,
-                    row: rowY + (p.y - a.y) * z,
+                    col: colX + (dx * s1[0] + dy * s2[0]) * z,
+                    row: rowY + (dx * s1[1] + dy * s2[1]) * z,
                     behind: (p.z || 1) < 0
                 });
             }
             for (const h of held)
                 if (h.behind) drawFound(h.child, h.col, h.row);
             if (picture) {
-                const o = found.frame.origin;
-                ctx.save();
-                if (turned) {
-                    ctx.translate(colX + (o.x + 1) * z, rowY - o.y * z);
-                    ctx.scale(-1, 1);
-                } else {
-                    ctx.translate(colX - o.x * z, rowY - o.y * z);
-                }
-                ctx.drawImage(picture.canvas, 0, 0, picture.width * z, picture.height * z);
-                ctx.restore();
-                if (this.edit.playMasks && alpha === 1) this.drawMasks(found.frame, state, colX, rowY, turned);
+                Scene.drawOriented(ctx, picture.canvas, found.frame.origin, colX, rowY, z, s1, s2);
+                if (this.edit.playMasks && alpha === 1) this.drawMasks(found.frame, state, colX, rowY, s1, s2);
                 for (const h of held)
                     if (!h.behind) drawFound(h.child, h.col, h.row);
             } else {
@@ -458,8 +451,9 @@ const AnimPlayer = {
             ctx.fillRect(Math.round(sx(state.x) - (dir < 0 ? z : 0)), Math.round(sy(state.y)), z, z);
             ctx.globalAlpha = 1;
         },
-        // masks of the frame; with a masks statement before, only those that are active
-        drawMasks(frame, state, colX, rowY, turned) {
+        // masks of the frame; with a masks statement before, only those that are active; s1, s2: where a step along x
+        // and y of the picture goes on the screen
+        drawMasks(frame, state, colX, rowY, s1, s2) {
             const ctx = this.ctx;
             const z = this.zoom;
             for (const m of this.spritesStore.sprites.masks) {
@@ -467,7 +461,7 @@ const AnimPlayer = {
                 if (state.masks && !state.masks.includes(m.index)) continue;
                 ctx.fillStyle = m.color;
                 ctx.globalAlpha = 0.45;
-                Mask.forEach(frame.masks[m.index], (x, y) => ctx.fillRect(colX + (turned ? -x : x) * z, rowY + y * z, z, z));
+                Mask.forEach(frame.masks[m.index], (x, y) => ctx.fillRect(colX + (x * s1[0] + y * s2[0]) * z, rowY + (x * s1[1] + y * s2[1]) * z, z, z));
             }
             ctx.globalAlpha = 1;
         },
@@ -526,8 +520,10 @@ const AnimPlayer = {
                         :title="T('Play a touch of the terrain: in the game at this moment the engine puts the actor at the place of the touch and sends it the event ' + view.contactEvent, 'Изобразить касание местности: в игре движок в этот момент ставит персонажа на место касания и посылает ему событие ' + view.contactEvent)">{{T('touch', 'касание')}} → {{view.contactEvent}}</button>
                     <span v-if="view.pending" class="badge bg-warning text-dark">{{T('waits:', 'ждёт:')}} {{view.pending.event}} → {{view.pending.to}} {{T('at', 'в')}} {{view.pending.when}}</span>
                 </div>
-                <div class="cursor-text">{{frameText}} · x {{view.x.toFixed(1)}}, y {{view.y.toFixed(1)}}<span v-if="view.flip"> · {{T('turned', 'повёрнут')}}</span>
-                    <span v-for="(v, name) in view.params"> · {{name}} {{v}}</span><span v-if="view.masks"> · masks {{view.masks.join(' ')}}</span>
+                <div class="cursor-text">{{frameText}} · x {{view.x.toFixed(1)}}, y {{view.y.toFixed(1)}}<span v-if="view.flip"> · {{T('turned', 'повёрнут')}}</span><span v-if="view.turn" :title="T('rotate: turned clockwise by so many degrees, after the mirror', 'rotate: повёрнут по часовой на столько градусов, после отражения')"> · rotation {{view.turn * 90}}</span>
+                    <span v-for="(v, name) in view.params"> · {{name}} {{v}}</span>
+                    <span v-for="(v, name) in view.vars || {}" :title="T('A variable of the game (Game → Variables): the player keeps them from their values in the document, scripts change them (set, add game_var.)', 'Переменная игры (Игра → Переменные): проигрыватель держит их с начальных значений документа, скрипты меняют (set, add game_var.)')"> · game_var.{{name}} {{v}}</span>
+                    <span v-if="view.music >= 0 || view.musicLevel !== undefined && view.musicLevel !== 100" :title="T('What scripts told the game of music: the one playing (music in expressions reads its number) and its level by design. The player plays no sound', 'Что скрипты сказали игре о музыке: какая играет (music в выражениях читает её номер) и её уровень по замыслу. Звука проигрыватель не играет')"> · music {{view.music >= 0 ? (runner && runner.musics[view.music] || view.music) : 'stop'}}<template v-if="view.musicLevel !== 100"> {{view.musicLevel}}%</template></span><span v-if="view.masks"> · masks {{view.masks.join(' ')}}</span>
                     <span v-for="c in view.carried || []" class="anim-hit" :title="T('Holds at the point ', 'Держит в точке ') + c.point"> · carry {{c.point}}: {{Anim.statementText(c.picture, set).replace(/^carry \\S+ /, '')}}</span>
                     <span v-if="view.released" class="anim-hit" :title="T('The last thing the actor let go (release): the picture and the speed, pixels a second, x to the right on the screen. From then on the game handles it', 'Последнее, что персонаж отпустил (release): картинка и скорость, пикселей в секунду, x — вправо на экране. Дальше им распоряжается игра')"> · {{T('released', 'отпущено')}} {{view.released.point}}: {{Anim.statementText(view.released.picture, set).replace(/^carry \\S+ /, '')}} {{T('at', 'со скоростью')}} {{Math.round(view.released.vx)}}, {{Math.round(view.released.vy)}}</span>
                     <span v-if="view.shot" class="anim-hit" :title="T('The last shot (shoot): from which point, the kind of the missile and the speed, pixels a second, x to the right on the screen. The game makes it fly', 'Последний выстрел (shoot): из какой точки, вид снаряда и скорость, пикселей в секунду, x — вправо на экране. Летит он силами игры')"> · {{T('shot', 'выстрел')}} {{view.shot.point}}: {{view.shot.kind}} {{T('at', 'со скоростью')}} {{Math.round(view.shot.vx)}}, {{Math.round(view.shot.vy)}}</span>

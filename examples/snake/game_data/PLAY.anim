@@ -1,6 +1,6 @@
 # The game itself as an actor: its phase (what moves now: PH_*), the score, the best, the length the snake is
 # to grow to, how fast it goes, when a star comes, the words it shows (GAME OVER: the game draws it in the zone
-# message). The game moves the snake a cell every speed ms and tells this actor what the head found and where it
+# message). The clock (CLOCK) moves the snake a cell every game_var.speed ms; the game tells this actor what the head found and where it
 # turned. Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over (the best is kept), SIG_STAR a star
 # comes (a cell of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays
 # the field anew).
@@ -10,7 +10,6 @@ param phase PH_TITLE
 param score 0
 param best 0  # the game gives it what it kept
 param length START_LENGTH  # the snake grows a cell a step until it is so long
-param speed STEP_MS  # ms a step
 
 script title  # the title show plays (the game's)
     set phase PH_TITLE
@@ -21,7 +20,7 @@ script new_game
     set phase PH_PLAYING
     set score 0
     set length START_LENGTH
-    set speed STEP_MS
+    set game_var.speed STEP_MS
     timer stop star
     signal SIG_NEW
     signal SIG_NUMBERS
@@ -34,7 +33,7 @@ script playing
 script apple  # each apple: longer and faster
     add score APPLE_SCORE
     add length GROW
-    set speed max(FASTEST_MS, speed - FASTER_MS)
+    set game_var.speed max(FASTEST_MS, game_var.speed - FASTER_MS)
     sound SND_EAT
     goto star_comes if (length - START_LENGTH) / GROW % STAR_EVERY == 0  # every STAR_EVERY apples
     goto counted
@@ -66,6 +65,7 @@ script turning
 script crashed  # GAME OVER; a start in its first second is not taken
     set phase PH_OVER
     timer stop star
+    music stop 800ms
     sound SND_CRASH
     signal SIG_OVER
     frame WORDS_GAME_OVER 1000ms

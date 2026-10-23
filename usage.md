@@ -411,7 +411,8 @@ sequence" window.
 | name | The kind's name. Together with the file name it makes the picture's name in the pack: `KID_401`. × deletes the kind with all its frames and animations |
 | Load PNG frames… | Loads frames; you can pick many files at once. Files with known names supply pictures for frames already marked up; new names become new frames. If a picture's size does not match the markup, you get a warning |
 | default mask | What counts as the mask of a frame with no masks drawn: all its opaque pixels. "none" means such a frame collides with nothing (scenery) |
-| preview in | Shows the kind's pictures in one of the file's palettes (a guard in the colours of a level). Preview only |
+| preview in | Shows the kind's pictures in one of the file's palettes (a guard in the colours of a level); with a palette in the pack, **the pack: …** shows them as the packer takes them, every colour its nearest of that palette (CIE76). Preview only |
+| palette in the pack | A ready palette of the set in the pack (DGX-GE 0.4.0): `nes`, `gameboy`, `pico8` (the engine's) or one of the file's palettes. The packer brings every colour of the pictures to the palette's nearest (as the eye sees it, CIE76), so the frames need not share colour numbers; it warns how many colours were not the palette's. A name that is no palette is an error |
 | faces left | The pictures face left (as in PoP): "forward" is to the left; the player shows them that way |
 | canvas | The canvas: left and top (the top-left corner relative to the base point), width, height. It grows by itself when a frame does not fit; Fit makes it exactly as big as the frames need. It never gets smaller than the frames need |
 | new frame | An empty transparent frame of the given size, in the current frame's palette, for drawing a picture with the pencil |
@@ -633,6 +634,17 @@ state with its transitions; the bottom shows the player.
 - A **label** (`label`) is a place inside a script that `goto` can jump to.
 - **Forward** is the direction the unflipped picture faces. `dx`, and speed
   and acceleration along x, point forward.
+- A character can also be **turned** by quarter turns (`rotate 90`,
+  `rotate to 180`, DGX-GE 0.4.0): the picture is drawn turned clockwise after
+  its mirror, and everything said in the character's axes turns with it —
+  `dx`, `dy`, speed, acceleration, `path`, the frame's shift, points, masks;
+  `rotation` in expressions reads the turn (0, 90, 180, 270). Pac-Man looking
+  up is the "right" pictures turned 270°.
+- The game's **variables** (Game → Variables) are read in any expression as
+  `game_var.NAME` and written by `set game_var.NAME …`, `add game_var.NAME …`;
+  **music** is played by `music NAME [500ms]`, `music stop`,
+  `music volume 30% [500ms]`, and `music` in expressions is the number of the
+  one playing (−1 none).
 - A script that reaches its last line **continues into the next one** in the
   list. Usually that is a mistake: a script should end with `goto` or
   `hold`. The editor flags it (⚠) and offers the buttons "+ hold" and
@@ -745,7 +757,10 @@ text, the way the engine reads it and the way it lies in the game folder
     2 at mask 1 of whoever it meets;
   - the frame: a picture from the kind's frames, "number…" (a number the
     game draws by), "pack name…" (the name of a pack picture the kind does
-    not have), or none (show nothing); **time** is the duration in ms;
+    not have), or none (show nothing); **time** is the duration in ms — a
+    number, a `define`, or an expression of the character's params
+    (`speed`, `game_var.pace`) worked out as the frame begins (below 1 it is
+    1 ms, above 65535 it is 65535): a snake's step that speeds up;
     **shift x, y** is the picture's offset from the character (`at` in the
     `.anim` text), empty means 0;
   - ← → move the step, ⧉ duplicates it, × deletes it.
@@ -810,8 +825,12 @@ the animation restarts the preview.
 | Events | Event buttons to the right of the scene: green ones are those the current state answers. A click sends the event |
 
 Above the buttons is where the character is: state, step, frame,
-coordinates, params, active masks, hits, what it is holding, a pending
-transition, and a log (signals, sounds, `goto`). Drag the top edge of the
+coordinates, its turn (`rotation`), params, the game's variables (the player
+keeps its own copies from their starting values: `set`/`add game_var.` change
+them, expressions read them), the music the scripts asked for and its level,
+active masks, hits, what it is holding, a pending transition, and a log
+(signals, sounds, music, `goto`). A turned character is drawn turned, with
+its masks and what it holds. Drag the top edge of the
 strip to change its height.
 
 ## 10. Scenes
@@ -842,7 +861,11 @@ with animations).
 | Camera | C | Drag the screen frame: layers with a different factor shift, so you can see the parallax; "Camera 0,0" puts it back |
 
 **How to work.** Scenes "+", then the scene properties (size; "= screen"
-makes a room). Tilesets: Tilesets "+", the cell size, "+ tile" (if a
+makes a room; **music** — what the game plays as it enters the scene: a music
+of Game → Music, **stop** for silence, or nothing to let what plays go on;
+**fade** — over how many ms, 500 when empty). A picture or a character on a
+layer can be turned: **rotation** 0°, 90°, 180°, 270° clockwise after its
+mirror, about the base point (a turned character's axes turn too). Tilesets: Tilesets "+", the cell size, "+ tile" (if a
 picture is selected in the palette, the tile gets it as its first piece);
 a tile has pieces, solid sides and a `kind`. A piece has a picture: a single
 one, **by mod** (chosen by the cell's modifier) or **cycle** (cycling over
@@ -1007,7 +1030,12 @@ width, and the colours (fill, border, text, bar, name).
   an answer; **less / more** go to the control of the chosen answer; **time
   out** means no answer within the choice time. The roles' params and
   pockets (initial values come from their kinds' animations) change as the
-  dialog goes on (`give`, controls); `tell` is written to the log. If the
+  dialog goes on (`give`, controls); `tell` is written to the log. The game's
+  variables (Game → Variables) are read by conditions
+  (`if game_var.volume > 0`), edited by a control
+  (`"Volume" control SLIDER game_var.volume`) and shown in a line
+  (`{game_var.score}`); the playback keeps copies of them from their starting
+  values. If the
   dialog's header has a `pause` line (as the settings menu does), **⏸ pauses
   the game** is shown above the params: in the game, the world stands still
   while the dialog is open.
@@ -1017,8 +1045,8 @@ width, and the colours (fill, border, text, bar, name).
 ## 12. The game as a whole (the Game node)
 
 What the game adds to the pack besides kinds, scenes and dialogs. The packer
-takes it through the calls `add_game`, `add_timer`, `add_sound`, `add_show`
-and `add_chase`; the editor stores it in optional JSON fields and checks it
+takes it through the calls `add_game`, `add_constants`, `add_variable`,
+`add_timer`, `add_sound`, `add_music`, `add_show` and `add_chase`; the editor stores it in optional JSON fields and checks it
 the way the packer does. Times are written as in the engine: `500ms`, `2s`.
 Events may come from any kind in the project: they are the pack's events.
 
@@ -1027,8 +1055,10 @@ Events may come from any kind in the project: they are the pack's events.
 | Numbers | The game's numbers (the `game` field): how many kinds, lives, world records… They are in the pack; each name becomes `PREFIX_GAME_NAME` in the header, in this order (↑↓) |
 | Constants | The pack's constants (the `constants` field): names for numbers that scripts and dialog answer conditions use instead of the numbers themselves: `frame A TICK_MS ms`, `signal CLOCK_OUT`, `if board & BOARD_PAD`. The packer turns them into numbers; they go into no blob, and the pack's header gives them to C (`PREFIX_NAME`), so a constant named like another name of the header (`SET_MAZE`, `GHOST_PARAM_WHO`) is an error, as the packer refuses it. Renaming one renames it in the scripts too; a `define` with the same name is an error |
 | Timers | Timers: **once** fires once after the given time; **every** fires every so often; **every, until** does so up to a limit. **reset** says when it stops by itself: never, scene (leaving the scene), map (leaving the map). **event** is what to send the owner. **game** means it runs from the start of the game (a clock). In scripts, `timer(NAME)` reads its milliseconds, and `timer start|stop|hold|go NAME` controls it |
-| Sounds | Sound names; the number is the position in the list (`sound N` in scripts). There is no sound data yet |
-| Shows | A show is a scene that plays by itself: a title screen, a story, credits. **Pictures** are the background pictures (pack name, position by the base point, layer, mirroring, colour for 1-bit pictures). **Actors** are the roles: a kind, the script it starts with, a position. **Cues** are timed cues: at a given moment, a role gets an event; the role **end** marks the end of the show (required) |
+| Variables | The game's variables (the `variables` field, DGX-GE 0.4.0): numbers that change as the game plays and belong to no actor — settings, a score, the state of the rules. **value** is what it starts with (32 bits). Scripts read `game_var.NAME` and write it (`set game_var.score 0`, `add game_var.score 10`); dialogs read it in conditions, edit it with a control and show it in a line. The number is the position in the list (↑↓); the header has `PREFIX_GAME_VAR_NAME`. Renaming one renames it in the scripts; a name of a constant, a number of the game or a kind's question is an error |
+| Sounds | Sound names; the number is the position in the list (`sound N` in scripts). Their samples are `sounds/NAME.wav` next to the document |
+| Music | Music by notes (DGX-GE 0.4.0): **synth** — the synthesizer (`fm` by default, `chip`, `nes`); the list of musics (the number is the position, the header has `PREFIX_MUSIC_NAME`; renaming one renames it in scripts and scenes); click one to edit its notes in MML below. The notes are saved as `music/NAME.mml` in the project folder and read from there when it is opened; a music without notes is only a name and plays nothing (a warning). The editor does not check the MML itself: the packer does |
+| Shows | A show is a scene that plays by itself: a title screen, a story, credits. **Pictures** are the background pictures (pack name, position by the base point, layer, mirroring, rotation, colour for 1-bit pictures). **Actors** are the roles: a kind, the script it starts with, a position, mirroring, rotation. **Cues** are timed cues: at a given moment, a role gets an event; the role **end** marks the end of the show (required) |
 | Chase | A kind chasing the hero from scene to scene: **sense** is how it senses (sight, hearing, always, none), **sides** are the sides it can go through, **hearing** is how close it hears, **near** is how close to a side it must be to go through it (empty: anywhere; below zero: beyond it), **steps** is how many scenes from home it may go (0: no limit), **calm** is how long out of its senses before it calms down |
 | Crops | Crops: part of a frame's picture made into a pack picture of its own with the same colour set, such as a portrait cut from a frame (the face of a dialog role): kind, frame, x, y, width, height from the top-left corner, and the crop's base point |
 

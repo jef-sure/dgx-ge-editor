@@ -8,9 +8,18 @@
 //   timers: [{name, once | every [, until], reset, event, start}]  times as "500ms" or "2s"; reset never | scene | map;
 //                                                             event '' none; start 'game' or ''
 //   sounds: [name]                                            sounds by name, the order is their numbers
-//   shows:  [{name, pictures: [{picture, x, y, layer, flip, color}], actors: [{name, kind, script, x, y, layer, flip, color}],
-//            cues: [{at, role, event}]}]                      a scene that plays by itself; the role 'end' ends it
+//   shows:  [{name, pictures: [{picture, x, y, layer, flip, rotation?, color}], actors: [{name, kind, script, x, y, layer, flip,
+//            rotation?, color}], cues: [{at, role, event}]}] a scene that plays by itself; the role 'end' ends it;
+//                                                             rotation: degrees clockwise after the mirror, 0, 90, 180, 270
 //   chases: [{kind, sense, sides: [], hearing, near: {left, right, up, down}, steps, calm}]
+//   variables: [{name, value}]                                the game's variables (add_variable), numbered in this order:
+//                                                             game_var.<name> in scripts and dialogs; the header
+//                                                             PREFIX_GAME_VAR_NAME; the value it begins with, 32 bits
+//   synth: 'fm' | 'chip' | 'nes'                              the synthesizer of the musics (fm when not said)
+//   music: [name]                                             musics by notes (add_music): their texts music/<name>.mml
+//                                                             beside the document; a script's music <name> plays one
+//   musicTexts: {name: text}                                  the notes (MML) of the musics as the editor keeps them: the
+//                                                             files music/<name>.mml of the folder (the packer reads those)
 const Game = {
     // [key, label, hint, label in Russian, hint in Russian]: label and hint through label() and hint(); the English
     // label is what the problems of a part are said with
@@ -28,9 +37,9 @@ const Game = {
             'Таймеры',
             'Таймеры игры: сработать раз через столько-то, или каждые столько-то (до предела); сброс при уходе со сцены или карты; событие владельцу; timer(ИМЯ) в выражениях скриптов читает его миллисекунды'],
         ['sounds', 'Sounds',
-            'Sounds by names: only names so far, the number is the place in the list (the command sound N of scripts). In the header — PREFIX_SOUND_NAME',
+            'Sounds by names: the number is the place in the list (the command sound N of scripts), the samples sounds/NAME.wav beside the document. In the header — PREFIX_SOUND_NAME',
             'Звуки',
-            'Звуки по именам: пока только имена, номер — порядок в списке (команда sound N скриптов). В заголовке — PREFIX_SOUND_ИМЯ'],
+            'Звуки по именам: номер — порядок в списке (команда sound N скриптов), сэмплы — sounds/ИМЯ.wav рядом с документом. В заголовке — PREFIX_SOUND_ИМЯ'],
         ['shows', 'Shows',
             'Shows: a scene that plays by itself — background pictures, actors of kinds with their scripts and cues in time (an event to a role at such a moment); the role end ends the show. A splash screen, a story, credits',
             'Показы',
@@ -39,6 +48,14 @@ const Game = {
             'Chase: how a kind (a guard) pursues the hero from scene to scene — what it senses with, which sides it goes through, how far from home, when it calms down',
             'Погоня',
             'Погоня: как вид (стражник) преследует героя из сцены в сцену — чем чует, через какие стороны идёт, как далеко от дома, когда успокаивается'],
+        ['variables', 'Variables',
+            'Variables of the game (field variables, add_variable): numbers that change as the game plays and belong to no actor — settings, a score, the state of the rules. Scripts read game_var.NAME and write it (set, add game_var.NAME), dialogs read it in conditions, edit it by a control (control SLIDER game_var.volume), show it in a line ({game_var.score}). Numbered in this order; the header gives PREFIX_GAME_VAR_NAME (DGX-GE 0.4.0)',
+            'Переменные',
+            'Переменные игры (поле variables, add_variable): числа, которые меняются по ходу игры и не принадлежат ни одному актёру — настройки, счёт, состояние правил. Скрипты читают game_var.ИМЯ и пишут его (set, add game_var.ИМЯ), диалоги читают в условиях, меняют контролом (control SLIDER game_var.volume), показывают в реплике ({game_var.score}). Нумеруются в этом порядке; заголовок даёт PREFIX_GAME_VAR_ИМЯ (DGX-GE 0.4.0)'],
+        ['music', 'Music',
+            'Music by notes (field music, add_music): songs in MML on a synthesizer of the game (synth: fm, chip, nes), their notes music/NAME.mml beside the document. Scripts play them (music NAME 500ms, music stop, music volume 30%), a scene starts its own as the game enters it; the header gives PREFIX_MUSIC_NAME (DGX-GE 0.4.0)',
+            'Музыка',
+            'Музыка нотами (поле music, add_music): песни на MML для синтезатора игры (synth: fm, chip, nes), их ноты — music/ИМЯ.mml рядом с документом. Скрипты играют их (music ИМЯ 500ms, music stop, music volume 30%), сцена запускает свою, когда игра в неё входит; заголовок даёт PREFIX_MUSIC_ИМЯ (DGX-GE 0.4.0)'],
         ['crops', 'Crops',
             'Crops: a part of a frame’s picture as a picture of the pack of its own, with the same set of colors — a portrait from a frame (face of a dialog role), with its own base point',
             'Вырезки',
@@ -55,6 +72,16 @@ const Game = {
     sides: ['left', 'right', 'up', 'down', 'doors'],
     nearSides: ['left', 'right', 'up', 'down'],
     timePattern: /^(\d+)\s*(ms|s)$/,
+    synths: ['fm', 'chip', 'nes'], // the synthesizers of music (dgx_ge_music.py SYNTHS), fm when the document says none
+    palettes: ['gameboy', 'nes', 'pico8'], // the engine's ready palettes (tools/palettes/<name>.txt)
+    // their colors, as the engine's files give them (the NES's 2C02G of the NESdev wiki, the DMG's greens, PICO-8's 16)
+    readyColors: {
+        gameboy: '9bbc0f 8bac0f 306230 0f380f',
+        nes: '575757 000c8e 0800a6 340096 550061 630015 5a0000 3c0e00 112800 003b00 004200 003a05 002652 000000 a5a5a5 0041d9 2f1eff 6704f2 9400b4 aa0057 a31800 803900 4b5b00 137600 008100 007923 006288 ffffff 4a9fff 797eff af63ff dd55ff f757c2 f76a63 dc8810 aea900 78c400 4ad211 2fcf64 2fbdc4 414141 b9ddff cad1ff dec6ff f0c0ff fcc0ee fdc6ca f5d0aa e4dd95 d0e892 bdeea2 b2eec0 b0e8e3 b3b3b3',
+        pico8: '000000 1d2b53 7e2553 008751 ab5236 5f574f c2c3c7 fff1e8 ff004d ffa300 ffec27 00e436 29adff 83769c ff77a8 ffccaa',
+    },
+    varsMax: 256, // VARS_MAX: a variable's number is a byte in the steps of scripts and dialogs
+    musicFade: 500, // MUSIC_FADE_MS: a scene's change of music, unless it says
 
     isIdent(name) {
         return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name);
@@ -111,6 +138,9 @@ const Game = {
                 y: int(p.y, 0),
                 layer: int(p.layer, 0),
                 flip: !!p.flip,
+                ...(p.rotation !== undefined && p.rotation !== null ? {
+                    rotation: p.rotation
+                } : {}),
                 color: int(p.color, 0)
             })),
             actors: (Array.isArray(s.actors) ? s.actors : []).filter(a => a && typeof a.name === 'string').map(a => ({
@@ -121,6 +151,9 @@ const Game = {
                 y: int(a.y, 0),
                 layer: int(a.layer, 0),
                 flip: !!a.flip,
+                ...(a.rotation !== undefined && a.rotation !== null ? {
+                    rotation: a.rotation
+                } : {}),
                 color: int(a.color, 0)
             })),
             cues: (Array.isArray(s.cues) ? s.cues : []).filter(c => c && typeof c === 'object').map(c => ({
@@ -150,7 +183,71 @@ const Game = {
             steps: int(c.steps, 0),
             calm: typeof c.calm === 'number' ? c.calm + 'ms' : str(c.calm)
         }));
+        // the game's variables, its synthesizer and musics: kept only where the file has them (as given: the check says
+        // what is wrong), so a document of an older engine is saved as it was
+        if (Array.isArray(file.variables)) out.variables = file.variables.filter(v => v && typeof v.name === 'string').map(v => ({
+            name: v.name,
+            value: typeof v.value === 'number' ? v.value : 0
+        }));
+        if (file.synth !== undefined && file.synth !== null) out.synth = file.synth;
+        if (Array.isArray(file.music)) out.music = file.music.filter(n => typeof n === 'string');
+        if (file.musicTexts && typeof file.musicTexts === 'object' && !Array.isArray(file.musicTexts))
+            out.musicTexts = Object.fromEntries(Object.entries(file.musicTexts).filter(([n, t]) => typeof t === 'string'));
         return out;
+    },
+    // every music the pack numbers, as the packer gives them: those the scripts name (their animations are made first),
+    // the document's, then those its scenes name
+    musics(doc) {
+        let out = [];
+        for (const s of doc.sets || [])
+            for (const sc of s.animation && s.animation.scripts || [])
+                for (const l of sc.lines)
+                    if (l.op === 'music' && l.name !== undefined && l.name !== 'stop' && !out.includes(l.name)) out.push(l.name);
+        for (const n of doc.music || [])
+            if (!out.includes(n)) out.push(n);
+        for (const sc of doc.scenes || [])
+            if (typeof sc.music === 'string' && sc.music && sc.music !== 'stop' && !out.includes(sc.music)) out.push(sc.music);
+        return out;
+    },
+    // the colors of a ready palette by its name, as the packer takes it: a palette of the document first, else the
+    // engine's; null none
+    paletteColors(doc, name) {
+        const own = (doc.palettes || []).find(p => p.name === name);
+        if (own) return own.colors.map(c => c.slice(0, 3));
+        if (!(name in this.readyColors)) return null;
+        return this.readyColors[name].split(' ').map(h => [0, 2, 4].map(k => parseInt(h.slice(k, k + 2), 16)));
+    },
+    // CIELAB of an sRGB color (D65), as the packer's _lab
+    lab(rgb) {
+        const linear = c => (c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        const [r, g, b] = rgb.map(linear);
+        const xyz = [(0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047, 0.2126 * r + 0.7152 * g + 0.0722 * b, (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883];
+        const f = xyz.map(t => t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116);
+        return [116 * f[1] - 16, 500 * (f[0] - f[1]), 200 * (f[1] - f[2])];
+    },
+    // the index of the color of colors nearest to rgb as the eye sees it (CIE76, the first of equals), as the packer's
+    // nearest_color brings a picture's colors to a ready palette
+    nearestColor(colors, rgb) {
+        const want = this.lab(rgb);
+        let best = 0,
+            least = Infinity;
+        colors.forEach((c, i) => {
+            const l = this.lab(c);
+            const d = Math.hypot(l[0] - want[0], l[1] - want[1], l[2] - want[2]);
+            if (d < least) {
+                least = d;
+                best = i;
+            }
+        });
+        return best;
+    },
+    // what the packer says of a set's ready palette (add_set): a name of the document's palettes, else of the engine's
+    paletteProblem(doc, set) {
+        if (set.palette === undefined) return null;
+        const names = (doc.palettes || []).map(p => p.name);
+        if (typeof set.palette !== 'string' || !names.includes(set.palette) && !this.palettes.includes(set.palette))
+            return 'set ' + set.name + ': no palette ' + JSON.stringify(set.palette) + '; there are ' + [...names.sort(), ...this.palettes.filter(n => !names.includes(n))].join(', ');
+        return null;
     },
     // the events of the pack: those of every kind, as the packer gathers them
     events(doc) {
@@ -196,9 +293,13 @@ const Game = {
         if ((doc.chases || []).length) blobs.push('CHASE');
         if ((doc.timers || []).length) blobs.push('TIMERS');
         if ((doc.styles || []).length) blobs.push('STYLES');
-        if ((doc.sounds || []).length) blobs.push('SOUNDS');
+        // the samples of the sounds and the songs of the musics (taken as there: sounds/<name>.wav, music/<name>.mml)
+        const musics = this.musics(doc);
+        if ((doc.sounds || []).length || (doc.music || []).length) blobs.push('SOUNDS');
+        if ((doc.variables || []).length) blobs.push('VARIABLES');
         for (const b of blobs) put('BLOB_' + N(b), 'the blob ' + b);
         for (const k of ['SET', 'IMG', 'BLOB']) put(k + '_COUNT', 'how many ' + k.toLowerCase() + 's');
+        put('SET_COLOR_COUNT', 'the colors of all the sets');
         // the tiles of the tile sets and the layers their pieces go to (slots)
         for (const ts of doc.tilesets || []) {
             let slots = [];
@@ -210,6 +311,8 @@ const Game = {
             for (const sl of slots) put(N(ts.name) + '_SLOT_' + N(sl), 'the slot ' + sl + ' of ' + ts.name);
         }
         for (const c of doc.game || []) put('GAME_' + N(c.name), 'the number of the game ' + c.name);
+        for (const v of doc.variables || []) put('GAME_VAR_' + N(v.name), 'the variable of the game ' + v.name);
+        if ((doc.variables || []).length) put('GAME_VAR_COUNT', 'how many variables of the game');
         // the graph of scenes: its exits, entries, maps
         if (graph) {
             const names = Maps.names(doc);
@@ -224,6 +327,8 @@ const Game = {
                 for (const p of Object.keys(f.points || {})) put('POINT_' + N(p), 'the point ' + p);
         for (const s of doc.sounds || []) put('SOUND_' + N(s), 'the sound ' + s);
         if ((doc.sounds || []).length) put('SOUND_COUNT', 'how many sounds');
+        for (const m of musics) put('MUSIC_' + N(m), 'the music ' + m);
+        if (musics.length) put('MUSIC_COUNT', 'how many musics');
         for (const t of doc.timers || []) put('TIMER_' + N(t.name), 'the timer ' + t.name);
         for (const e of this.events(doc)) put('EVENT_' + N(e), 'the event ' + e);
         // the kinds' animations: their scripts, events (the pack's, as many as are known as the kind is made, kind by kind),
@@ -339,6 +444,10 @@ const Game = {
             seen.add(n);
             for (const p of sh.pictures)
                 if (!pictures.has(p.picture)) say('shows', n, 'show ' + n + ': no picture ' + p.picture + ' in the pack');
+            // a turn the packer takes: a multiple of 90 degrees
+            for (const [what, list] of [['picture', sh.pictures], ['actor', sh.actors]])
+                for (const x of list)
+                    if (x.rotation !== undefined && !Scene.isTurn(x.rotation)) say('shows', n, 'show ' + n + ': ' + what + ' ' + (x.picture || x.name) + ': rotation ' + JSON.stringify(x.rotation) + ': 0, 90, 180 or 270 (degrees clockwise)');
             let roles = new Set();
             for (const a of sh.actors) {
                 if (!a.name || a.name === 'end' || roles.has(a.name)) say('shows', n, 'show ' + n + ": a role '" + a.name + "' twice, empty or named end");
@@ -382,6 +491,37 @@ const Game = {
             if (c.calm && (!this.isTime(c.calm) || this.ms(c.calm) > 65535)) say('chases', c.kind, 'chase ' + c.kind + ': calm is a time up to 65535 ms (65s)');
             if (!Number.isInteger(c.hearing) || c.hearing < -32768 || c.hearing > 32767) say('chases', c.kind, 'chase ' + c.kind + ': hearing is a 16-bit number');
         }
+        // the game's variables, as add_variable refuses them: a name and a 32-bit number, once (alike in capitals: one
+        // name of the header), not a constant's, a number's of the game, a question's of a kind
+        const N = t => Anim.nameOf(String(t));
+        seen = new Map();
+        for (const v of doc.variables || []) {
+            const n = v.name;
+            if (!this.isIdent(n) || !Number.isInteger(v.value) || v.value < -(2 ** 31) || v.value >= 2 ** 31) say('variables', n, 'variable ' + n + ': a name and a whole 32-bit number, not ' + JSON.stringify(v.value));
+            else if (seen.has(N(n))) say('variables', n, 'variable ' + n + ': declared already (names alike in upper case are one name of the header)');
+            seen.set(N(n), n);
+            const constant = Object.keys(doc.constants || {}).find(c => N(c) === N(n));
+            if (constant !== undefined) say('variables', n, 'variable ' + n + ': ' + constant + ' is a constant (add_constants): give the variable another name');
+            const number = (doc.game || []).find(c => N(c.name) === N(n));
+            if (number) say('variables', n, 'game ' + number.name + ': ' + n + ' is a variable of the game (add_variable): give it another name');
+            for (const set of doc.sets)
+                for (const q of set.animation && set.animation.questions || [])
+                    if (N(q) === N(n)) say('variables', n, 'game ' + q + ': ' + n + ' is a variable of the game (game_var.' + n + '), not a question to it (the kind ' + set.name + ')');
+            if (N(n) === 'COUNT') say('variables', n, "variable " + n + ": the header names it GAME_VAR_COUNT, which counts them: rename it");
+        }
+        if ((doc.variables || []).length > this.varsMax) say('variables', null, this.varsMax + ' variables at most');
+        // the music: the synthesizer, the names (as scripts write them, once), their notes where the editor knows them
+        if (doc.synth !== undefined && !this.synths.includes(doc.synth)) say('music', null, 'synth ' + JSON.stringify(doc.synth) + ': chip, nes or fm');
+        seen = new Set();
+        for (const n of doc.music || []) {
+            if (n === 'stop' || n === 'volume' || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(n)) say('music', n, 'music ' + JSON.stringify(n) + ': a name as scripts write it (a letter or _, then letters, digits, _), not stop or volume');
+            else if (seen.has(n)) say('music', n, 'music ' + n + ' twice');
+            seen.add(n);
+            // the notes are music/<name>.mml beside the document: the editor read the folder (or keeps their texts)
+            if (doc.musicTexts && !(typeof doc.musicTexts[n] === 'string' && doc.musicTexts[n].trim()))
+                say('music', n, 'music ' + n + ': no notes (music/' + n + '.mml beside the document): a name only, it plays nothing', false);
+        }
+        if (this.musics(doc).length > 255) say('music', null, this.musics(doc).length + " musics, 255 at most (255 is a script's music stop)");
         return out;
     },
 };
@@ -529,6 +669,95 @@ const GameMain = {
                 value: 0
             });
         },
+        // the game's variables: made when the first is added (a document of an older engine has none)
+        addVariable() {
+            if (!this.sprites.variables) this.sprites.variables = [];
+            this.sprites.variables.push({
+                name: Game.freeName(this.sprites.variables, 'var'),
+                value: 0
+            });
+        },
+        // a variable renamed: the scripts that read and write it follow (game_var.<name>)
+        renameVariable(v, event) {
+            const name = event.target.value.trim();
+            if (!name) {
+                if (confirm(T('Remove variable ' + v.name + '? Scripts and dialogs that name it get errors', 'Удалить переменную ' + v.name + '? Скрипты и диалоги, которые её называют, получат ошибки'))) this.remove(this.sprites.variables, v);
+                else event.target.value = v.name;
+                return;
+            }
+            if (name === v.name) return;
+            if (!Game.isIdent(name) || this.sprites.variables.some(x => x.name === name)) {
+                this.message = T("'" + name + "' is no name or it is taken", "'" + name + "' — не имя или уже занято");
+                event.target.value = v.name;
+                return;
+            }
+            for (const set of this.sprites.sets)
+                if (set.animation) Anim.renameGameVar(set.animation, v.name, name);
+            v.name = name;
+        },
+        addMusic() {
+            if (!this.sprites.music) this.sprites.music = [];
+            const name = Game.freeName(this.sprites.music, 'theme');
+            this.sprites.music.push(name);
+            // its notes, a start: one channel of a scale
+            if (!this.sprites.musicTexts) this.sprites.musicTexts = {};
+            if (!(name in this.sprites.musicTexts)) this.sprites.musicTexts[name] = 'A t120 o4 l8 c d e f g a b > c4\n';
+            this.edit.gameMusic = name;
+        },
+        // a music renamed: its notes, the scripts that play it and the scenes that start it follow
+        renameMusic(name, event) {
+            const to = event.target.value.trim();
+            const list = this.sprites.music;
+            const i = list.indexOf(name);
+            if (to === name || i < 0) return;
+            if (!to) {
+                if (confirm(T('Remove music ' + name + '?', 'Удалить музыку ' + name + '?'))) {
+                    list.splice(i, 1);
+                    if (this.sprites.musicTexts) delete this.sprites.musicTexts[name];
+                } else event.target.value = name;
+                return;
+            }
+            if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(to) || to === 'stop' || to === 'volume' || list.includes(to)) {
+                this.message = T("'" + to + "' is no name of a music (letters, digits, _; not stop or volume) or it is taken", "'" + to + "' — не имя музыки (буквы, цифры, _; не stop и не volume) или уже занято");
+                event.target.value = name;
+                return;
+            }
+            list[i] = to;
+            const texts = this.sprites.musicTexts;
+            if (texts && name in texts) {
+                texts[to] = texts[name];
+                delete texts[name];
+            }
+            for (const set of this.sprites.sets)
+                if (set.animation) Anim.renameMusic(set.animation, name, to);
+            for (const sc of this.sprites.scenes)
+                if (sc.music === name) sc.music = to;
+            if (this.edit.gameMusic === name) this.edit.gameMusic = to;
+        },
+        musicLines(name) {
+            return this.musicText(name).replace(/\n$/, '').split('\n').length;
+        },
+        musicText(name) {
+            return this.sprites.musicTexts && this.sprites.musicTexts[name] || '';
+        },
+        setMusicText(name, text) {
+            if (!this.sprites.musicTexts) this.sprites.musicTexts = {};
+            this.sprites.musicTexts[name] = text;
+        },
+        setSynth(value) {
+            // fm is what the engine takes when the document says none: an older document stays without the field
+            if (value === 'fm' && this.sprites.synth === undefined) return;
+            this.sprites.synth = value;
+        },
+        // the turn of a show's picture or actor: degrees clockwise; 0 is not written
+        turnOf(x) {
+            return Scene.turnsOf(x.rotation) * 90;
+        },
+        setTurn(x, event) {
+            const v = parseInt(event.target.value, 10);
+            if (v) x.rotation = v;
+            else delete x.rotation;
+        },
         addTimer() {
             this.sprites.timers.push({
                 name: Game.freeName(this.sprites.timers, 'timer'),
@@ -669,6 +898,43 @@ const GameMain = {
                 <div v-if="!Object.keys(sprites.constants).length" class="anim-empty">{{T('No constants: «+ constant».', 'Констант нет: «+ константа».')}}</div>
             </template>
 
+            <template v-if="part === 'variables'">
+                <div class="view-toolbar"><button class="btn btn-sm btn-outline-primary" @click="addVariable" :title="T('A new variable of the game; the order is its number', 'Новая переменная игры; порядок — её номер')">{{T('+ variable', '+ переменная')}}</button>
+                    <span class="help-text">{{T('add_variable(name, value): scripts read game_var.NAME and write it (set, add game_var.NAME); dialogs read it in conditions, edit it (control SLIDER game_var.NAME), show it ({game_var.NAME}); the header gives PREFIX_GAME_VAR_NAME', 'add_variable(имя, значение): скрипты читают game_var.ИМЯ и пишут его (set, add game_var.ИМЯ); диалоги читают в условиях, меняют (control SLIDER game_var.ИМЯ), показывают ({game_var.ИМЯ}); заголовок даёт PREFIX_GAME_VAR_ИМЯ')}}</span></div>
+                <table class="table table-sm game-table"><thead><tr><th>N</th><th>{{T('name', 'имя')}}</th><th>{{T('value', 'значение')}}</th><th></th></tr></thead><tbody>
+                    <tr v-for="(v, i) in sprites.variables || []" :key="i">
+                        <td>{{i}}</td>
+                        <td><input :value="v.name" @change="renameVariable(v, $event)" :title="T('The name: letters, digits, _. A rename changes it in the scripts too. Erase it to remove the variable', 'Имя: буквы, цифры, _. Переименование меняет его и в скриптах. Сотрите — удалится')"></td>
+                        <td><input class="num" :value="v.value" @change="setInt(v, 'value', $event, -(2 ** 31), 2 ** 31 - 1)" :title="T('The value it begins with: a whole number, 32 bits (the blob VARIABLES)', 'Значение в начале: целое число, 32 бита (блоб VARIABLES)')"></td>
+                        <td><button @click="move(sprites.variables, v, -1)" :title="T('Earlier (a smaller number)', 'Раньше (номер меньше)')">↑</button><button @click="move(sprites.variables, v, 1)" :title="T('Later', 'Позже')">↓</button>
+                            <button class="btn btn-sm btn-remove" @click="remove(sprites.variables, v)" :title="T('Remove: scripts and dialogs that name it get errors', 'Удалить: скрипты и диалоги, которые её называют, получат ошибки')">×</button></td>
+                    </tr>
+                </tbody></table>
+                <div v-if="!(sprites.variables || []).length" class="anim-empty">{{T('No variables: «+ variable».', 'Переменных нет: «+ переменная».')}}</div>
+            </template>
+
+            <template v-if="part === 'music'">
+                <div class="view-toolbar">
+                    <label :title="T('The synthesizer the musics play on, unless a song says its own (#synth): fm — after the OPL2 (the default), chip — square, triangle, noise, nes — after the 2A03. The firmware carries those dgx_ge_synths(...) names', 'Синтезатор, на котором играет музыка, если песня не называет свой (#synth): fm — по образцу OPL2 (по умолчанию), chip — меандр, треугольник, шум, nes — по образцу 2A03. Прошивка несёт те, что названы в dgx_ge_synths(...)')">synth
+                        <select :value="sprites.synth === undefined ? 'fm' : sprites.synth" @change="setSynth($event.target.value)"><option v-for="n in Game.synths" :value="n">{{n}}</option></select></label>
+                    <button class="btn btn-sm btn-outline-primary" @click="addMusic" :title="T('A new music with a few notes to begin with', 'Новая музыка с несколькими нотами для начала')">{{T('+ music', '+ музыка')}}</button>
+                    <span class="help-text">{{T('add_music(name, mml): music NAME [500ms] in scripts, a scene’s music; the notes are music/NAME.mml beside the document (the folder of the project gets them)', 'add_music(имя, mml): music ИМЯ [500ms] в скриптах, музыка сцены; ноты — music/ИМЯ.mml рядом с документом (папка проекта получает их)')}}</span>
+                </div>
+                <table class="table table-sm game-table"><thead><tr><th>N</th><th>{{T('name', 'имя')}}</th><th>{{T('notes', 'ноты')}}</th><th></th></tr></thead><tbody>
+                    <tr v-for="(m, i) in sprites.music || []" :key="i" :class="{selected: m === edit.gameMusic}" @click="edit.gameMusic = m">
+                        <td>{{i}}</td>
+                        <td><input :value="m" @change="renameMusic(m, $event)" :title="T('The name of the music: PREFIX_MUSIC_NAME; scripts and scenes follow a rename. Erase it to remove the music', 'Имя музыки: PREFIX_MUSIC_ИМЯ; скрипты и сцены следуют за переименованием. Сотрите — удалится')"></td>
+                        <td><span class="help-text">{{musicText(m) ? T(musicLines(m) + (musicLines(m) === 1 ? ' line' : ' lines'), 'строк: ' + musicLines(m)) : sprites.musicTexts ? T('none: a name only', 'нет: только имя') : T('in music/' + m + '.mml', 'в music/' + m + '.mml')}}</span></td>
+                        <td><button @click.stop="move(sprites.music, m, -1)" :title="T('Earlier (a smaller number)', 'Раньше (номер меньше)')">↑</button><button @click.stop="move(sprites.music, m, 1)" :title="T('Later', 'Позже')">↓</button></td>
+                    </tr>
+                </tbody></table>
+                <div v-if="!(sprites.music || []).length" class="anim-empty">{{T('No music: «+ music».', 'Музыки нет: «+ музыка».')}}</div>
+                <div v-if="(sprites.music || []).includes(edit.gameMusic)" class="game-music-text">
+                    <div class="help-text">{{T('The notes of ' + edit.gameMusic + ' in MML (dgx_ge_music.py): channels A–H, instruments @n = square 25% | triangle | noise …, notes, lengths, ties, [ ]n repeats, $ the loop point; #synth, #set, #tail. Saved as music/' + edit.gameMusic + '.mml in the folder of the project; the packer checks them', 'Ноты ' + edit.gameMusic + ' на MML (dgx_ge_music.py): каналы A–H, инструменты @n = square 25% | triangle | noise …, ноты, длительности, лиги, повторы [ ]n, $ — точка возврата; #synth, #set, #tail. Сохраняются как music/' + edit.gameMusic + '.mml в папке проекта; проверяет их упаковщик')}}</div>
+                    <textarea class="form-control dialog-text" rows="14" spellcheck="false" :value="musicText(edit.gameMusic)" @change="setMusicText(edit.gameMusic, $event.target.value)"></textarea>
+                </div>
+            </template>
+
             <template v-if="part === 'timers'">
                 <div class="view-toolbar"><button class="btn btn-sm btn-outline-primary" @click="addTimer" :title="T('A new timer', 'Новый таймер')">{{T('+ timer', '+ таймер')}}</button>
                     <span class="help-text">{{T('timer(NAME) in expressions reads its milliseconds; the command timer start|stop|hold|go NAME drives it', 'timer(ИМЯ) в выражениях читает его миллисекунды; команда timer start|stop|hold|go ИМЯ управляет им')}}</span></div>
@@ -690,7 +956,7 @@ const GameMain = {
 
             <template v-if="part === 'sounds'">
                 <div class="view-toolbar"><button class="btn btn-sm btn-outline-primary" @click="addSound" :title="T('A new sound', 'Новый звук')">{{T('+ sound', '+ звук')}}</button>
-                    <span class="help-text">{{T('the number of a sound is its place in the list (from 0): the command sound N of scripts; no data of sounds yet, only names', 'номер звука — его место в списке (с 0): команда sound N скриптов; данных звука пока нет, только имена')}}</span></div>
+                    <span class="help-text">{{T('the number of a sound is its place in the list (from 0): the command sound N of scripts; its samples are sounds/NAME.wav beside the document (the packer takes them)', 'номер звука — его место в списке (с 0): команда sound N скриптов; его сэмплы — sounds/ИМЯ.wav рядом с документом (их берёт упаковщик)')}}</span></div>
                 <table class="table table-sm game-table"><thead><tr><th>N</th><th>{{T('name', 'имя')}}</th><th></th></tr></thead><tbody>
                     <tr v-for="(s, i) in sprites.sounds" :key="i">
                         <td>{{i}}</td>
@@ -713,19 +979,20 @@ const GameMain = {
                 </div>
                 <template v-if="show">
                     <h6 :title="T('The background of the show: pictures of the pack in their places (by the base point), in layers', 'Фон показа: картинки пакета на своих местах (базовой точкой), в слоях')">{{T('Pictures', 'Картинки')}} <button class="btn btn-sm btn-outline-secondary" @click="addShowPicture">{{T('+ picture', '+ картинка')}}</button></h6>
-                    <table class="table table-sm game-table"><thead><tr><th>{{T('picture', 'картинка')}}</th><th>x</th><th>y</th><th>{{T('layer', 'слой')}}</th><th>{{T('flip', 'отражение')}}</th><th>{{T('color', 'цвет')}}</th><th></th></tr></thead><tbody>
+                    <table class="table table-sm game-table"><thead><tr><th>{{T('picture', 'картинка')}}</th><th>x</th><th>y</th><th>{{T('layer', 'слой')}}</th><th>{{T('flip', 'отражение')}}</th><th :title="T('Turned clockwise about the base point, after the mirror', 'Повёрнута по часовой вокруг базовой точки, после отражения')">{{T('rotation', 'поворот')}}</th><th>{{T('color', 'цвет')}}</th><th></th></tr></thead><tbody>
                         <tr v-for="p in show.pictures" :key="show.pictures.indexOf(p)">
                             <td><input :value="p.picture" list="game-pictures" size="18" @change="p.picture = $event.target.value.trim()" :title="T('The name of the picture in the pack (KIND_FILE or the frame’s own name)', 'Имя картинки в пакете (ВИД_ФАЙЛ или своё имя кадра)')"></td>
                             <td><input class="num" :value="p.x" @change="setInt(p, 'x', $event, -32768, 32767)"></td>
                             <td><input class="num" :value="p.y" @change="setInt(p, 'y', $event, -32768, 32767)"></td>
                             <td><input class="num" :value="p.layer" @change="setInt(p, 'layer', $event, 0, 7)" :title="T('The layer of the show’s scene, 0…7', 'Слой сцены показа, 0…7')"></td>
                             <td><input type="checkbox" v-model="p.flip" :title="T('Mirrored', 'Отражена')"></td>
+                            <td><select :value="turnOf(p)" @change="setTurn(p, $event)"><option v-for="d in [0, 90, 180, 270]" :value="d">{{d}}°</option></select></td>
                             <td><input class="num" :value="p.color" @change="setInt(p, 'color', $event, 0, 255)" :title="T('The color of a one-bit picture: the number of a color of its set', 'Цвет однобитной картинки: номер цвета её набора')"></td>
                             <td><button class="btn btn-sm btn-remove" @click="remove(show.pictures, p)">×</button></td>
                         </tr>
                     </tbody></table>
                     <h6 :title="T('The actors of the show: a role, a kind (an animation of the pack), the script it begins with, a place', 'Актёры показа: роль, вид (анимация пакета), скрипт, с которого он начинает, место')">{{T('Actors', 'Актёры')}} <button class="btn btn-sm btn-outline-secondary" @click="addShowActor">{{T('+ actor', '+ актёр')}}</button></h6>
-                    <table class="table table-sm game-table"><thead><tr><th>{{T('role', 'роль')}}</th><th>{{T('kind', 'вид')}}</th><th>{{T('script', 'скрипт')}}</th><th>x</th><th>y</th><th>{{T('layer', 'слой')}}</th><th>{{T('flip', 'отражение')}}</th><th>{{T('color', 'цвет')}}</th><th></th></tr></thead><tbody>
+                    <table class="table table-sm game-table"><thead><tr><th>{{T('role', 'роль')}}</th><th>{{T('kind', 'вид')}}</th><th>{{T('script', 'скрипт')}}</th><th>x</th><th>y</th><th>{{T('layer', 'слой')}}</th><th>{{T('flip', 'отражение')}}</th><th :title="T('Turned clockwise about the base point, after the mirror: the actor’s axes turn with it', 'Повёрнут по часовой вокруг базовой точки, после отражения: оси актёра поворачиваются с ним')">{{T('rotation', 'поворот')}}</th><th>{{T('color', 'цвет')}}</th><th></th></tr></thead><tbody>
                         <tr v-for="a in show.actors" :key="show.actors.indexOf(a)">
                             <td><input :value="a.name" size="8" @change="a.name = $event.target.value.trim()" :title="T('The role: cues call the actor by it; end is not allowed', 'Роль: так реплики называют актёра; end — нельзя')"></td>
                             <td><select v-model="a.kind" :title="T('A kind with an animation', 'Вид с анимацией')"><option v-for="k in kinds" :value="k.name">{{k.name}}</option></select></td>
@@ -734,6 +1001,7 @@ const GameMain = {
                             <td><input class="num" :value="a.y" @change="setInt(a, 'y', $event, -32768, 32767)"></td>
                             <td><input class="num" :value="a.layer" @change="setInt(a, 'layer', $event, 0, 7)"></td>
                             <td><input type="checkbox" v-model="a.flip"></td>
+                            <td><select :value="turnOf(a)" @change="setTurn(a, $event)"><option v-for="d in [0, 90, 180, 270]" :value="d">{{d}}°</option></select></td>
                             <td><input class="num" :value="a.color" @change="setInt(a, 'color', $event, 0, 255)" :title="T('The color of the actor’s one-bit pictures', 'Цвет однобитных картинок актёра')"></td>
                             <td><button class="btn btn-sm btn-remove" @click="remove(show.actors, a)">×</button></td>
                         </tr>

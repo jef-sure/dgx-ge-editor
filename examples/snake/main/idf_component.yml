@@ -1,7 +1,7 @@
 ## IDF Component Manager Manifest File: the engine, and what the boards need beyond it
 dependencies:
   jef-sure/dgx-ge:
-    version: ">=0.2.0"
+    version: "^0.4.0"
     # the folder of the engine: $DGX_GE (CMakeLists.txt sets it when it is not); a game of its own may take the
     # registry's instead, its version without this line
     override_path: "$DGX_GE"

@@ -40,3 +40,7 @@ if(GAME_BOARD STREQUAL "cyd")
 endif()
 # the params an actor keeps, as many as the pack's animations need
 dgx_ge_params_of_pack(assets/snake_pack.h)
+# the events at once an actor's own say may give in one step: the engine's default, said aloud
+dgx_ge_now_events(4)
+# the synthesizer of music the build carries: the one its songs are of
+dgx_ge_synths(fm)

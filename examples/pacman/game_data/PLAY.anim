@@ -5,7 +5,7 @@
 # (the ghosts go), SIG_HIDE the ghosts and the fruit go (the level eaten), SIG_WHITE and SIG_BLUE the maze flashing,
 # SIG_FRUIT the fruit comes, SIG_RELEASE the next ghost out of the house (no dot eaten for a while: the timer idle),
 # SIG_OVER the game is over, SIG_TITLE the title again.
-event start, restart, dot, energizer, ghost, fruit, caught, lost, idle
+event start, restart, dot, energizer, ghost, fruit, caught, lost, idle, calm
 
 param phase PH_TITLE
 param score 0
@@ -49,9 +49,11 @@ script ate_dot
     add score DOT_SCORE
     goto counted
 
-script ate_energizer
+script ate_energizer  # the ghosts blue: their music while it lasts
     add score ENERGIZER_SCORE
     set bonus GHOST_SCORE
+    music fright 100ms
+    timer start blue
     goto counted
 
 script counted
@@ -83,11 +85,17 @@ script ate_ghost  # 200, 400, 800, 1600 in one fright: all stands a while, its p
     set bonus bonus * 2
     set phase PH_ATE
     timer hold idle
+    timer hold blue
     signal SIG_NUMBERS
     frame none EAT_GHOST_MS
     set phase PH_PLAYING
     timer go idle
+    timer go blue
     goto scored
+
+script calm  # the fright over: the siren again
+    music siren 300ms
+    goto playing
 
 script ate_fruit
     add score FRUIT_SCORE
@@ -98,9 +106,11 @@ script release  # no dot eaten for so long: the next ghost out, and the time ane
     timer start idle
     goto playing
 
-script caught  # a ghost has him: all stands a second, then he dies (the ghosts go)
+script caught  # a ghost has him: all stands a second, the music goes, then he dies (the ghosts go)
     set phase PH_CAUGHT
     timer stop idle
+    timer stop blue
+    music stop 300ms
     frame none 1000ms
     set phase PH_DYING
     signal SIG_DIE
@@ -113,9 +123,11 @@ script life_lost  # he is gone (the game says): again, or the game is over
     goto ready if lives > 0
     goto game_over
 
-script cleared  # the level eaten: all stands, the maze flashes, the next level
+script cleared  # the level eaten: all stands, the music goes, the maze flashes, the next level
     set phase PH_CLEARED
     timer stop idle
+    timer stop blue
+    music stop 300ms
     signal SIG_NUMBERS
     frame none 1000ms
     signal SIG_HIDE
@@ -149,11 +161,12 @@ script over
     signal SIG_TITLE
     goto title
 
-group any: title, new_game, level, ready, playing, ate_dot, ate_energizer, counted, fruit_comes, scored, bonus_life, ate_ghost, ate_fruit, release, caught, life_lost, cleared, game_over, over
+group any: title, new_game, level, ready, playing, ate_dot, ate_energizer, counted, fruit_comes, scored, bonus_life, ate_ghost, calm, ate_fruit, release, caught, life_lost, cleared, game_over, over
 
 on start: title -> new_game now
 on start: over -> new_game now
 on restart: any -> new_game now
+on calm: playing -> calm now
 on dot: playing -> ate_dot now
 on energizer: playing -> ate_energizer now
 on ghost: playing -> ate_ghost now

@@ -1,0 +1,5 @@
+# The snake's clock: a step every game_var.speed ms (PLAY makes it shorter as the snake eats); the game moves it a cell.
+script ticking
+    frame none (game_var.speed)
+    signal SIG_STEP
+    goto ticking

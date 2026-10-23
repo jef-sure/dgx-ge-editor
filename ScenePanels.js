@@ -252,6 +252,14 @@ const SceneProps = {
             if (v === null) event.target.value = obj[key];
             else obj[key] = v;
         },
+        // the fade of the scene's music, ms; empty: 500, the packer's own, not written
+        setFade(event) {
+            if (!event.target.value.trim()) {
+                delete this.scene.musicFade;
+                return;
+            }
+            this.setInt(this.scene, 'musicFade', event, 0, 65535);
+        },
         renameScene(event) {
             const name = event.target.value.trim();
             if (!name || this.sprites.scenes.some(s => s.name === name)) {
@@ -794,6 +802,12 @@ const SceneProps = {
                 <label class="prop">{{T('height', 'высота')}} <input class="num" :value="scene.height" @change="setInt(scene, 'height', $event, 1, 32767)" :title="T('The height of the scene, pixels', 'Высота сцены, пикселей')"></label>
                 <button class="btn btn-sm btn-outline-secondary" @click="sceneToScreen" :title="T('The scene as big as the screen: a room', 'Сцена размером с экран: комната')">= {{T('screen', 'экран')}}</button>
                 <label class="prop">{{T('background', 'фон')}} <input type="color" v-model="scene.background" :title="T('The background color of the scene (in the editor; in the game, the paper of the frame)', 'Цвет фона сцены (в редакторе; в игре — бумага кадра)')"></label>
+                <label class="prop" :title="T('The music the game plays as it enters the scene (Game → Music); stop — silence; none — what plays goes on', 'Музыка, которую игра включает, когда входит в сцену (Игра → Музыка); stop — тишина; нет — что играет, то и играет')">{{T('music', 'музыка')}}
+                    <select :value="scene.music === undefined ? '' : scene.music" @change="$event.target.value ? scene.music = $event.target.value : delete scene.music">
+                        <option value="">— {{T('goes on', 'как было')}}</option><option value="stop">stop</option>
+                        <option v-for="m in (sprites.music || []).concat(scene.music && scene.music !== 'stop' && !(sprites.music || []).includes(scene.music) ? [scene.music] : [])" :value="m">{{m}}</option></select></label>
+                <label v-if="scene.music !== undefined" class="prop" :title="T('How long the music before fades out and this one comes in, ms (musicFade); empty — 500', 'За сколько мс прежняя музыка затихает и входит эта (musicFade); пусто — 500')">{{T('fade', 'переход')}}
+                    <input class="num" :value="scene.musicFade === undefined ? '' : scene.musicFade" placeholder="500" @change="setFade($event)"> ms</label>
                 <h6 :title="T('The screen size of the device: one for all scenes', 'Размер экрана устройства: общий для всех сцен')">{{T('Screen', 'Экран')}}</h6>
                 <label class="prop">{{T('width', 'ширина')}} <input class="num" :value="sprites.screen.width" @change="setInt(sprites.screen, 'width', $event, 1, 4096)"></label>
                 <label class="prop">{{T('height', 'высота')}} <input class="num" :value="sprites.screen.height" @change="setInt(sprites.screen, 'height', $event, 1, 4096)"></label>
@@ -854,6 +868,9 @@ const SceneProps = {
                     <label class="prop">{{T('height', 'высота')}} <input class="num" :value="object.height" @change="setInt(object, 'height', $event, 1, 32767)"></label>
                 </template>
                 <label v-if="object.type !== 'zone'" class="prop" :title="T('Mirrored: looks the other way', 'Зеркально: смотрит в другую сторону')"><input type="checkbox" v-model="object.flip"> {{T('flip', 'зеркально')}}</label>
+                <label v-if="object.type === 'picture' || object.type === 'actor'" class="prop" :title="T('Turned clockwise about the base point, after the mirror (rotation); an actor turned so carries its axes with it: forward, down, its velocity, its points', 'Повёрнут по часовой вокруг базовой точки, после отражения (rotation); актёр, повёрнутый так, несёт с собой свои оси: вперёд, вниз, скорость, точки')">{{T('rotation', 'поворот')}}
+                    <select :value="Scene.isTurn(object.rotation) ? Scene.turnsOf(object.rotation) * 90 : 0" @change="+$event.target.value ? object.rotation = +$event.target.value : delete object.rotation">
+                        <option v-for="d in [0, 90, 180, 270]" :value="d">{{d}}°</option></select></label>
                 <template v-if="object.type === 'entry'">
                     <label class="prop" :title="T('The event to whoever came by this entry (falls, comes out of a door); empty — none', 'Событие тому, кто пришёл этим входом (падает, выходит из двери); пусто — нет')">arrive
                         <input :value="object.arrive" list="scene-events" @change="object.arrive = $event.target.value.trim()"></label>

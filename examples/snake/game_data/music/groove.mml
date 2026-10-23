@@ -1,0 +1,6 @@
+; the snake's groove: a bass and a tune on FM, round and round
+#synth fm
+#set msx-music
+A t132 @synth-bass o2 l8 v12 $ [c c >c< c a- a- >a-< a- | b- b- >b-< b- g g >g< g]2 f f >f< f g g >g< g
+B @vibraphone o5 l8 v10 $ e g >c< g e4 r4 e- g >c< g e-4 r4 d f a- f d4 r4 d g b g d4 r4
+B e g >c< g e4 r4 e- g >c< g e-4 r4 f a- >c< a- f4 r4 g b >d< b g4 r4

@@ -13,7 +13,6 @@ param phase PH_TITLE
 param score 0
 param lines 0
 param level 1
-param fall 800  # ms a row falls at this level
 param given 0  # what the game gives with its event: the lines taken, the cells dropped
 
 script idle
@@ -25,7 +24,7 @@ script new_game
     set score 0
     set lines 0
     set level 1
-    set fall fall_ms[0]
+    set game_var.fall fall_ms[0]
     signal SIG_NEW
     signal SIG_NUMBERS
     goto idle
@@ -68,7 +67,7 @@ script counted
     signal SIG_NUMBERS
     goto idle if lines < level * LINES_PER_LEVEL or level >= TOP_LEVEL
     add level 1
-    set fall fall_ms[level - 1]
+    set game_var.fall fall_ms[level - 1]
     sound SND_LEVEL_UP
     signal SIG_NUMBERS
     goto idle
@@ -89,6 +88,7 @@ script turning
 script over
     set phase PH_OVER
     timer stop lock
+    music stop 600ms
     sound SND_GAME_OVER
     signal SIG_OVER
     goto idle

@@ -29,6 +29,7 @@
 #include "dgx_ge_dialog.h"
 #include "dgx_ge_frame.h"
 #include "dgx_ge_game.h"
+#include "dgx_ge_glue.h"
 #include "dgx_ge_graph.h"
 #include "dgx_ge_input.h"
 #include "dgx_ge_label.h"
@@ -36,6 +37,7 @@
 #include "dgx_ge_mask.h"
 #include "dgx_ge_mixer.h"
 #include "dgx_ge_pack.h"
+#include "dgx_ge_save.h"
 #include "dgx_ge_pockets.h"
 #include "dgx_ge_scene.h"
 #include "dgx_ge_show.h"
@@ -46,8 +48,6 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "fonts/TerminusTTFMedium12.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "nvs_flash.h"
 #ifdef GAME_CYD
 #include "cyd_touch.h"
@@ -71,9 +71,11 @@ typedef struct {
 } ghost_t;
 
 static dgx_ge_pack_t      pack;
-static uint8_t            maps[PACMAN_SET_COUNT][16];
-static const uint8_t     *map_of[PACMAN_SET_COUNT];
-static dgx_image_t        images[PACMAN_IMG_COUNT];
+static uint8_t            maps[PACMAN_SET_COLOR_COUNT]; /* the colors of the sets: indices of the frame, a byte a color */
+static const uint8_t     *map_of[PACMAN_SET_COUNT];     /* where the map of each set begins in maps */
+static const uint8_t     *maze_map, *white_map;         /* the maze's map, and the palette MAZE_WHITE's it flashes in */
+static dgx_image_t        pictures[16];                 /* what the actors of this frame show */
+static int                pictured;
 static dgx_ge_frame_t    *frame;
 static dgx_ge_scene_t    *scene;
 static dgx_ge_kinds_t     kinds;
@@ -106,6 +108,8 @@ static dgx_font_t        *fonts[PACMAN_FONT_COUNT];
 static dgx_ge_sounds_t    sounds;
 static dgx_ge_mixer_t     mixer;
 static dgx_ge_sound_t     sound; /* the mixer as the game's output; none: nothing plays */
+static dgx_ge_vars_t      vars;  /* the game's variables: the player's settings, the volumes of the music and the effects */
+static int32_t            heard[2] = {-1, -1};
 
 /* the places of the scene the game takes from the editor's, points of the scene: the door of the house, its middle */
 static int           door_x, door_y, inside_y;
@@ -174,16 +178,15 @@ static bool open(const dgx_ge_walker_t *w, int col, int row, int side, void *ctx
     return true;
 }
 
-/* The set of the scene laid anew (the maze white as a level is cleared, the dots as they are), drawn anew where it changed: the places, or all (n < 0). */
-static void lay_set(const dgx_ge_rect_t *places, int n)
+/* The set of the scene laid anew (its paper, the maze white as a level is cleared, the dots as they are); all of it drawn anew, or only where cells changed (marked as they did). */
+static void lay_set(bool all)
 {
-    map_of[PACMAN_SET_MAZE] = maps[white ? PACMAN_SET_MAZE_WHITE : PACMAN_SET_MAZE];
+    map_of[PACMAN_SET_MAZE] = white ? white_map : maze_map;
     dgx_ge_scene_set_begin(scene);
     dgx_ge_layout_scene(&layout, scene, &pack, map_of, layout_images);
     dgx_ge_grid_add(&grid, scene);
     dgx_ge_scene_set_end(scene);
-    if (n < 0) dgx_ge_scene_invalidate(scene, 0, dgx_ge_rect(0, 0, dgx_ge_frame_width(frame), dgx_ge_frame_height(frame)));
-    for (int i = 0; i < n; ++i) dgx_ge_scene_invalidate(scene, 0, places[i]);
+    if (all) dgx_ge_scene_invalidate(scene, 0, dgx_ge_rect(0, 0, dgx_ge_frame_width(frame), dgx_ge_frame_height(frame)));
     relay_all = false;
 }
 
@@ -336,8 +339,9 @@ static void pac_arrive(dgx_ge_walker_t *w, uint32_t at_ms, void *ctx)
     const int i = w->row * cols + w->col, c = cells[i];
     if (c != PACMAN_MAZE_TILE_DOT && c != PACMAN_MAZE_TILE_ENERGIZER) return;
     const bool energizer = c == PACMAN_MAZE_TILE_ENERGIZER;
-    cells[i]             = 0;
-    if (!relay_all && !dgx_ge_grid_relay(&grid, scene, w->col, w->row, true)) relay_all = true;
+    if (relay_all) dgx_ge_scene_invalidate(scene, 0, dgx_ge_grid_change_box(&grid, w->col, w->row)); /* the set is laid anew: its place marked */
+    cells[i] = 0;
+    if (!relay_all && !dgx_ge_grid_relay(&grid, scene, w->col, w->row, true)) relay_all = true; /* its place marked all the same */
     --dots_left;
     w->at_ms += (uint32_t)number(energizer ? PACMAN_GAME_ENERGIZER_PAUSE_MS : PACMAN_GAME_DOT_PAUSE_MS, 0); /* he stands a moment eating it */
     if (energizer) frighten(at_ms);
@@ -415,14 +419,53 @@ static void start_title(void)
     }
 }
 
+/* The player's settings, the game's variables the pause dialog's sliders edit (0..10), as the mixer's volumes of its buses. */
+static void volumes(void)
+{
+    const int32_t m = dgx_ge_var(&vars, PACMAN_GAME_VAR_MUSIC_VOLUME), e = dgx_ge_var(&vars, PACMAN_GAME_VAR_EFFECTS_VOLUME);
+    if (!sound.play || (m == heard[0] && e == heard[1])) return;
+    heard[0] = m, heard[1] = e;
+    dgx_ge_mixer_music_volume(&mixer, (uint8_t)((m < 0 ? 0 : m > 10 ? 10 : m) * 255 / 10));
+    dgx_ge_mixer_effects_volume(&mixer, (uint8_t)((e < 0 ? 0 : e > 10 ? 10 : e) * 255 / 10));
+}
+
+/*
+ * The settings over a restart: the variables as the engine saves them (a chunk VARS), in NVS (on the computer: a file,
+ * the engine's boards/host/host_nvs.c). A save names the pack it was made of: a pack made anew begins with its own.
+ */
+static void settings_load(void)
+{
+    uint8_t      buf[128];
+    size_t       n = sizeof buf;
+    nvs_handle_t h;
+    if (nvs_flash_init() != ESP_OK || nvs_open("pacman", NVS_READONLY, &h) != ESP_OK) return;
+    if (nvs_get_blob(h, "settings", buf, &n) == ESP_OK) {
+        dgx_ge_load_t l;
+        uint32_t      saved_ms;
+        if (dgx_ge_load_open(&l, buf, n, dgx_ge_pack_id(&pack), &saved_ms)) dgx_ge_vars_load(&vars, &l);
+    }
+    nvs_close(h);
+}
+
+static void settings_keep(void)
+{
+    uint8_t       buf[128];
+    dgx_ge_save_t s;
+    nvs_handle_t  h;
+    dgx_ge_save_begin(&s, buf, sizeof buf, dgx_ge_pack_id(&pack), 0);
+    dgx_ge_vars_save(&vars, &s);
+    const size_t n = dgx_ge_save_end(&s);
+    if (!n || nvs_open("pacman", NVS_READWRITE, &h) != ESP_OK) return;
+    nvs_set_blob(h, "settings", buf, n);
+    nvs_commit(h);
+    nvs_close(h);
+}
+
 /* What the actors say (and the dialog's tell to PLAY): their sounds, PLAY's timer, the modes, their signals. */
 static void say(dgx_ge_actor_t *actor, dgx_ge_anim_say_t what, uint8_t value, uint32_t at_ms, void *ctx)
 {
     (void)ctx;
-    if (what == DGX_GE_ANIM_SOUND) {
-        dgx_ge_sound_play(&sound, value);
-        return;
-    }
+    if (dgx_ge_anim_said_sound(&sound, what, value)) return; /* a sound, a music, its level */
     if (actor == &play && what >= DGX_GE_ANIM_TIMER_START && what <= DGX_GE_ANIM_TIMER_GO) {
         dgx_ge_timers_said(&timers, what, value, DGX_GE_OWNER_ACTOR, 0, 0, 0, at_ms);
         return;
@@ -443,9 +486,12 @@ static void say(dgx_ge_actor_t *actor, dgx_ge_anim_say_t what, uint8_t value, ui
         if (title.cast) dgx_ge_show_stop(&title);
         white = false;
         fill_dots();
-        lay_set(NULL, -1);
+        lay_set(true);
         break;
-    case PACMAN_SIG_PLACE: put_actors(maze_ms); break;
+    case PACMAN_SIG_PLACE:
+        put_actors(maze_ms);
+        dgx_ge_layout_music(&layout, &sound); /* the maze's music: the siren, going on if it plays */
+        break;
     case PACMAN_SIG_DIE:
         tell(&pac, PACMAN_EVENT_DIE, maze_ms);
         hide_all(maze_ms);
@@ -454,7 +500,7 @@ static void say(dgx_ge_actor_t *actor, dgx_ge_anim_say_t what, uint8_t value, ui
     case PACMAN_SIG_WHITE:
     case PACMAN_SIG_BLUE:
         white = value == PACMAN_SIG_WHITE;
-        lay_set(NULL, -1);
+        lay_set(true);
         break;
     case PACMAN_SIG_FRUIT: tell(&fruit, PACMAN_EVENT_SHOW, maze_ms); break;
     case PACMAN_SIG_RELEASE: {
@@ -523,18 +569,13 @@ static void playing(uint32_t now)
 
 /* ---- the screen ---- */
 
-/* A picture of the pack as an actor of this frame: in the colors of a set (its own: set -1). */
-static void put(int image, int x, int y, int set, int layer)
-{
-    if (image < 0 || image >= PACMAN_IMG_COUNT) return;
-    const int     s  = set >= 0 ? set : dgx_ge_pack_image_set(&pack, image);
-    dgx_ge_item_t it = {.image = &images[image], .map = maps[s], .x = (int16_t)x, .y = (int16_t)y, .layer = (uint8_t)layer};
-    dgx_ge_scene_actor(scene, &it);
-}
-
+/* An actor as it is drawn, an actor of this frame: in the colors of a set (its picture's own: set -1). */
 static void put_actor(const dgx_ge_actor_t *actor, int set, int layer)
 {
-    put(actor->image, dgx_ge_actor_x(actor), dgx_ge_actor_y(actor), set, layer);
+    dgx_ge_item_t it = {.layer = (uint8_t)layer};
+    if (pictured >= (int)(sizeof pictures / sizeof pictures[0]) || !dgx_ge_item_actor(&it, actor, &pack, map_of, &pictures[pictured])) return;
+    if (set >= 0) it.map = map_of[set];
+    if (dgx_ge_scene_actor(scene, &it)) ++pictured;
 }
 
 /* A ghost's colors: Blinky's are its kind's own, the others' the palettes of the pack, by its param who. */
@@ -549,13 +590,17 @@ static void show_game(void)
 {
     const int layer = PACMAN_SCENE_MAZE_LAYER_ACTORS, text = PACMAN_SCENE_MAZE_LAYER_TEXT;
     const int ph    = phase();
+    pictured        = 0;
     for (int i = 0; i < GHOSTS; ++i)
         if (ph != PACMAN_PH_ATE || i != eaten_ghost) put_actor(&ghosts[i].actor, ghost_set(&ghosts[i]), layer);
     if (ph != PACMAN_PH_ATE) put_actor(&pac, -1, layer);
     put_actor(&fruit, -1, layer);
     /* the lives left, in their zone */
-    for (int k = 0; k + 1 < play.params[PACMAN_PLAY_PARAM_LIVES] && k < 5; ++k)
-        put(PACMAN_IMG_PAC_LEFT_1, lives_zone.x + 8 + k * 16, lives_zone.y + lives_zone.h / 2, -1, layer);
+    for (int k = 0; k + 1 < play.params[PACMAN_PLAY_PARAM_LIVES] && k < 5 && pictured < (int)(sizeof pictures / sizeof pictures[0]); ++k) {
+        dgx_ge_item_t it = {.x = (int16_t)(lives_zone.x + 8 + k * 16), .y = (int16_t)(lives_zone.y + lives_zone.h / 2), .layer = (uint8_t)layer};
+        it.flags = DGX_GE_BLIT_FLIP_X; /* facing left, as the arcade's */
+        if (dgx_ge_item_picture(&it, &pack, map_of, PACMAN_IMG_PAC_RIGHT_1, &pictures[pictured]) && dgx_ge_scene_actor(scene, &it)) ++pictured;
+    }
     put_actor(&play, -1, text); /* its word: READY!, GAME OVER */
     if (ph == PACMAN_PH_OVER) put_actor(&prompt, -1, text);
     if (points_until && (int32_t)(game_ms - points_until) >= 0) points_until = 0;
@@ -609,12 +654,14 @@ static void control(dgx_ge_input_t *input, uint32_t real)
     const bool tap    = touch.released && !steered && !touch.told;
     const bool go     = input->pressed & (DGX_GE_KEY_START | DGX_GE_KEY_A);
     if (paused) {
-        talk.ahead_ms = real - game_ms; /* the game stands, the talk goes on: what it tells lands at the game's moment */
-        if (input->pressed & DGX_GE_KEY_UP) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_PREV, real);
-        if (input->pressed & DGX_GE_KEY_DOWN) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_NEXT, real);
-        if (go) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_ACTIVATE, real);
-        if (input->pressed & (DGX_GE_KEY_B | DGX_GE_KEY_BACK)) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_BACK, real);
-        if (!steered || !(touch.down || touch.released)) dgx_ge_talk_view_pointer(&view, &talk, &input->pointer, real); /* not the finger that paused */
+        /* the talk goes by real time, what it tells lands at the game's moment (it stands) */
+        if (input->pressed & DGX_GE_KEY_UP) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_PREV, real, game_ms);
+        if (input->pressed & DGX_GE_KEY_DOWN) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_NEXT, real, game_ms);
+        if (go) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_ACTIVATE, real, game_ms);
+        if (input->pressed & DGX_GE_KEY_LEFT) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_LESS, real, game_ms);
+        if (input->pressed & DGX_GE_KEY_RIGHT) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_MORE, real, game_ms);
+        if (input->pressed & (DGX_GE_KEY_B | DGX_GE_KEY_BACK)) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_BACK, real, game_ms);
+        if (!steered || !(touch.down || touch.released)) dgx_ge_talk_view_pointer(&view, &talk, &input->pointer, real, game_ms); /* not the finger that paused */
         dgx_ge_input_spend(input, input->pressed); /* what the dialog took moves nobody */
         return;
     }
@@ -627,9 +674,9 @@ static void control(dgx_ge_input_t *input, uint32_t real)
     if ((input->pressed & (DGX_GE_KEY_START | DGX_GE_KEY_BACK)) || held) {
         steered = true; /* the finger that paused does not answer the dialog as it goes up */
         dgx_ge_actor_t *roles[] = {&play};
-        dgx_ge_cast_t   cast    = {.roles = roles, .game = &play};
-        dgx_ge_talk_start(&talk, &pause_dialog, &cast, PACMAN_STYLE_MENU, real, say, NULL);
-        talk.ahead_ms = real - game_ms;
+        dgx_ge_cast_t   cast    = {.roles = roles, .game = &play, .kinds = &kinds}; /* kinds: the sliders */
+        dgx_ge_talk_start(&talk, &pause_dialog, &cast, PACMAN_STYLE_MENU, real, game_ms, say, NULL);
+        if (sound.play) dgx_ge_mixer_music_level(&mixer, 40, 300); /* the music lower under the dialog */
         paused        = true;
         dgx_ge_input_spend(input, input->pressed);
         return;
@@ -667,11 +714,6 @@ void app_main(void)
         ESP_LOGE(TAG, "no scene maze");
         return;
     }
-    for (int i = 0; i < PACMAN_IMG_COUNT; ++i)
-        if (!dgx_ge_pack_image(&pack, i, &images[i])) {
-            ESP_LOGE(TAG, "no picture %d", i);
-            return;
-        }
     blob = dgx_ge_pack_blob(&pack, PACMAN_BLOB_GAME, &size);
     if (!blob || !dgx_ge_game_open(&game, blob, size)) {
         ESP_LOGE(TAG, "no numbers of the game");
@@ -679,11 +721,7 @@ void app_main(void)
     }
     /* the game's screen, the editor's: as large as the display lets it be, in its middle */
     const int w = PACMAN_SCREEN_WIDTH, h = PACMAN_SCREEN_HEIGHT;
-    int       scale = lcd->width / w < lcd->height / h ? lcd->width / w : lcd->height / h;
-    scale           = scale < 1 ? 1 : scale;
-    frame           = dgx_ge_frame_create(lcd, (lcd->width - w * scale) / 2, (lcd->height - h * scale) / 2, w, h);
-    if (frame && scale > 1 && !dgx_ge_frame_scale(frame, scale)) frame = NULL;
-    if (frame && board_band) dgx_ge_frame_band(frame, board_band);
+    frame           = dgx_ge_frame_fit(lcd, w, h, 0, board_band);
     dgx_ge_layout_grid_t lg;
     if (!dgx_ge_layout_grid(&layout, PACMAN_SCENE_MAZE_GRID_MAZE, &lg) || lg.cols * lg.rows > MAX_CELLS) {
         ESP_LOGE(TAG, "no grid maze");
@@ -694,13 +732,9 @@ void app_main(void)
         ESP_LOGE(TAG, "no memory for the frame");
         return;
     }
-    /* the colors of every set and palette (the ghosts', the maze white) */
-    for (int set = 0; set < PACMAN_SET_COUNT; ++set) {
-        const uint8_t (*rgb)[3];
-        const int n = dgx_ge_pack_set_colors(&pack, set, &rgb);
-        if (n) dgx_ge_frame_add_colors(frame, rgb, n, maps[set]);
-        map_of[set] = maps[set];
-    }
+    /* the colors of every set and palette (the ghosts', the maze white; the paper of the frame is the scene's, laid with it) */
+    dgx_ge_frame_pack_colors(frame, &pack, maps, sizeof maps, map_of);
+    maze_map = map_of[PACMAN_SET_MAZE], white_map = map_of[PACMAN_SET_MAZE_WHITE];
     dgx_ge_scene_reset(scene, 0);
 
     /* the maze: its set of tiles, its cells the game's own copy; the grid walkers go on */
@@ -750,12 +784,12 @@ void app_main(void)
     if (blob) dgx_ge_timers_define(&timers, blob, size);
     fonts[PACMAN_FONT_TERMINUSTTFMEDIUM12] = TerminusTTFMedium12();
     dgx_ge_rect_t place_of;
-    const uint8_t ink = maps[PACMAN_SET_WORDS][4 - 1]; /* the white of WORDS: a map has the frame's index of value v at v - 1 */
+    const uint8_t ink = map_of[PACMAN_SET_WORDS][4 - 1]; /* the white of WORDS: a map has the frame's index of value v at v - 1 */
     if (dgx_ge_layout_zone(&layout, PACMAN_SCENE_MAZE_ZONE_SCORE, &place_of, &kind))
         dgx_ge_label_init(&score_label, frame, fonts[0], place_of.x, place_of.y, place_of.w, place_of.h, DGX_GE_ALIGN_RIGHT, PACMAN_SCENE_MAZE_LAYER_TEXT, ink);
     if (dgx_ge_layout_zone(&layout, PACMAN_SCENE_MAZE_ZONE_HIGH, &place_of, &kind))
         dgx_ge_label_init(&high_label, frame, fonts[0], place_of.x, place_of.y, place_of.w, place_of.h, DGX_GE_ALIGN_MIDDLE, PACMAN_SCENE_MAZE_LAYER_TEXT, ink);
-    dgx_ge_label_init(&points_label, frame, fonts[0], 0, 0, 32, 14, DGX_GE_ALIGN_MIDDLE, PACMAN_SCENE_MAZE_LAYER_TEXT, maps[PACMAN_SET_INKY][0]);
+    dgx_ge_label_init(&points_label, frame, fonts[0], 0, 0, 32, 14, DGX_GE_ALIGN_MIDDLE, PACMAN_SCENE_MAZE_LAYER_TEXT, map_of[PACMAN_SET_INKY][0]);
     high_load();
     numbers();
     blob = dgx_ge_pack_blob(&pack, PACMAN_BLOB_PAUSE, &size);
@@ -768,13 +802,12 @@ void app_main(void)
 
     /* the sound, where the board has it: the mixer at the board's rate, the board's task (on the computer, SDL) pulls it */
     blob = dgx_ge_pack_blob(&pack, PACMAN_BLOB_SOUNDS, &size);
-    if (board_sound_rate && blob && dgx_ge_sounds_open(&sounds, blob, size) &&
-        dgx_ge_mixer_init(&mixer, &sounds, number(PACMAN_GAME_VOICES, 4), board_sound_rate, 1)) {
-        if (board_sound_start(&mixer)) {
-            sound = dgx_ge_mixer_output(&mixer);
-            dgx_ge_mixer_volume(&mixer, board_sound_volume);
-        } else dgx_ge_mixer_free(&mixer);
-    }
+    sound = board_sound_open(&mixer, &sounds, blob, size, number(PACMAN_GAME_VOICES, 4));
+    dgx_ge_expr_sound = &sound; /* the music a script waits for (music in expressions) */
+    blob              = dgx_ge_pack_blob(&pack, PACMAN_BLOB_VARIABLES, &size);
+    if (blob && dgx_ge_vars_open(&vars, blob, size)) dgx_ge_game_vars = &vars;
+    settings_load();
+    volumes();
 
     /* the touch: the board's (the mouse on the computer), else the CYD's own; its gestures by the display's size */
     bool pointing = board_pointer_start(lcd);
@@ -791,9 +824,10 @@ void app_main(void)
 #endif
     const bool padded = pointing && board_pad_able && !board_buttons_able &&
                         board_pad_show(lcd, dgx_di_pad_layout_classic, dgx_di_pad_layout_classic_size, 120);
-    ESP_LOGI(TAG, "a frame of %dx%d, x%d, on a display of %dx%d; %s%s%s", w, h, scale, lcd->width, lcd->height, sound.play ? "sound, " : "",
+    ESP_LOGI(TAG, "a frame of %dx%d, x%d, on a display of %dx%d; %s%s%s", w, h, frame->scale, lcd->width, lcd->height, sound.play ? "sound, " : "",
              padded ? "a pad" : board_buttons_able ? "buttons" : pointing ? "a pointer" : "no input", cyd ? " (the CYD's touch)" : "");
 
+    lay_set(true); /* the scene's paper, the title on it */
     start_title();
     dgx_ge_input_t input = {0};
     uint32_t       last  = (uint32_t)(esp_timer_get_time() / 1000);
@@ -818,9 +852,13 @@ void app_main(void)
         last = real;
         game_ms += dt;
         if (paused) {
-            talk.ahead_ms = real - game_ms;
-            dgx_ge_talk_view_play(&view, &talk, &strings, real);
-            if (talk.state == DGX_GE_TALK_OVER) paused = false;
+            dgx_ge_talk_view_play(&view, &talk, &strings, real, game_ms);
+            volumes();
+            if (talk.state == DGX_GE_TALK_OVER) {
+                paused = false;
+                settings_keep();
+                if (sound.play) dgx_ge_mixer_music_level(&mixer, 100, 300);
+            }
         } else {
             dgx_ge_timers_play(&timers, game_ms);
             dgx_ge_actor_advance(&play, game_ms, say, NULL);
@@ -840,13 +878,11 @@ void app_main(void)
                 dgx_ge_actor_advance(&fruit, maze_ms, say, NULL);
                 if (ph == PACMAN_PH_PLAYING) look();
                 if (ph == PACMAN_PH_OVER) dgx_ge_actor_advance(&prompt, game_ms, say, NULL);
-                /* the energizers blink: the set laid anew, drawn anew where they changed */
-                dgx_ge_rect_t places[8];
-                const int     changed = dgx_ge_grid_animate(&grid, game_ms, places, 8);
-                if (changed && !relay_all) lay_set(places, changed > 8 ? -1 : changed);
+                /* the energizers blink: their cells laid again, drawn anew where they changed */
+                if (!dgx_ge_grid_play(&grid, scene, game_ms)) relay_all = true;
             }
         }
-        if (relay_all && phase() != PACMAN_PH_TITLE) lay_set(NULL, -1);
+        if (relay_all && phase() != PACMAN_PH_TITLE) lay_set(false);
 
         /* what moves in this frame */
         dgx_ge_scene_actors_begin(scene);
@@ -854,7 +890,6 @@ void app_main(void)
         else show_game();
         dgx_ge_scene_render(scene);
 
-        const int64_t spent = esp_timer_get_time() - t0;
-        vTaskDelay(spent < STEP_US ? pdMS_TO_TICKS((STEP_US - spent) / 1000) + 1 : 1);
+        board_pace(t0, STEP_US); /* the rest of the step waited, a tick given up at least */
     }
 }

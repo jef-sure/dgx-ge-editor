@@ -479,6 +479,9 @@ function readSprites(file) {
         }
         // the pictures look to the left: forward is to the left (the player shows them so)
         if (s.facesLeft === true) set.facesLeft = true;
+        // a ready palette (nes, gameboy, pico8 or a palette of the document): the packer brings every color of the
+        // pictures to its nearest (CIE76) and the set has those taken; kept as given, the checks say what is wrong
+        if (s.palette !== undefined && s.palette !== null && s.palette !== '') set.palette = s.palette;
         // the game's frames by number (frame N): [{set, image, dx, dy} | null], the picture and how far it stands
         // forward and down; for the editor's player only, the game has its own table
         if (Array.isArray(s.frameTable)) set.frameTable = s.frameTable.map(e => e && typeof e.image === 'string' ? {
@@ -636,6 +639,7 @@ const useSpriteStore = Pinia.defineStore('sprites', {
                 dialogMode: 'say', // the preview of a style: a line said, or answers to choose from
                 gamePart: 'constants', // the part of the game edited: constants | timers | sounds | shows | chases | crops
                 gameShow: '', // the show edited
+                gameMusic: '', // the music whose notes are edited
                 mapName: '', // the map of the graph edited
             },
             undoCount: 0,
@@ -805,13 +809,15 @@ const useSpriteStore = Pinia.defineStore('sprites', {
             else delete this.edit.previewPalette[setName];
             this.applyPreviewPalette(setName);
         },
+        // '@pack': as the packer takes a set of a ready palette, every color of a picture its nearest of the palette (CIE76)
         applyPreviewPalette(setName) {
             const set = this.sprites.sets.find(s => s.name === setName);
             const p = this.sprites.palettes.find(x => x.name === this.edit.previewPalette[setName]);
+            const ready = this.edit.previewPalette[setName] === '@pack' && set && typeof set.palette === 'string' ? Game.paletteColors(this.sprites, set.palette) : null;
             for (const f of set ? set.frames : []) {
                 const picture = FrameImages.get(set.name, f.image);
                 if (!picture) continue;
-                picture.override = p ? [[0, 0, 0], ...p.colors] : null;
+                picture.override = ready ? picture.palette.map((c, i) => i && c ? ready[Game.nearestColor(ready, c)] : c) : p ? [[0, 0, 0], ...p.colors] : null;
                 FrameImages.render(picture);
             }
             this.imagesVersion++;
@@ -1520,7 +1526,7 @@ const useSpriteStore = Pinia.defineStore('sprites', {
                     const owner = this.sprites.sets.find(s => s.frames.some(fr => fr.image === f.name));
                     set = owner ? owner.name : this.currentSet.name;
                 }
-                if (set === 'po' || set === 'dialogs') continue;
+                if (set === 'po' || set === 'dialogs' || set === 'music' || set === 'sounds') continue;
                 if (!bySet.has(set)) bySet.set(set, []);
                 bySet.get(set).push(f);
             }
@@ -1567,6 +1573,11 @@ const useSpriteStore = Pinia.defineStore('sprites', {
                         text: text
                     });
                     said.push('dialogs/' + f.name);
+                } else if (r.length === 2 && r[0] === 'music' && /\.mml$/i.test(f.name)) {
+                    // the notes of a music: music/<name>.mml, as the packer takes them for the document's music
+                    if (!this.sprites.musicTexts) this.sprites.musicTexts = {};
+                    this.sprites.musicTexts[f.name.replace(/\.mml$/i, '')] = await f.text();
+                    said.push('music/' + f.name);
                 } else if (r.length === 2 && r[0] === 'po' && /\.po$/i.test(f.name)) {
                     Translations.add(f.name.replace(/\.po$/i, ''), await f.text());
                     said.push('po/' + f.name);
@@ -1583,6 +1594,8 @@ const useSpriteStore = Pinia.defineStore('sprites', {
                     }
                 }
             }
+            // the notes of the musics are the folder's: one it has not for a music of the document is told (Game → Music)
+            if ((this.sprites.music || []).length && !this.sprites.musicTexts) this.sprites.musicTexts = {};
             this.loadMessages = errors;
             return said;
         },
@@ -1617,7 +1630,7 @@ const useSpriteStore = Pinia.defineStore('sprites', {
             for await (const [name, h] of handle.entries()) {
                 if (h.kind === 'file' && /\.(json|anim|c)$/i.test(name)) await take(h, top + '/' + name);
                 else if (h.kind === 'directory' && !ProjectFolder.skipped(name)) {
-                    const wanted = name === 'dialogs' ? /\.dlg$/i : name === 'po' ? /\.po$/i : /\.png$/i;
+                    const wanted = name === 'dialogs' ? /\.dlg$/i : name === 'po' ? /\.po$/i : name === 'music' ? /\.mml$/i : name === 'sounds' ? /^$/ : /\.png$/i;
                     for await (const [inner, f] of h.entries())
                         if (f.kind === 'file' && wanted.test(inner)) await take(f, top + '/' + name + '/' + inner);
                 }
@@ -1634,7 +1647,7 @@ const useSpriteStore = Pinia.defineStore('sprites', {
             ProjectFolder.saved = JSON.stringify(Maps.saved(this.sprites), null, '    ');
             ProjectFolder.written = new Map();
             for (const f of files)
-                if (/\.(json|anim|dlg)$/i.test(f.name)) ProjectFolder.written.set(f.webkitRelativePath.split('/').slice(1).join('/'), await f.text());
+                if (/\.(json|anim|dlg|mml)$/i.test(f.name)) ProjectFolder.written.set(f.webkitRelativePath.split('/').slice(1).join('/'), await f.text());
             this.projectFolderName = label;
             this.projectFolderKept = '';
             this.folderState = 'saved';
@@ -1775,6 +1788,16 @@ const useSpriteStore = Pinia.defineStore('sprites', {
                         ProjectFolder.written.delete('dialogs/' + name);
                         gone.push('dialogs/' + name);
                     }
+            }
+            // the notes of the musics as music/<name>.mml (the packer reads them for the document's music); a file of a
+            // music no more listed is left as it is (the packer does not read it)
+            const texts = sprites.musicTexts || {};
+            const notes = (sprites.music || []).filter(n => typeof texts[n] === 'string' && texts[n].trim());
+            if (notes.length) {
+                const dir = await handle.getDirectoryHandle('music', {
+                    create: true
+                });
+                for (const n of notes) files += await write(dir, n + '.mml', texts[n], 'music/' + n + '.mml');
             }
             this.savePictures();
             const time = new Date().toLocaleTimeString();

@@ -12,12 +12,15 @@ script shown
     frame FRUIT_CHERRY FRUIT_MS
     goto hidden
 
-script taken
+script taken  # gone, as hidden: shown again when PLAY says
     masks
     sound SND_FRUIT
     signal SIG_TAKEN  # tell the game: PLAY counts it
-    goto hidden
+    frame none 1000ms
+    hold
 
-on show: hidden -> shown now
+group away: hidden, taken
+
+on show: away -> shown now
 on eaten: shown -> taken now
 on hide: shown -> hidden now

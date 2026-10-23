@@ -38,12 +38,15 @@
 //     lays the cell on that side, at its own place; step: its turn among the pieces laid with a cell, 0 first;
 //     draw: 'normal' | 'card' (on a rectangle of its color) | 'silhouette' (its shape in one color); color: n of the
 //     set of the piece, or [set, n] of another set, 0 the paper
-//   scene: {name, width, height, background, layers: [layer], grids: [grid], exits: [exit], links: [link]}
+//   scene: {name, width, height, background, music?, musicFade?, layers: [layer], grids: [grid], exits: [exit], links: [link]}
+//     music: a music of the document (or a name only) the game plays as it enters the scene, or 'stop'; none: what
+//     plays goes on; musicFade: ms the change fades over (500 when not said)
 //   layer: {name, factor, order: 'added' | 'key', visible, locked, objects: [object]}
 //   grid: {name, tileset, x, y, cols, rows, cells: [[0 empty | n the tile n - 1]], mods: {'col,row': n},
 //          variants: {'col,row': n}}
-//   object: {type: 'picture', name, set, image, x, y, key, flip, clip: null | {x, y, width, height}}
-//         | {type: 'actor', name, set, script, x, y, flip, params: {name: value}}
+//   object: {type: 'picture', name, set, image, x, y, key, flip, rotation?, clip: null | {x, y, width, height}}
+//         | {type: 'actor', name, set, script, x, y, flip, rotation?, params: {name: value}}
+//     rotation: degrees clockwise, 0, 90, 180 or 270 (a multiple of 90), after the mirror, about the base point
 //         | {type: 'zone', name, kind, x, y, width, height}
 //         | {type: 'entry', name, x, y, flip}
 //   exit: {edge: 'left' | 'right' | 'up' | 'down' | '', zone: '' | name of a zone, scene, entry}
@@ -206,35 +209,68 @@ const Scene = {
         return own(set.frames[0]);
     },
 
-    // the rectangle a frame takes standing with its base point at x, y; mirrored around its base column
-    frameRect(f, x, y, flip) {
+    // a rotation of the document (degrees clockwise, a multiple of 90; -90 is 270) in quarter turns 0..3; another 0
+    turnsOf(rotation) {
+        return Number.isInteger(rotation) && rotation % 90 === 0 ? (rotation / 90 % 4 + 4) % 4 : 0;
+    },
+    // a rotation the packer takes: a whole number of degrees, a multiple of 90 (_turns)
+    isTurn(rotation) {
+        return Number.isInteger(rotation) && rotation % 90 === 0;
+    },
+    // the orientation of a picture or an actor of a scene (dgx_ge_orient): mirrored (flip), then turned (rotation)
+    orientOf(o) {
+        return AnimRunner.orient(o.flip, this.turnsOf(o.rotation));
+    },
+    // where an actor's picture stands from it: the frame's shift (forward and down of its axes), turned as it lies
+    shiftOf(o, ap) {
+        return ap ? AnimRunner.apply(this.orientOf(o), ap.dx, ap.dy) : [0, 0];
+    },
+    // the rectangle a frame takes standing with its base point at x, y; mirrored around its base column, then turned
+    // about its base point by quarters (dgx_ge_image_box: a quarter turn swaps its width and height)
+    frameRect(f, x, y, flip, rotation) {
         if (!f || !f.width) return {
             x: x - 4,
             y: y - 15,
             width: 9,
             height: 16
         };
-        return {
-            x: flip ? x - (f.width - 1 - f.origin.x) : x - f.origin.x,
-            y: y - f.origin.y,
+        const o = AnimRunner.orient(flip, this.turnsOf(rotation));
+        const xb = 0x5A >> o & 1,
+            yb = 0x3C >> o & 1;
+        const along = xb ? -(f.width - 1 - f.origin.x) : -f.origin.x,
+            down = yb ? -(f.height - 1 - f.origin.y) : -f.origin.y;
+        return o & 2 ? {
+            x: x + down,
+            y: y + along,
+            width: f.height,
+            height: f.width
+        } : {
+            x: x + along,
+            y: y + down,
             width: f.width,
             height: f.height
         };
     },
 
+    // draws a picture (a canvas) whose base point is origin with its base pixel's left top at col, row of the view, z
+    // view pixels a pixel, a step along its x and y going as s1, s2 there ([dx, dy], whole steps): as it is, mirrored,
+    // turned (one of the eight of DGX)
+    drawOriented(ctx, canvas, origin, col, row, z, s1, s2) {
+        ctx.save();
+        ctx.transform(z * s1[0], z * s1[1], z * s2[0], z * s2[1],
+            col + z * (-s1[0] * origin.x - s2[0] * origin.y + (s1[0] < 0 || s2[0] < 0 ? 1 : 0)),
+            row + z * (-s1[1] * origin.x - s2[1] * origin.y + (s1[1] < 0 || s2[1] < 0 ? 1 : 0)));
+        ctx.drawImage(canvas, 0, 0);
+        ctx.restore();
+    },
     // draws a frame of a set standing with its base point at x, y of the view (pixels of the screen),
-    // z screen pixels a pixel, mirrored around its base column when flipped. False when there is no picture
-    drawFrame(ctx, setName, frame, x, y, flip, z) {
+    // z screen pixels a pixel, mirrored around its base column when flipped, then turned clockwise by rotation
+    // (degrees, a multiple of 90) about its base point. False when there is no picture
+    drawFrame(ctx, setName, frame, x, y, flip, z, rotation) {
         const picture = frame && FrameImages.get(setName, frame.image);
         if (!picture) return false;
-        const o = frame.origin;
-        ctx.save();
-        if (flip) {
-            ctx.translate(x + (o.x + 1) * z, y - o.y * z);
-            ctx.scale(-1, 1);
-        } else ctx.translate(x - o.x * z, y - o.y * z);
-        ctx.drawImage(picture.canvas, 0, 0, picture.width * z, picture.height * z);
-        ctx.restore();
+        const o = AnimRunner.orient(flip, this.turnsOf(rotation));
+        this.drawOriented(ctx, picture.canvas, frame.origin, x, y, z, AnimRunner.apply(o, 1, 0), AnimRunner.apply(o, 0, 1));
         return true;
     },
     // a frame drawn as a piece of a tile asks: as it is, on a card of a color (a rectangle as large as it, hiding what
@@ -268,12 +304,14 @@ const Scene = {
         ctx.restore();
         return true;
     },
-    // is the pixel x, y of the scene an opaque pixel of a frame standing at ox, oy
-    framePixel(setName, frame, ox, oy, flip, x, y) {
+    // is the pixel x, y of the scene an opaque pixel of a frame standing at ox, oy (mirrored, turned)
+    framePixel(setName, frame, ox, oy, flip, x, y, rotation) {
         const picture = frame && FrameImages.get(setName, frame.image);
         if (!picture) return false;
-        let px = flip ? frame.origin.x - (x - ox) : x - ox + frame.origin.x;
-        let py = y - oy + frame.origin.y;
+        // the scene's point in the picture's axes: the orientation undone (whole pixels from the base pixel)
+        const [u, v] = AnimRunner.apply(AnimRunner.inverse(AnimRunner.orient(flip, this.turnsOf(rotation))), x - ox, y - oy);
+        let px = u + frame.origin.x;
+        let py = v + frame.origin.y;
         if (px < 0 || py < 0 || px >= picture.width || py >= picture.height) return false;
         return picture.indexes[py * picture.width + px] !== 0;
     },
@@ -295,9 +333,10 @@ const Scene = {
         if (o.type === 'actor') {
             // the picture it shows, of whatever set, so far forward and down
             const ap = this.actorPicture(sprites, o);
-            return this.frameRect(ap && ap.frame, o.x + (ap ? (o.flip ? -ap.dx : ap.dx) : 0), o.y + (ap ? ap.dy : 0), o.flip);
+            const [dx, dy] = this.shiftOf(o, ap);
+            return this.frameRect(ap && ap.frame, o.x + dx, o.y + dy, o.flip, o.rotation);
         }
-        return this.frameRect(this.findFrame(sprites, o.set, o.image), o.x, o.y, o.flip);
+        return this.frameRect(this.findFrame(sprites, o.set, o.image), o.x, o.y, o.flip, o.rotation);
     },
 
     inside(r, x, y) {
@@ -666,9 +705,17 @@ const Scene = {
                     seen[k] = x.name;
                 }
             }
+            // its music: a name of a music (the document's music, or a name only the pack numbers) or stop; the fade in ms
+            if (s.music !== undefined && (typeof s.music !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(s.music)))
+                say(s.name, 'music ' + JSON.stringify(s.music) + ': the name of a music, or stop', true);
+            else if (s.music && s.music !== 'stop' && !(doc.music || []).includes(s.music))
+                say(s.name, 'music ' + s.music + ': no music of that name in the document (Game → Music): a name only, it plays nothing', false);
+            if (s.musicFade !== undefined && (!Number.isInteger(s.musicFade) || s.musicFade < 0 || s.musicFade > 65535))
+                say(s.name, 'musicFade ' + JSON.stringify(s.musicFade) + ': 0..65535 ms', true);
             // the packer lays the layers, pictures, zones, entries, sources of links and actors of a scene in 64 KB (DGSC
-            // v2): 28 bytes ahead, 4 a layer, 18 a picture, 10 a zone, 6 an entry, 6 a source, 12 an actor and 4 a param of it
-            let bytes = 28 + 4 * s.layers.length + 6 * new Set(s.links.map(l => this.refText(l.from))).size;
+            // v5): 36 bytes ahead (the paper, the music), 4 a layer, 18 a picture, 10 a zone, 6 an entry, 6 a source, 12 an
+            // actor (with its offset) and 4 a param of it
+            let bytes = 36 + 4 * s.layers.length + 6 * new Set(s.links.map(l => this.refText(l.from))).size;
             for (const o of this.objects(s)) bytes += o.type === 'picture' ? 18 : o.type === 'zone' ? 10 : o.type === 'entry' ? 6 : 12 + 4 * Object.keys(o.params || {}).length;
             if (bytes > 0xffff) say(s.name, 'its layers, pictures, zones, entries and actors take ' + bytes + ' bytes in the pack, 65535 at most', true);
             // names the game knows from its code: unique in the scene
@@ -687,6 +734,8 @@ const Scene = {
             // what the packer refuses of an object, named or not
             for (const o of this.objects(s)) {
                 const who = o.name || 'a ' + o.type;
+                if ((o.type === 'picture' || o.type === 'actor') && o.rotation !== undefined && !this.isTurn(o.rotation))
+                    say(s.name, who + ': rotation ' + JSON.stringify(o.rotation) + ': 0, 90, 180 or 270 (degrees clockwise)', true);
                 if (o.type === 'picture' && !o.name && !this.findFrame(doc, o.set, o.image)) say(s.name, 'a picture: no frame ' + o.set + '/' + o.image, true);
                 if (o.type === 'picture' && (!coord(o.key) || o.clip && !['x', 'y', 'width', 'height'].every(k => coord(o.clip[k]))))
                     say(s.name, who + ': the key or the clip is beyond 16 bits', true);
@@ -1070,6 +1119,15 @@ const Scene = {
                 onEnter: str(s.onEnter),
                 leave: Maps.readLeave(s.leave)
             };
+            // its music, as the game enters it (a music's name, or stop; none: what plays goes on), and how long the
+            // change fades (500 ms when not said): kept as given, the check says what is wrong
+            if (s.music !== undefined && s.music !== null) scene.music = s.music;
+            if (s.musicFade !== undefined && s.musicFade !== null) scene.musicFade = s.musicFade;
+            // a picture's or an actor's turn, degrees clockwise after its mirror: kept as given when there is one
+            const turned = (o, out) => {
+                if (o.rotation !== undefined && o.rotation !== null) out.rotation = o.rotation;
+                return out;
+            };
             for (const l of s.layers) {
                 if (!l || typeof l.name !== 'string') return bad('a layer of scene ' + s.name);
                 let layer = {
@@ -1083,7 +1141,7 @@ const Scene = {
                 for (const o of l.objects || []) {
                     if (!o || !isInt(o.x) || !isInt(o.y)) return bad('an object of layer ' + l.name);
                     const name = str(o.name);
-                    if (o.type === 'picture' && typeof o.set === 'string' && typeof o.image === 'string') layer.objects.push({
+                    if (o.type === 'picture' && typeof o.set === 'string' && typeof o.image === 'string') layer.objects.push(turned(o, {
                         type: 'picture',
                         name: name,
                         set: o.set,
@@ -1098,8 +1156,8 @@ const Scene = {
                             width: o.clip.width,
                             height: o.clip.height
                         } : null
-                    });
-                    else if (o.type === 'actor' && typeof o.set === 'string') layer.objects.push({
+                    }));
+                    else if (o.type === 'actor' && typeof o.set === 'string') layer.objects.push(turned(o, {
                         type: 'actor',
                         name: name,
                         set: o.set,
@@ -1108,7 +1166,7 @@ const Scene = {
                         y: o.y,
                         flip: !!o.flip,
                         params: Object.fromEntries(Object.entries(o.params || {}).filter(([k, v]) => isInt(v)))
-                    });
+                    }));
                     else if (o.type === 'zone' && isInt(o.width) && isInt(o.height)) layer.objects.push({
                         type: 'zone',
                         name: name,

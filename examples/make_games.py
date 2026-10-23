@@ -155,6 +155,37 @@ def square_mask(index, half):
 
 # --- sounds ---
 
+SIREN_MML = """; Pac-Man's siren under the play: a tone gliding up and down, round and round
+#synth chip
+@1 wail = square 25% volume 7
+A t150 @wail o5 l16 $ c&d&e&f&g&a&b&a&g&f&e&d
+"""
+
+FRIGHT_MML = """; while the ghosts are blue: a quick wobble, round and round
+#synth chip
+@1 wobble = square 12.5% volume 6
+A t150 @wobble o6 l32 $ c&g&c&g&c&g&c&g
+"""
+
+GROOVE_MML = """; the snake's groove: a bass and a tune on FM, round and round
+#synth fm
+#set msx-music
+A t132 @synth-bass o2 l8 v12 $ [c c >c< c a- a- >a-< a- | b- b- >b-< b- g g >g< g]2 f f >f< f g g >g< g
+B @vibraphone o5 l8 v10 $ e g >c< g e4 r4 e- g >c< g e-4 r4 d f a- f d4 r4 d g b g d4 r4
+B e g >c< g e4 r4 e- g >c< g e-4 r4 f a- >c< a- f4 r4 g b >d< b g4 r4
+"""
+
+THEME_MML = """; Tetris's theme on the NES: a tune of its own in A minor, a triangle bass, a ticking noise
+#synth nes
+@1 lead = square 25% attack 2 decay 80 sustain 10 release 60 volume 12
+@2 bass = triangle release 30
+@3 tick = noise short decay 30 sustain 0 volume 6
+A t140 @lead o5 l8 $ a4 e8 f g4 f e d4 d f a4 g f e4. f g4 a4 f4 d4 d4 r4 g4. b- >d4< c b- a4. f a4 g f e4 e f g4 a4 f4 d4 d4 r4
+B @bass o3 l4 $ a <a> a <a> d <d> d <d> c <c> c <c> d <d> d <d> g <g> g <g> f <f> f <f> c <c> c <c> d <d> d <d>
+C @tick o4 l8 $ [c r c c]16
+"""
+
+
 SOUND_RATE = 11025
 
 
@@ -194,7 +225,8 @@ class Project:
         self.colors = {}  # kind -> its colors
         self.anims = {}  # kind -> .anim text
         self.dialog_files = {}
-        self.sound_samples = {}  # name -> its samples: sounds/<name>.wav beside the document (the game's pack script adds them)
+        self.sound_samples = {}  # name -> its samples: sounds/<name>.wav beside the document (the packer takes them)
+        self.music_texts = {}  # name -> its notes in MML: music/<name>.mml beside the document (the packer takes them)
 
     def kind(self, name, colors, default_mask=None):
         self.doc['sets'].append({'name': name, 'defaultMask': default_mask, 'frames': []})
@@ -226,6 +258,15 @@ class Project:
         self.doc['sounds'].append(name)
         self.sound_samples[name] = samples
 
+    def music(self, name, mml):
+        """A music by its name and its notes in MML, written as music/<name>.mml."""
+        self.doc.setdefault('music', []).append(name)
+        self.music_texts[name] = mml
+
+    def variable(self, name, value):
+        """A variable of the game (game_var.<name> of scripts and dialogs), its value as a game begins."""
+        self.doc.setdefault('variables', []).append({'name': name, 'value': value})
+
     def write(self, root):
         # the data of the game made anew, in its own folder; the game's code beside it is left as it is
         out = os.path.join(root, self.name, 'game_data')
@@ -256,6 +297,11 @@ class Project:
             os.makedirs(os.path.join(out, 'sounds'))
             for name, samples in self.sound_samples.items():
                 write_wav(os.path.join(out, 'sounds', name + '.wav'), samples)
+        if self.music_texts:
+            os.makedirs(os.path.join(out, 'music'))
+            for name, text in self.music_texts.items():
+                with open(os.path.join(out, 'music', name + '.mml'), 'w', encoding='utf-8') as f:
+                    f.write(text)
         with open(os.path.join(out, self.name + '.json'), 'w', encoding='utf-8') as f:
             f.write(json.dumps(doc, indent=4, ensure_ascii=False))
         errors = [p for p in r['problems'] if p['error']]
@@ -336,6 +382,8 @@ pause
     say game "{title}  {numbers}"
 choose play
     "Continue" -> resume
+    "Music" control SLIDER game_var.music_volume
+    "Effects" control SLIDER game_var.effects_volume
     "New game" -> restart
 label resume
     end
@@ -343,6 +391,43 @@ label restart
     tell play restart
     end
 """
+
+
+def settings(p, colors):
+    """The player's settings, kept by the game: the volume of the music and of the effects, variables of the game (0..10)
+    that the pause dialog's sliders edit (left and right on an answer: less, more); the kind SLIDER shows its value as a
+    bar of ten steps. colors: of the bar, its frame, its steps."""
+    p.variable('music_volume', 8)
+    p.variable('effects_volume', 10)
+    p.kind('SLIDER', colors)
+    for v in range(11):
+        bar = Pic(43, 7)
+        bar.frame(0, 0, 43, 7, 1)
+        for k in range(v):
+            bar.rect(2 + 4 * k, 2, 3, 3, 2)
+        p.frame('SLIDER', f'bar_{v}.png', bar, (0, 6))
+    p.anim('SLIDER', """# A slider of the pause dialog: its value, 0..10, as a bar; more and less (right, left) move it a step.
+event more, less
+param value 0
+param least 0
+param most 10
+param step 1
+
+script rest
+    frame (SLIDER_BAR_0 + value) 1000ms
+    hold
+
+script up
+    set value min(value + step, most)
+    goto rest
+
+script down
+    set value max(value - step, least)
+    goto rest
+
+on more: rest -> up now
+on less: rest -> down now
+""")
 
 
 def words(p, kind, items, colors):
@@ -514,10 +599,10 @@ def pacman_game():
     p.frame('DOTS', 'blank.png', Pic(8, 8), (0, 7))
 
     p.kind('PAC', [YELLOW], default_mask=1)
+    # he faces right; his scripts turn him the way he goes (rotate)
     p.frame('PAC', 'full.png', pacman(0, 0), (6, 6), masks=pac_mask)
-    for w, a in WAYS.items():
-        p.frame('PAC', f'{w}_1.png', pacman(a, 50), (6, 6), masks=pac_mask)
-        p.frame('PAC', f'{w}_2.png', pacman(a, 100), (6, 6), masks=pac_mask)
+    p.frame('PAC', 'right_1.png', pacman(0, 50), (6, 6), masks=pac_mask)
+    p.frame('PAC', 'right_2.png', pacman(0, 100), (6, 6), masks=pac_mask)
     for k in range(11):
         p.frame('PAC', f'die_{k}.png', pacman(90, 40 + k * 32), (6, 6), masks=pac_mask)
 
@@ -560,7 +645,7 @@ def pacman_game():
     ghosts = [actor(name, 'GHOST', 'out' if i == 0 else 'home', x, y + TOP, params={'who': i, 'way': f'WAY_{way.upper()}', 'wait': waits[i]})
               for i, (name, _, (x, y), way) in enumerate(GHOSTS)]
     d['scenes'].append({
-        'name': 'maze', 'width': 224, 'height': 288, 'background': '#000000',
+        'name': 'maze', 'width': 224, 'height': 288, 'background': '#000000', 'music': 'siren', 'musicFade': 300,
         'layers': [
             layer('maze', [picture('MAZE', 'maze.png', 0, TOP + ROWS * CELL - 1, 'walls')]),
             layer('dots'),
@@ -622,47 +707,61 @@ def pacman_game():
             ('extra_life', [n for _ in range(6) for n in ((1320, 1320, 70, .22, sq), (0, 0, 50, 0, sq))])):
         p.sound(name, synth(notes))
     d['constants'].update({f'SND_{s.upper()}': i for i, s in enumerate(d['sounds'])})
+    # the music, on the chip's squares as the arcade's: the siren under the play (the scene's), a wobble while the ghosts
+    # are blue (PLAY's, as long as a fright lasts)
+    d['synth'] = 'chip'
+    p.music('siren', SIREN_MML)
+    p.music('fright', FRIGHT_MML)
+    settings(p, [BLUE, WHITE])
     d['timers'] = [
         # the house lets the next ghost out when no dot is eaten for so long: each dot starts it anew
         {'name': 'idle', 'once': '4000ms', 'reset': 'scene', 'event': 'idle', 'start': ''},
+        # as long as the ghosts are blue (their fright's loops and flashes): the siren again after it
+        {'name': 'blue', 'once': f"{14 * 266 + 5 * 466}ms", 'reset': 'scene', 'event': 'calm', 'start': ''},
     ]
 
     ways = list(WAYS)
-    chomp = ''.join(f"""
-script {w}
-    masks PAC
-label {w}_chomp
-    frame PAC_{w.upper()}_1 40ms
-    frame PAC_{w.upper()}_2 40ms
-    frame PAC_{w.upper()}_1 40ms
-    frame PAC_FULL 40ms
-    goto {w}_chomp
-""" for w in ways)
-    still = ''.join(f"""
-script still_{w}            # against a wall: his mouth stays as it was
-    frame PAC_{w.upper()}_1 1000ms
-    hold
-""" for w in ways)
-    p.anim('PAC', f"""# Pac-Man: chomping his way, still against a wall, caught, dying, running on the title.
-# The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and tells him his way. His body is the
-# mask PAC: a ghost that meets it says what follows (its hit: caught).
+    # his pictures face right: each way turns him so far, clockwise (right 0, down 90, left 180, up 270)
+    turned = {'right': 0, 'down': 90, 'left': 180, 'up': 270}
+    p.anim('PAC', """# Pac-Man: chomping his way, still against a wall, caught, dying, running on the title. His pictures face right:
+# the way he goes turns him (rotate to). The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and
+# tells him his way. His body is the mask PAC: a ghost that meets it says what follows (its hit: caught).
 event left, right, up, down, stop, caught, die
 
 script whole
     masks PAC
+    rotate to 0
     frame PAC_FULL 1000ms
     hold
-{chomp}{still}
+""" + ''.join(f"""
+script {w}
+    rotate to {turned[w]}
+    goto chomp
+""" for w in ways) + """
+script chomp
+    masks PAC
+label chomping
+    frame PAC_RIGHT_1 40ms
+    frame PAC_RIGHT_2 40ms
+    frame PAC_RIGHT_1 40ms
+    frame PAC_FULL 40ms
+    goto chomping
+
+script still                # against a wall: his mouth half open, turned the way he went
+    frame PAC_RIGHT_1 1000ms
+    hold
+
 script caught               # a ghost has him: he stands whole; the game is told (PLAY stands it all a while)
     masks
     signal SIG_CAUGHT
     frame PAC_FULL 1000ms
     hold
 
-script dying
+script dying                # upright again: his pictures of dying open up
     masks
+    rotate to 0
     sound SND_DEATH
-""" + ''.join(f"    frame PAC_DIE_{k} 133ms\n" for k in range(11)) + f"""    frame none 500ms
+""" + ''.join(f"    frame PAC_DIE_{k} 133ms\n" for k in range(11)) + """    frame none 500ms
     signal SIG_GONE           # tell the game: he is gone
 label gone
     frame none 1000ms
@@ -678,9 +777,8 @@ label parade_chomp
     frame PAC_FULL 40ms
     goto parade_chomp
 
-group any: whole, {', '.join(ways)}, {', '.join('still_' + w for w in ways)}
-""" + ''.join(f"on {w}: any -> {w} now\n" for w in ways) + ''.join(f"on stop: {w} -> still_{w} now\n" for w in ways)
-           + "on caught: any -> caught now\non die: caught -> dying now\n")
+group any: whole, """ + ', '.join(ways) + """, chomp, still
+""" + ''.join(f"on {w}: any -> {w} now\n" for w in ways) + "on stop: chomp -> still now\non caught: any -> caught now\non die: caught -> dying now\n")
 
     # what a ghost hunting aims at, before each of its frames: the arcade's, by who. Blinky hurrying (so few dots
     # left: "Cruise Elroy") is faster and hunts scattering too.
@@ -894,13 +992,15 @@ script shown
     frame FRUIT_CHERRY FRUIT_MS
     goto hidden
 
-script taken
+script taken                # gone, as hidden: shown again when PLAY says
     masks
     sound SND_FRUIT
     signal SIG_TAKEN          # tell the game: PLAY counts it
-    goto hidden
+    frame none 1000ms
+    hold
 
-on show: hidden -> shown now
+group away: hidden, taken
+on show: away -> shown now
 on eaten: shown -> taken now
 on hide: shown -> hidden now
 """)
@@ -929,7 +1029,7 @@ label chasing                 # the last chase lasts
 """)
 
     play = ['title', 'new_game', 'level', 'ready', 'playing', 'ate_dot', 'ate_energizer', 'counted', 'fruit_comes', 'scored',
-            'bonus_life', 'ate_ghost', 'ate_fruit', 'release', 'caught', 'life_lost', 'cleared', 'game_over', 'over']
+            'bonus_life', 'ate_ghost', 'calm', 'ate_fruit', 'release', 'caught', 'life_lost', 'cleared', 'game_over', 'over']
     p.anim('PLAY', """# The game itself as an actor: its numbers, its phases and how long each lasts, and the word it shows (READY!,
 # GAME OVER: the game draws it in the zone message). The game tells it what happened and reads its phase (what moves
 # now: PH_*) and its numbers (PACMAN_PLAY_PARAM_*); the pause dialog shows them. Its signals: SIG_NUMBERS the
@@ -937,7 +1037,7 @@ label chasing                 # the last chase lasts
 # (the ghosts go), SIG_HIDE the ghosts and the fruit go (the level eaten), SIG_WHITE and SIG_BLUE the maze flashing,
 # SIG_FRUIT the fruit comes, SIG_RELEASE the next ghost out of the house (no dot eaten for a while: the timer idle),
 # SIG_OVER the game is over, SIG_TITLE the title again.
-event start, restart, dot, energizer, ghost, fruit, caught, lost, idle
+event start, restart, dot, energizer, ghost, fruit, caught, lost, idle, calm
 param phase PH_TITLE
 param score 0
 param lives LIVES
@@ -980,9 +1080,11 @@ script ate_dot
     add score DOT_SCORE
     goto counted
 
-script ate_energizer
+script ate_energizer          # the ghosts blue: their music while it lasts
     add score ENERGIZER_SCORE
     set bonus GHOST_SCORE
+    music fright 100ms
+    timer start blue
     goto counted
 
 script counted
@@ -1014,11 +1116,17 @@ script ate_ghost              # 200, 400, 800, 1600 in one fright: all stands a 
     set bonus bonus * 2
     set phase PH_ATE
     timer hold idle
+    timer hold blue
     signal SIG_NUMBERS
     frame none EAT_GHOST_MS
     set phase PH_PLAYING
     timer go idle
+    timer go blue
     goto scored
+
+script calm                   # the fright over: the siren again
+    music siren 300ms
+    goto playing
 
 script ate_fruit
     add score FRUIT_SCORE
@@ -1029,9 +1137,11 @@ script release                # no dot eaten for so long: the next ghost out, an
     timer start idle
     goto playing
 
-script caught                 # a ghost has him: all stands a second, then he dies (the ghosts go)
+script caught                 # a ghost has him: all stands a second, the music goes, then he dies (the ghosts go)
     set phase PH_CAUGHT
     timer stop idle
+    timer stop blue
+    music stop 300ms
     frame none 1000ms
     set phase PH_DYING
     signal SIG_DIE
@@ -1044,9 +1154,11 @@ script life_lost              # he is gone (the game says): again, or the game i
     goto ready if lives > 0
     goto game_over
 
-script cleared                # the level eaten: all stands, the maze flashes, the next level
+script cleared                # the level eaten: all stands, the music goes, the maze flashes, the next level
     set phase PH_CLEARED
     timer stop idle
+    timer stop blue
+    music stop 300ms
     signal SIG_NUMBERS
     frame none 1000ms
     signal SIG_HIDE
@@ -1072,6 +1184,7 @@ group any: """ + ', '.join(play) + """
 on start: title -> new_game now
 on start: over -> new_game now
 on restart: any -> new_game now
+on calm: playing -> calm now
 on dot: playing -> ate_dot now
 on energizer: playing -> ate_energizer now
 on ghost: playing -> ate_ghost now
@@ -1092,7 +1205,7 @@ script blink
                               {'name': 'pac', 'kind': 'PAC', 'script': 'parade', 'x': -20, 'y': 160, 'layer': 1, 'flip': False, 'color': 0},
                               {'name': 'ghost', 'kind': 'GHOST', 'script': 'parade', 'x': -60, 'y': 160, 'layer': 1, 'flip': False, 'color': 0}],
                    'cues': [{'at': '5s', 'role': 'end', 'event': ''}]}]
-    d['styles'] = [menu_style((224, 288), 160, 64, [0, 0, 0], list(BLUE), list(WHITE), [33, 33, 120])]
+    d['styles'] = [menu_style((224, 288), 160, 100, [0, 0, 0], list(BLUE), list(WHITE), [33, 33, 120])]
     p.dialog('pause', PAUSE_DIALOG.format(title='PAUSE', numbers='Score {score}  Lives {lives}'))
     return p
 
@@ -1224,7 +1337,7 @@ def tetris_game():
                 nmods[f'{c},{r}'] = 3
     box_x = WELL_X + 10 * TC + 16
     d['scenes'].append({
-        'name': 'well', 'width': 320, 'height': 240, 'background': '#14142a',
+        'name': 'well', 'width': 320, 'height': 240, 'background': '#14142a', 'music': 'theme', 'musicFade': 500,
         'layers': [
             layer('back', [picture('WELL', 'well.png', WELL_X, WELL_Y, 'well'),
                            picture('WELL', 'box.png', box_x, 20, 'next_box'), picture('WELL', 'box.png', box_x, 70, 'score_box'),
@@ -1245,8 +1358,8 @@ def tetris_game():
     # the shapes and the hand (how a held button repeats, how fast down drops) are the code's numbers; how fast a level
     # falls is PLAY's (its table fall_ms)
     d['game'] = [{'name': f'{k}_{t}', 'value': shape_bits(s)} for k, turns in PIECES.items() for t, s in enumerate(turns)] + [
-        {'name': n, 'value': v} for n, v in (('spawn_col', 3), ('repeat_after_ms', 170), ('repeat_ms', 50), ('soft_drop_ms', 40), ('voices', 4))]
-    d['constants'] = {'LINES_PER_LEVEL': 10, 'TOP_LEVEL': 15, 'PH_TITLE': 0, 'PH_PLAYING': 1, 'PH_CLEARING': 2, 'PH_OVER': 3,
+        {'name': n, 'value': v} for n, v in (('spawn_col', 3), ('repeat_after_ms', 170), ('repeat_ms', 50), ('voices', 4))]
+    d['constants'] = {'LINES_PER_LEVEL': 10, 'TOP_LEVEL': 15, 'SOFT_DROP_MS': 40, 'SIG_FALL': 7, 'PH_TITLE': 0, 'PH_PLAYING': 1, 'PH_CLEARING': 2, 'PH_OVER': 3,
                       'SIG_NUMBERS': 1, 'SIG_OVER': 3, 'SIG_LOCK': 4, 'SIG_CLEAR': 5, 'SIG_NEW': 6}
     sq, tri = 'square', 'triangle'
     for name, notes in (('move', [(220, 220, 18, .12, sq)]),
@@ -1258,6 +1371,10 @@ def tetris_game():
                         ('game_over', [(f, f - 40, 220, .25, tri) for f in (523, 466, 415, 392)] + [(330, 200, 500, .25, tri)])):
         p.sound(name, synth(notes))
     d['constants'].update({f'SND_{s.upper()}': i for i, s in enumerate(d['sounds'])})
+    # the music, on the NES's pulses, triangle and noise: the well's (its scene's)
+    d['synth'] = 'nes'
+    p.music('theme', THEME_MML)
+    settings(p, [(190, 190, 210), (240, 240, 250)])
     d['timers'] = [
         {'name': 'lock', 'once': '500ms', 'reset': 'scene', 'event': 'lock', 'start': ''},
         {'name': 'clear', 'once': '360ms', 'reset': 'scene', 'event': 'cleared', 'start': ''},
@@ -1273,7 +1390,6 @@ param phase PH_TITLE
 param score 0
 param lines 0
 param level 1
-param fall 800                # ms a row falls at this level
 param given 0                 # what the game gives with its event: the lines taken, the cells dropped
 table line_points 0 40 100 300 1200
 table fall_ms 800 717 633 550 467 383 300 217 133 100 83 83 83 67 67   # by level, from 1
@@ -1287,7 +1403,7 @@ script new_game
     set score 0
     set lines 0
     set level 1
-    set fall fall_ms[0]
+    set game_var.fall fall_ms[0]
     signal SIG_NEW
     signal SIG_NUMBERS
     goto idle
@@ -1330,7 +1446,7 @@ script counted
     signal SIG_NUMBERS
     goto idle if lines < level * LINES_PER_LEVEL or level >= TOP_LEVEL
     add level 1
-    set fall fall_ms[level - 1]
+    set game_var.fall fall_ms[level - 1]
     sound SND_LEVEL_UP
     signal SIG_NUMBERS
     goto idle
@@ -1351,6 +1467,7 @@ script turning
 script over
     set phase PH_OVER
     timer stop lock
+    music stop 600ms
     sound SND_GAME_OVER
     signal SIG_OVER
     goto idle
@@ -1369,6 +1486,17 @@ on full: any -> flashing now
 on cleared: any -> clearing now
 on moved: any -> moving now
 on turned: any -> turning now
+""")
+    p.variable('fall', 800)  # ms a row falls at this level: PLAY's (its table fall_ms)
+    p.variable('soft', 0)    # 1 while down is held (the game's): it falls faster
+    p.anim('FALL', """# The fall of the piece: a row every game_var.fall ms, every SOFT_DROP_MS while down is held (game_var.soft); the game
+# moves the piece down and starts it anew (hurry) as a piece comes or down is pressed.
+event hurry
+script falling
+    frame none (game_var.soft ? SOFT_DROP_MS : game_var.fall)ms
+    signal SIG_FALL
+    goto falling
+on hurry: falling -> falling now
 """)
     p.anim('WORDS', """# Words in the well: the prompt of the title blinks, GAME OVER drops into the middle, PAUSED blinks.
 event over, paused, resume, restart
@@ -1417,7 +1545,7 @@ on restart: game_over -> quiet now
                                'layer': 0, 'flip': False, 'color': 0} for i in range(6)] +
                    [{'name': 'prompt', 'kind': 'WORDS', 'script': 'blink', 'x': 160, 'y': 180, 'layer': 1, 'flip': False, 'color': 0}],
                    'cues': [{'at': '6s', 'role': 'end', 'event': ''}]}]
-    d['styles'] = [menu_style((320, 240), 180, 64, [20, 20, 40], [190, 190, 210], [240, 240, 250], [50, 90, 240])]
+    d['styles'] = [menu_style((320, 240), 180, 100, [20, 20, 40], [190, 190, 210], [240, 240, 250], [50, 90, 240])]
     p.dialog('pause', PAUSE_DIALOG.format(title='PAUSED', numbers='Score {score}  Lines {lines}'))
     return p
 
@@ -1581,7 +1709,7 @@ def snake_game():
     cells[r0][20] = 2
     cells[4][26] = 6
     d['scenes'].append({
-        'name': 'field', 'width': 320, 'height': 240, 'background': '#60963c',
+        'name': 'field', 'width': 320, 'height': 240, 'background': '#60963c', 'music': 'groove', 'musicFade': 500,
         'layers': [
             layer('cells'),
             layer('actors', [entry('start', 10 * SC, FIELD_Y + r0 * SC + SC - 1)]),
@@ -1596,7 +1724,7 @@ def snake_game():
     d['game'] = [{'name': 'voices', 'value': 2}]
     d['constants'] = {'START_LENGTH': 5, 'STEP_MS': 150, 'FASTEST_MS': 60, 'FASTER_MS': 4, 'GROW': 3, 'APPLE_SCORE': 10, 'STAR_SCORE': 50,
                       'STAR_EVERY': 5, 'PH_TITLE': 0, 'PH_PLAYING': 1, 'PH_OVER': 2,
-                      'SIG_NUMBERS': 1, 'SIG_OVER': 2, 'SIG_STAR': 3, 'SIG_STAR_GONE': 4, 'SIG_NEW': 5}
+                      'SIG_NUMBERS': 1, 'SIG_OVER': 2, 'SIG_STAR': 3, 'SIG_STAR_GONE': 4, 'SIG_NEW': 5, 'SIG_STEP': 6}
     sq, tri = 'square', 'triangle'
     for name, notes in (('eat', [(520, 880, 60, .25, sq), (880, 1320, 60, .22, sq)]),
                         ('star', [(f, f, 55, .22, tri) for f in (1047, 1319, 1568, 2093)]),
@@ -1604,11 +1732,15 @@ def snake_game():
                         ('crash', [(400, 60, 450, .3, sq)])):
         p.sound(name, synth(notes))
     d['constants'].update({f'SND_{s.upper()}': i for i, s in enumerate(d['sounds'])})
+    # the music, on FM with the instruments of MSX-MUSIC: the field's (its scene's)
+    d['synth'] = 'fm'
+    p.music('groove', GROOVE_MML)
+    settings(p, [(150, 220, 90), (240, 240, 240)])
     d['timers'] = [{'name': 'star', 'once': '6000ms', 'reset': 'scene', 'event': 'star_gone', 'start': ''}]
     play = ['title', 'new_game', 'playing', 'apple', 'star_comes', 'star_goes', 'bonus', 'counted', 'turning', 'crashed', 'over']
     p.anim('PLAY', """# The game itself as an actor: its phase (what moves now: PH_*), the score, the best, the length the snake is
 # to grow to, how fast it goes, when a star comes, the words it shows (GAME OVER: the game draws it in the zone
-# message). The game moves the snake a cell every speed ms and tells this actor what the head found and where it
+# message). The clock (CLOCK) moves the snake a cell every game_var.speed ms; the game tells this actor what the head found and where it
 # turned. Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over (the best is kept), SIG_STAR a star
 # comes (a cell of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays
 # the field anew).
@@ -1617,7 +1749,6 @@ param phase PH_TITLE
 param score 0
 param best 0                   # the game gives it what it kept
 param length START_LENGTH      # the snake grows a cell a step until it is so long
-param speed STEP_MS            # ms a step
 
 script title                   # the title show plays (the game's)
     set phase PH_TITLE
@@ -1628,7 +1759,7 @@ script new_game
     set phase PH_PLAYING
     set score 0
     set length START_LENGTH
-    set speed STEP_MS
+    set game_var.speed STEP_MS
     timer stop star
     signal SIG_NEW
     signal SIG_NUMBERS
@@ -1641,7 +1772,7 @@ script playing
 script apple                    # each apple: longer and faster
     add score APPLE_SCORE
     add length GROW
-    set speed max(FASTEST_MS, speed - FASTER_MS)
+    set game_var.speed max(FASTEST_MS, game_var.speed - FASTER_MS)
     sound SND_EAT
     goto star_comes if (length - START_LENGTH) / GROW % STAR_EVERY == 0   # every STAR_EVERY apples
     goto counted
@@ -1673,6 +1804,7 @@ script turning
 script crashed                  # GAME OVER; a start in its first second is not taken
     set phase PH_OVER
     timer stop star
+    music stop 800ms
     sound SND_CRASH
     signal SIG_OVER
     frame WORDS_GAME_OVER 1000ms
@@ -1691,6 +1823,13 @@ on star: playing -> bonus now
 on turned: playing -> turning now
 on crash: playing -> crashed now
 on star_gone: playing -> star_goes now
+""")
+    p.variable('speed', d['constants']['STEP_MS'])  # ms a step of the snake: PLAY makes it shorter, the clock waits it
+    p.anim('CLOCK', """# The snake's clock: a step every game_var.speed ms (PLAY makes it shorter as the snake eats); the game moves it a cell.
+script ticking
+    frame none (game_var.speed)ms
+    signal SIG_STEP
+    goto ticking
 """)
     p.anim('SPARKLE', """# Where the snake ate: sparks fly out and are gone.
 script pop
@@ -1718,7 +1857,7 @@ script sway                     # entry: the title show starts it
                    'actors': [{'name': 'logo', 'kind': 'WORDS', 'script': 'sway', 'x': 160, 'y': 110, 'layer': 0, 'flip': False, 'color': 0},
                               {'name': 'prompt', 'kind': 'WORDS', 'script': 'blink', 'x': 160, 'y': 170, 'layer': 1, 'flip': False, 'color': 0}],
                    'cues': [{'at': '6s', 'role': 'end', 'event': ''}]}]
-    d['styles'] = [menu_style((320, 240), 180, 64, [20, 70, 20], [150, 220, 90], [240, 240, 240], [70, 170, 50])]
+    d['styles'] = [menu_style((320, 240), 180, 100, [20, 70, 20], [150, 220, 90], [240, 240, 240], [70, 170, 50])]
     p.dialog('pause', PAUSE_DIALOG.format(title='PAUSE', numbers='Score {score}  Best {best}'))
     return p
 

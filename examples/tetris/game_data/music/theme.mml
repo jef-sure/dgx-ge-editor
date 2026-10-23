@@ -1,0 +1,8 @@
+; Tetris's theme on the NES: a tune of its own in A minor, a triangle bass, a ticking noise
+#synth nes
+@1 lead = square 25% attack 2 decay 80 sustain 10 release 60 volume 12
+@2 bass = triangle release 30
+@3 tick = noise short decay 30 sustain 0 volume 6
+A t140 @lead o5 l8 $ a4 e8 f g4 f e d4 d f a4 g f e4. f g4 a4 f4 d4 d4 r4 g4. b- >d4< c b- a4. f a4 g f e4 e f g4 a4 f4 d4 d4 r4
+B @bass o3 l4 $ a <a> a <a> d <d> d <d> c <c> c <c> d <d> d <d> g <g> g <g> f <f> f <f> c <c> c <c> d <d> d <d>
+C @tick o4 l8 $ [c r c c]16

@@ -247,8 +247,9 @@ const SceneCanvas = {
             }
             // an actor: the picture of its frame, of whatever set, so far forward and down
             const ap = o.type === 'actor' ? Scene.actorPicture(this.sprites, o) : null;
-            const drawn = ap ? Scene.drawFrame(ctx, ap.setName, ap.frame, x + (o.flip ? -ap.dx : ap.dx) * this.z, y + ap.dy * this.z, o.flip, this.z) :
-                Scene.drawFrame(ctx, o.set, f, x, y, o.flip, this.z);
+            const [dx, dy] = Scene.shiftOf(o, ap);
+            const drawn = ap ? Scene.drawFrame(ctx, ap.setName, ap.frame, x + dx * this.z, y + dy * this.z, o.flip, this.z, o.rotation) :
+                Scene.drawFrame(ctx, o.set, f, x, y, o.flip, this.z, o.rotation);
             if (!drawn) {
                 // a picture not loaded: its place
                 const r = Scene.bounds(this.sprites, o);
@@ -553,11 +554,12 @@ const SceneCanvas = {
                     const ap = o.type === 'actor' ? Scene.actorPicture(this.sprites, o) : null;
                     const f = ap ? ap.frame : o.type === 'actor' ? null : Scene.findFrame(this.sprites, o.set, o.image);
                     const setName = ap ? ap.setName : o.set;
-                    const ox = o.x + (ap ? (o.flip ? -ap.dx : ap.dx) : 0),
-                        oy = o.y + (ap ? ap.dy : 0);
+                    const [dx, dy] = Scene.shiftOf(o, ap);
+                    const ox = o.x + dx,
+                        oy = o.y + dy;
                     const loaded = f && FrameImages.get(setName, f.image);
                     const inRect = Scene.inside(Scene.bounds(this.sprites, o), p.x - off.x, p.y - off.y);
-                    if (loaded ? Scene.framePixel(setName, f, ox, oy, o.flip, p.x - off.x, p.y - off.y) : inRect) return {
+                    if (loaded ? Scene.framePixel(setName, f, ox, oy, o.flip, p.x - off.x, p.y - off.y, o.rotation) : inRect) return {
                         layer: layer,
                         index: i
                     };

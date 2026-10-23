@@ -1,0 +1,10 @@
+# The fall of the piece: a row every game_var.fall ms, every SOFT_DROP_MS while down is held (game_var.soft); the game
+# moves the piece down and starts it anew (hurry) as a piece comes or down is pressed.
+event hurry
+
+script falling
+    frame none (game_var.soft ? SOFT_DROP_MS : game_var.fall)
+    signal SIG_FALL
+    goto falling
+
+on hurry: falling -> falling now

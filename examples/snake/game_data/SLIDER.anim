@@ -1,0 +1,22 @@
+# A slider of the pause dialog: its value, 0..10, as a bar; more and less (right, left) move it a step.
+event more, less
+
+param value 0
+param least 0
+param most 10
+param step 1
+
+script rest
+    frame (SLIDER_BAR_0 + value) 1000ms
+    hold
+
+script up
+    set value min(value + step, most)
+    goto rest
+
+script down
+    set value max(value - step, least)
+    goto rest
+
+on more: rest -> up now
+on less: rest -> down now

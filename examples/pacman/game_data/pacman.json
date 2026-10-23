@@ -384,103 +384,7 @@
                     "points": {}
                 },
                 {
-                    "image": "down_1.png",
-                    "width": 13,
-                    "height": 13,
-                    "origin": {
-                        "x": 6,
-                        "y": 6
-                    },
-                    "masks": {
-                        "1": {
-                            "x": -2,
-                            "y": -2,
-                            "width": 4,
-                            "height": 4,
-                            "rows": [
-                                "f",
-                                "f",
-                                "f",
-                                "f"
-                            ]
-                        }
-                    },
-                    "points": {}
-                },
-                {
-                    "image": "down_2.png",
-                    "width": 13,
-                    "height": 13,
-                    "origin": {
-                        "x": 6,
-                        "y": 6
-                    },
-                    "masks": {
-                        "1": {
-                            "x": -2,
-                            "y": -2,
-                            "width": 4,
-                            "height": 4,
-                            "rows": [
-                                "f",
-                                "f",
-                                "f",
-                                "f"
-                            ]
-                        }
-                    },
-                    "points": {}
-                },
-                {
                     "image": "full.png",
-                    "width": 13,
-                    "height": 13,
-                    "origin": {
-                        "x": 6,
-                        "y": 6
-                    },
-                    "masks": {
-                        "1": {
-                            "x": -2,
-                            "y": -2,
-                            "width": 4,
-                            "height": 4,
-                            "rows": [
-                                "f",
-                                "f",
-                                "f",
-                                "f"
-                            ]
-                        }
-                    },
-                    "points": {}
-                },
-                {
-                    "image": "left_1.png",
-                    "width": 13,
-                    "height": 13,
-                    "origin": {
-                        "x": 6,
-                        "y": 6
-                    },
-                    "masks": {
-                        "1": {
-                            "x": -2,
-                            "y": -2,
-                            "width": 4,
-                            "height": 4,
-                            "rows": [
-                                "f",
-                                "f",
-                                "f",
-                                "f"
-                            ]
-                        }
-                    },
-                    "points": {}
-                },
-                {
-                    "image": "left_2.png",
                     "width": 13,
                     "height": 13,
                     "origin": {
@@ -550,54 +454,6 @@
                         }
                     },
                     "points": {}
-                },
-                {
-                    "image": "up_1.png",
-                    "width": 13,
-                    "height": 13,
-                    "origin": {
-                        "x": 6,
-                        "y": 6
-                    },
-                    "masks": {
-                        "1": {
-                            "x": -2,
-                            "y": -2,
-                            "width": 4,
-                            "height": 4,
-                            "rows": [
-                                "f",
-                                "f",
-                                "f",
-                                "f"
-                            ]
-                        }
-                    },
-                    "points": {}
-                },
-                {
-                    "image": "up_2.png",
-                    "width": 13,
-                    "height": 13,
-                    "origin": {
-                        "x": 6,
-                        "y": 6
-                    },
-                    "masks": {
-                        "1": {
-                            "x": -2,
-                            "y": -2,
-                            "width": 4,
-                            "height": 4,
-                            "rows": [
-                                "f",
-                                "f",
-                                "f",
-                                "f"
-                            ]
-                        }
-                    },
-                    "points": {}
                 }
             ],
             "animation": {
@@ -623,10 +479,8 @@
                             "up",
                             "left",
                             "down",
-                            "still_right",
-                            "still_up",
-                            "still_left",
-                            "still_down"
+                            "chomp",
+                            "still"
                         ]
                     }
                 ],
@@ -639,6 +493,11 @@
                                 "indexes": [
                                     "PAC"
                                 ]
+                            },
+                            {
+                                "op": "rotate",
+                                "value": 0,
+                                "to": true
                             },
                             {
                                 "op": "frame",
@@ -654,6 +513,62 @@
                         "name": "right",
                         "lines": [
                             {
+                                "op": "rotate",
+                                "value": 0,
+                                "to": true
+                            },
+                            {
+                                "op": "goto",
+                                "target": "chomp"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "up",
+                        "lines": [
+                            {
+                                "op": "rotate",
+                                "value": 270,
+                                "to": true
+                            },
+                            {
+                                "op": "goto",
+                                "target": "chomp"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "left",
+                        "lines": [
+                            {
+                                "op": "rotate",
+                                "value": 180,
+                                "to": true
+                            },
+                            {
+                                "op": "goto",
+                                "target": "chomp"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "down",
+                        "lines": [
+                            {
+                                "op": "rotate",
+                                "value": 90,
+                                "to": true
+                            },
+                            {
+                                "op": "goto",
+                                "target": "chomp"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "chomp",
+                        "lines": [
+                            {
                                 "op": "masks",
                                 "indexes": [
                                     "PAC"
@@ -661,7 +576,7 @@
                             },
                             {
                                 "op": "label",
-                                "name": "right_chomp"
+                                "name": "chomping"
                             },
                             {
                                 "op": "frame",
@@ -685,129 +600,12 @@
                             },
                             {
                                 "op": "goto",
-                                "target": "right_chomp"
+                                "target": "chomping"
                             }
                         ]
                     },
                     {
-                        "name": "up",
-                        "lines": [
-                            {
-                                "op": "masks",
-                                "indexes": [
-                                    "PAC"
-                                ]
-                            },
-                            {
-                                "op": "label",
-                                "name": "up_chomp"
-                            },
-                            {
-                                "op": "frame",
-                                "image": "up_1.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "frame",
-                                "image": "up_2.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "frame",
-                                "image": "up_1.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "frame",
-                                "image": "full.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "goto",
-                                "target": "up_chomp"
-                            }
-                        ]
-                    },
-                    {
-                        "name": "left",
-                        "lines": [
-                            {
-                                "op": "masks",
-                                "indexes": [
-                                    "PAC"
-                                ]
-                            },
-                            {
-                                "op": "label",
-                                "name": "left_chomp"
-                            },
-                            {
-                                "op": "frame",
-                                "image": "left_1.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "frame",
-                                "image": "left_2.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "frame",
-                                "image": "left_1.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "frame",
-                                "image": "full.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "goto",
-                                "target": "left_chomp"
-                            }
-                        ]
-                    },
-                    {
-                        "name": "down",
-                        "lines": [
-                            {
-                                "op": "masks",
-                                "indexes": [
-                                    "PAC"
-                                ]
-                            },
-                            {
-                                "op": "label",
-                                "name": "down_chomp"
-                            },
-                            {
-                                "op": "frame",
-                                "image": "down_1.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "frame",
-                                "image": "down_2.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "frame",
-                                "image": "down_1.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "frame",
-                                "image": "full.png",
-                                "ms": 40
-                            },
-                            {
-                                "op": "goto",
-                                "target": "down_chomp"
-                            }
-                        ]
-                    },
-                    {
-                        "name": "still_right",
+                        "name": "still",
                         "lines": [
                             {
                                 "op": "frame",
@@ -818,49 +616,7 @@
                                 "op": "hold"
                             }
                         ],
-                        "note": " against a wall: his mouth stays as it was"
-                    },
-                    {
-                        "name": "still_up",
-                        "lines": [
-                            {
-                                "op": "frame",
-                                "image": "up_1.png",
-                                "ms": 1000
-                            },
-                            {
-                                "op": "hold"
-                            }
-                        ],
-                        "note": " against a wall: his mouth stays as it was"
-                    },
-                    {
-                        "name": "still_left",
-                        "lines": [
-                            {
-                                "op": "frame",
-                                "image": "left_1.png",
-                                "ms": 1000
-                            },
-                            {
-                                "op": "hold"
-                            }
-                        ],
-                        "note": " against a wall: his mouth stays as it was"
-                    },
-                    {
-                        "name": "still_down",
-                        "lines": [
-                            {
-                                "op": "frame",
-                                "image": "down_1.png",
-                                "ms": 1000
-                            },
-                            {
-                                "op": "hold"
-                            }
-                        ],
-                        "note": " against a wall: his mouth stays as it was"
+                        "note": " against a wall: his mouth half open, turned the way he went"
                     },
                     {
                         "name": "caught",
@@ -890,6 +646,11 @@
                             {
                                 "op": "masks",
                                 "indexes": []
+                            },
+                            {
+                                "op": "rotate",
+                                "value": 0,
+                                "to": true
                             },
                             {
                                 "op": "sound",
@@ -973,7 +734,8 @@
                                 "op": "goto",
                                 "target": "gone"
                             }
-                        ]
+                        ],
+                        "note": " upright again: his pictures of dying open up"
                     },
                     {
                         "name": "parade",
@@ -1047,26 +809,8 @@
                     },
                     {
                         "event": "stop",
-                        "source": "right",
-                        "to": "still_right",
-                        "when": "now"
-                    },
-                    {
-                        "event": "stop",
-                        "source": "up",
-                        "to": "still_up",
-                        "when": "now"
-                    },
-                    {
-                        "event": "stop",
-                        "source": "left",
-                        "to": "still_left",
-                        "when": "now"
-                    },
-                    {
-                        "event": "stop",
-                        "source": "down",
-                        "to": "still_down",
+                        "source": "chomp",
+                        "to": "still",
                         "when": "now"
                     },
                     {
@@ -1085,9 +829,9 @@
                 "heads": {
                     "event": {
                         "above": [
-                            " Pac-Man: chomping his way, still against a wall, caught, dying, running on the title.",
-                            " The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and tells him his way. His body is the",
-                            " mask PAC: a ghost that meets it says what follows (its hit: caught)."
+                            " Pac-Man: chomping his way, still against a wall, caught, dying, running on the title. His pictures face right:",
+                            " the way he goes turns him (rotate to). The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and",
+                            " tells him his way. His body is the mask PAC: a ghost that meets it says what follows (its hit: caught)."
                         ]
                     }
                 }
@@ -3011,7 +2755,15 @@
                 "tables": [],
                 "questions": [],
                 "params": [],
-                "groups": [],
+                "groups": [
+                    {
+                        "name": "away",
+                        "scripts": [
+                            "hidden",
+                            "taken"
+                        ]
+                    }
+                ],
                 "scripts": [
                     {
                         "name": "hidden",
@@ -3075,16 +2827,21 @@
                                 "note": " tell the game: PLAY counts it"
                             },
                             {
-                                "op": "goto",
-                                "target": "hidden"
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
                             }
-                        ]
+                        ],
+                        "note": " gone, as hidden: shown again when PLAY says"
                     }
                 ],
                 "rules": [
                     {
                         "event": "show",
-                        "source": "hidden",
+                        "source": "away",
                         "to": "shown",
                         "when": "now"
                     },
@@ -3208,6 +2965,231 @@
                     }
                 ],
                 "rules": []
+            }
+        },
+        {
+            "name": "SLIDER",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": -6,
+                "width": 43,
+                "height": 7
+            },
+            "frames": [
+                {
+                    "image": "bar_0.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_1.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_2.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_3.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_4.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_5.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_6.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_7.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_8.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_9.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_10.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [
+                    "more",
+                    "less"
+                ],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [
+                    {
+                        "name": "value",
+                        "value": 0
+                    },
+                    {
+                        "name": "least",
+                        "value": 0
+                    },
+                    {
+                        "name": "most",
+                        "value": 10
+                    },
+                    {
+                        "name": "step",
+                        "value": 1
+                    }
+                ],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "rest",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "expr": "SLIDER_BAR_0 + value",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "up",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "value",
+                                "value": "min(value + step, most)"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "rest"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "down",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "value",
+                                "value": "max(value - step, least)"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "rest"
+                            }
+                        ]
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "more",
+                        "source": "rest",
+                        "to": "up",
+                        "when": "now"
+                    },
+                    {
+                        "event": "less",
+                        "source": "rest",
+                        "to": "down",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " A slider of the pause dialog: its value, 0..10, as a bar; more and less (right, left) move it a step."
+                        ]
+                    }
+                }
             }
         },
         {
@@ -3342,7 +3324,8 @@
                     "fruit",
                     "caught",
                     "lost",
-                    "idle"
+                    "idle",
+                    "calm"
                 ],
                 "defines": [],
                 "tables": [],
@@ -3392,6 +3375,7 @@
                             "scored",
                             "bonus_life",
                             "ate_ghost",
+                            "calm",
                             "ate_fruit",
                             "release",
                             "caught",
@@ -3553,10 +3537,21 @@
                                 "value": "GHOST_SCORE"
                             },
                             {
+                                "op": "music",
+                                "name": "fright",
+                                "ms": 100
+                            },
+                            {
+                                "op": "timer",
+                                "action": "start",
+                                "name": "blue"
+                            },
+                            {
                                 "op": "goto",
                                 "target": "counted"
                             }
-                        ]
+                        ],
+                        "note": " the ghosts blue: their music while it lasts"
                     },
                     {
                         "name": "counted",
@@ -3676,6 +3671,11 @@
                                 "name": "idle"
                             },
                             {
+                                "op": "timer",
+                                "action": "hold",
+                                "name": "blue"
+                            },
+                            {
                                 "op": "signal",
                                 "value": "SIG_NUMBERS"
                             },
@@ -3695,11 +3695,31 @@
                                 "name": "idle"
                             },
                             {
+                                "op": "timer",
+                                "action": "go",
+                                "name": "blue"
+                            },
+                            {
                                 "op": "goto",
                                 "target": "scored"
                             }
                         ],
                         "note": " 200, 400, 800, 1600 in one fright: all stands a while, its points shown"
+                    },
+                    {
+                        "name": "calm",
+                        "lines": [
+                            {
+                                "op": "music",
+                                "name": "siren",
+                                "ms": 300
+                            },
+                            {
+                                "op": "goto",
+                                "target": "playing"
+                            }
+                        ],
+                        "note": " the fright over: the siren again"
                     },
                     {
                         "name": "ate_fruit",
@@ -3748,6 +3768,16 @@
                                 "name": "idle"
                             },
                             {
+                                "op": "timer",
+                                "action": "stop",
+                                "name": "blue"
+                            },
+                            {
+                                "op": "music",
+                                "name": "stop",
+                                "ms": 300
+                            },
+                            {
                                 "op": "frame",
                                 "none": true,
                                 "ms": 1000
@@ -3770,7 +3800,7 @@
                                 "op": "hold"
                             }
                         ],
-                        "note": " a ghost has him: all stands a second, then he dies (the ghosts go)"
+                        "note": " a ghost has him: all stands a second, the music goes, then he dies (the ghosts go)"
                     },
                     {
                         "name": "life_lost",
@@ -3808,6 +3838,16 @@
                                 "op": "timer",
                                 "action": "stop",
                                 "name": "idle"
+                            },
+                            {
+                                "op": "timer",
+                                "action": "stop",
+                                "name": "blue"
+                            },
+                            {
+                                "op": "music",
+                                "name": "stop",
+                                "ms": 300
                             },
                             {
                                 "op": "signal",
@@ -3904,7 +3944,7 @@
                                 "target": "level"
                             }
                         ],
-                        "note": " the level eaten: all stands, the maze flashes, the next level"
+                        "note": " the level eaten: all stands, the music goes, the maze flashes, the next level"
                     },
                     {
                         "name": "game_over",
@@ -3966,6 +4006,12 @@
                         "event": "restart",
                         "source": "any",
                         "to": "new_game",
+                        "when": "now"
+                    },
+                    {
+                        "event": "calm",
+                        "source": "playing",
+                        "to": "calm",
                         "when": "now"
                     },
                     {
@@ -5277,7 +5323,9 @@
                 "right": "",
                 "up": "",
                 "down": ""
-            }
+            },
+            "music": "siren",
+            "musicFade": 300
         }
     ],
     "styles": [
@@ -5286,9 +5334,9 @@
             "frame": "fill",
             "place": [
                 32,
-                112,
+                94,
                 160,
-                64
+                100
             ],
             "padding": [
                 8,
@@ -5476,7 +5524,7 @@
     "dialogs": [
         {
             "name": "pause",
-            "text": "dialog pause\nroles play PLAY\ngame PLAY\nstyle menu\npause\n    say game \"PAUSE  Score {score}  Lives {lives}\"\nchoose play\n    \"Continue\" -> resume\n    \"New game\" -> restart\nlabel resume\n    end\nlabel restart\n    tell play restart\n    end\n"
+            "text": "dialog pause\nroles play PLAY\ngame PLAY\nstyle menu\npause\n    say game \"PAUSE  Score {score}  Lives {lives}\"\nchoose play\n    \"Continue\" -> resume\n    \"Music\" control SLIDER game_var.music_volume\n    \"Effects\" control SLIDER game_var.effects_volume\n    \"New game\" -> restart\nlabel resume\n    end\nlabel restart\n    tell play restart\n    end\n"
         }
     ],
     "game": [
@@ -5628,6 +5676,15 @@
             "reset": "scene",
             "event": "idle",
             "start": ""
+        },
+        {
+            "name": "blue",
+            "once": "6054ms",
+            "every": "",
+            "until": "",
+            "reset": "scene",
+            "event": "calm",
+            "start": ""
         }
     ],
     "sounds": [
@@ -5694,5 +5751,20 @@
         }
     ],
     "chases": [],
-    "crops": []
+    "crops": [],
+    "variables": [
+        {
+            "name": "music_volume",
+            "value": 8
+        },
+        {
+            "name": "effects_volume",
+            "value": 10
+        }
+    ],
+    "synth": "chip",
+    "music": [
+        "siren",
+        "fright"
+    ]
 }

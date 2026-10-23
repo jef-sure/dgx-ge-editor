@@ -1,63 +1,41 @@
-# Pac-Man: chomping his way, still against a wall, caught, dying, running on the title.
-# The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and tells him his way. His body is the
-# mask PAC: a ghost that meets it says what follows (its hit: caught).
+# Pac-Man: chomping his way, still against a wall, caught, dying, running on the title. His pictures face right:
+# the way he goes turns him (rotate to). The game moves him from the middle of a cell to the next (dgx_ge_walk.h) and
+# tells him his way. His body is the mask PAC: a ghost that meets it says what follows (its hit: caught).
 event left, right, up, down, stop, caught, die
 
 script whole
     masks PAC
+    rotate to 0
     frame PAC_FULL 1000ms
     hold
 
 script right
+    rotate to 0
+    goto chomp
+
+script up
+    rotate to 270
+    goto chomp
+
+script left
+    rotate to 180
+    goto chomp
+
+script down
+    rotate to 90
+    goto chomp
+
+script chomp
     masks PAC
-label right_chomp
+label chomping
     frame PAC_RIGHT_1 40ms
     frame PAC_RIGHT_2 40ms
     frame PAC_RIGHT_1 40ms
     frame PAC_FULL 40ms
-    goto right_chomp
+    goto chomping
 
-script up
-    masks PAC
-label up_chomp
-    frame PAC_UP_1 40ms
-    frame PAC_UP_2 40ms
-    frame PAC_UP_1 40ms
-    frame PAC_FULL 40ms
-    goto up_chomp
-
-script left
-    masks PAC
-label left_chomp
-    frame PAC_LEFT_1 40ms
-    frame PAC_LEFT_2 40ms
-    frame PAC_LEFT_1 40ms
-    frame PAC_FULL 40ms
-    goto left_chomp
-
-script down
-    masks PAC
-label down_chomp
-    frame PAC_DOWN_1 40ms
-    frame PAC_DOWN_2 40ms
-    frame PAC_DOWN_1 40ms
-    frame PAC_FULL 40ms
-    goto down_chomp
-
-script still_right  # against a wall: his mouth stays as it was
+script still  # against a wall: his mouth half open, turned the way he went
     frame PAC_RIGHT_1 1000ms
-    hold
-
-script still_up  # against a wall: his mouth stays as it was
-    frame PAC_UP_1 1000ms
-    hold
-
-script still_left  # against a wall: his mouth stays as it was
-    frame PAC_LEFT_1 1000ms
-    hold
-
-script still_down  # against a wall: his mouth stays as it was
-    frame PAC_DOWN_1 1000ms
     hold
 
 script caught  # a ghost has him: he stands whole; the game is told (PLAY stands it all a while)
@@ -66,8 +44,9 @@ script caught  # a ghost has him: he stands whole; the game is told (PLAY stands
     frame PAC_FULL 1000ms
     hold
 
-script dying
+script dying  # upright again: his pictures of dying open up
     masks
+    rotate to 0
     sound SND_DEATH
     frame PAC_DIE_0 133ms
     frame PAC_DIE_1 133ms
@@ -96,15 +75,12 @@ label parade_chomp
     frame PAC_FULL 40ms
     goto parade_chomp
 
-group any: whole, right, up, left, down, still_right, still_up, still_left, still_down
+group any: whole, right, up, left, down, chomp, still
 
 on right: any -> right now
 on up: any -> up now
 on left: any -> left now
 on down: any -> down now
-on stop: right -> still_right now
-on stop: up -> still_up now
-on stop: left -> still_left now
-on stop: down -> still_down now
+on stop: chomp -> still now
 on caught: any -> caught now
 on die: caught -> dying now

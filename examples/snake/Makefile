@@ -9,6 +9,7 @@ GAME          := snake
 GAME_SRCS     := main/main.c
 GAME_INCLUDES := main
 GAME_EMBED    := main/assets/snake.pack
+GAME_DEFINES  := DGX_GE_ANIM_NOW_EVENTS=4 DGX_GE_SYNTH_FM=1 # as dgx_ge_now_events, dgx_ge_synths in main/CMakeLists.txt
 GAME_PACK_H   := main/assets/snake_pack.h
 HOST_DISPLAY  ?= 320x240
 HOST_MM       ?= 58x43

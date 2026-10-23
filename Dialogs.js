@@ -5,6 +5,8 @@
 // a player that goes through a dialog as the engine does (DialogRunner)
 const Dialogs = {
     talkNumbers: 4, // so many numbers a line shows at most (dgx_ge_dialog.h)
+    // a number a line shows: {name}, a param of the one saying it; {game_var.name}, a variable of the game (SHOWN)
+    shown: /\{((?:game_var\.)?\w+)\}/g,
     uiEvents: ['activate', 'more', 'less'],
 
     // a string in double quotes at the start of text: [the string, the rest]
@@ -39,7 +41,8 @@ const Dialogs = {
 
     // a dialog from its text: {dialog: {name, roles: [{role, kind, shown, face}], game, pause, code: [statement], labels},
     // errors: [text], warnings: [text]}. A statement: {op, line, ...}: say {role, important, msgid, plural, ms},
-    // choose {role, ms, timeout, answers: [{msgid, cond, control, param, to}]}, tell {role, event}, give {from, kind,
+    // choose {role, ms, timeout, answers: [{msgid, cond, control, param | variable, to}]} (variable: a control of a variable
+    // of the game, control SLIDER game_var.volume), tell {role, event}, give {from, kind,
     // count, to}, goto {label}, style {name}, end. A kind or a picture the file has not is a warning: the pack may have it
     parse(text, doc) {
         text = text.normalize('NFC'); // as the packer reads a dialog: its msgids meet those of a .po in NFC
@@ -105,10 +108,11 @@ const Dialogs = {
                 const indent = line.length - line.replace(/^ +/, '').length;
                 const body = line.trim();
                 if (choosing && indent > choosing.indent && body.startsWith('"')) {
-                    // an answer of the choose above: "msgid" [if expr] [control KIND param | field NAME] [-> label]; a field is
-                    // the game's (Pack.add_field): the file has none, the packer refuses a name it was not given
+                    // an answer of the choose above: "msgid" [if expr] [control KIND param | control KIND game_var.NAME | field
+                    // NAME] [-> label]; a field is the game's (Pack.add_field): the file has none, the packer refuses a name it
+                    // was not given
                     const [msgid, rest] = this.string(body, where);
-                    const m = /^\s*(?:if\s+(.+?))?\s*(?:control\s+(\w+)\s+(\w+)|field\s+(\w+))?\s*(?:->\s*(\w+))?\s*$/.exec(rest);
+                    const m = /^\s*(?:if\s+(.+?))?\s*(?:control\s+(\w+)\s+((?:game_var\.)?\w+)|field\s+(\w+))?\s*(?:->\s*(\w+))?\s*$/.exec(rest);
                     if (!m || !(m[2] || m[4] || m[5]))
                         throw new Error(where + ': "<msgid>" [if <expression>] [control <kind> <param> | field <name>] [-> <label>]: a control, a field or a label at least');
                     const kind = kindOf(choosing.statement.role);
@@ -119,9 +123,15 @@ const Dialogs = {
                     if (m[2]) {
                         knownKind(m[2], where);
                         const own = paramsOf(kind);
-                        if (own && !own.includes(m[3])) throw new Error(where + ": no param '" + m[3] + "' of " + (kind || 'the one choosing'));
+                        if (m[3].startsWith('game_var.')) {
+                            // a control of a variable of the game (ANSWER_VAR)
+                            if (!Anim.packVariables().includes(m[3].slice(9))) throw new Error(where + ': ' + m[3] + ': no such variable of the game (Pack.add_variable)');
+                            a.variable = m[3].slice(9);
+                        } else {
+                            if (own && !own.includes(m[3])) throw new Error(where + ": no param '" + m[3] + "' of " + (kind || 'the one choosing'));
+                            a.param = m[3];
+                        }
                         a.control = m[2];
-                        a.param = m[3];
                     }
                     if (m[4]) a.field = m[4];
                     if (m[1]) {
@@ -191,9 +201,10 @@ const Dialogs = {
                     if (tail.trim().startsWith('"'))[plural, tail] = this.string(tail, where);
                     const ms = tail.trim() ? this.ms(tail, where) : 0;
                     const r = role(m[1], where);
-                    // the numbers a line shows: {name} of params of the one saying it, in order; the form by the first
-                    const order = [...msgid.matchAll(/\{(\w+)\}/g)].map(x => x[1]);
-                    const shows = new Set([...(msgid + (plural || '')).matchAll(/\{(\w+)\}/g)].map(x => x[1]));
+                    // the numbers a line shows: {name} of params of the one saying it, or {game_var.name} of the game's
+                    // variables (not both), in order; the form by the first
+                    const order = [...msgid.matchAll(this.shown)].map(x => x[1]);
+                    const shows = new Set([...(msgid + (plural || '')).matchAll(this.shown)].map(x => x[1]));
                     let s = {
                         op: 'say',
                         role: r,
@@ -203,18 +214,26 @@ const Dialogs = {
                         line: i
                     };
                     if (plural !== undefined || shows.size) {
+                        const ofVars = new Set([...shows].map(n => n.startsWith('game_var.')));
+                        if (ofVars.size > 1) throw new Error(where + ': a line shows params of the one saying it or variables of the game, not both');
+                        const vars = ofVars.has(true);
+                        if (vars)
+                            for (const n of shows)
+                                if (!Anim.packVariables().includes(n.slice(9))) throw new Error(where + ': {' + n + '}: no such variable of the game (Pack.add_variable)');
                         if (order.length > this.talkNumbers) throw new Error(where + ': a line shows ' + this.talkNumbers + ' numbers at most');
                         if (order.length > 1) {
-                            if (plural !== undefined && [...plural.matchAll(/\{(\w+)\}/g)].map(x => x[1]).join(',') !== order.join(','))
+                            if (plural !== undefined && [...plural.matchAll(this.shown)].map(x => x[1]).join(',') !== order.join(','))
                                 throw new Error(where + ': the forms of a line show the same numbers in the same order');
                         } else if (shows.size !== 1) throw new Error(where + ': a line of a number shows one param of the one saying it: {name}');
                         const kind = kindOf(r);
-                        const own = paramsOf(kind);
+                        // a line of variables: its names are the variables (game_var.<name>), whoever says it
+                        const own = vars ? [...shows] : paramsOf(kind);
                         const names = order.length ? order : [...shows];
                         for (const shown of names)
                             if (own && !own.includes(shown)) throw new Error(where + ": no param '" + shown + "' of " + (kind || 'the one saying it'));
                         s.param = names[0];
                         s.params = names;
+                        if (vars) s.vars = true;
                         if (plural !== undefined) s.plural = plural;
                     }
                     d.code.push(s);
@@ -377,6 +396,7 @@ class DialogRunner {
         this.known = {}; // role -> whether its kind is in the file (its params known); unknown params are 0 then
         this.pockets = {}; // role -> {kind: count}
         this.fields = {}; // the game's text fields the answers edit: name -> text (empty at first; the game keeps its own)
+        this.vars = Anim.packVariableValues(); // the game's variables (game_var.<name>) as they begin: conditions read them, controls edit them
         for (const r of [...dialog.roles.map(r => r.role), 'game']) {
             const kind = r === 'game' ? dialog.game : dialog.roles.find(x => x.role === r).kind;
             const set = kind && this.ctx.kinds[kind];
@@ -394,6 +414,10 @@ class DialogRunner {
         this.log.push(text);
         if (this.log.length > 12) this.log.shift();
     }
+    // what a control of an answer edits: a param of the one choosing, or a variable of the game
+    controlValue(a, role) {
+        return (a.variable !== undefined ? this.vars[a.variable] : this.params[role][a.param]) || 0;
+    }
     // the value of an expression of a role's params and pockets
     value(text, role) {
         // a kind not in the file: its params are not known, any name is taken as one (as the parse took it), 0
@@ -405,7 +429,8 @@ class DialogRunner {
             animation: false
         });
         return Anim.evalExpr(tree, this.params[role], 0, {
-            count: kind => this.pockets[role][kind] || 0
+            count: kind => this.pockets[role][kind] || 0,
+            gameVar: name => this.vars[name] || 0
         });
     }
     name(role) {
@@ -416,7 +441,8 @@ class DialogRunner {
     // translation may put them in its own order (the packer stores them as {i}, the engine shows number i there); a
     // name the line has not (the packer refuses it) takes the next, as the engine does at a name
     lineText(s) {
-        const numbers = (s.params || (s.param !== undefined ? [s.param] : [])).map(p => this.params[s.role][p] || 0);
+        // a param of the one saying it, or a variable of the game ({game_var.name})
+        const numbers = (s.params || (s.param !== undefined ? [s.param] : [])).map(p => (p.startsWith('game_var.') ? this.vars[p.slice(9)] : this.params[s.role][p]) || 0);
         const n = numbers.length ? numbers[0] : 0;
         let text;
         if (s.plural !== undefined) {
@@ -431,7 +457,7 @@ class DialogRunner {
         if (!numbers.length) return text;
         const names = s.params || [s.param];
         let k = 0;
-        return text.replace(/\{(\w*)\}/g, (m, name) => {
+        return text.replace(/\{((?:game_var\.)?\w*)\}/g, (m, name) => {
             const i = names.indexOf(name);
             return String(numbers[i >= 0 ? i : Math.min(k++, numbers.length - 1)]);
         });
@@ -461,7 +487,7 @@ class DialogRunner {
                     const answers = s.answers.filter(a => !a.cond || this.value(a.cond, s.role) !== 0).map(a => ({
                         answer: a,
                         text: Dialogs.translate(this.po, this.d.name, a.msgid),
-                        value: a.control ? this.params[s.role][a.param] || 0 : undefined
+                        value: a.control ? this.controlValue(a, s.role) : undefined
                     }));
                     this.shown = {
                         op: 'choose',
@@ -572,15 +598,16 @@ class DialogRunner {
         runner.event(event);
         const value = runner.state.params[anim.params[0].name];
         if (value !== a.value) {
-            this.params[v.role][a.answer.param] = value;
-            this.say(a.answer.control + ' ' + event + ': ' + a.answer.param + ' = ' + value);
+            if (a.answer.variable !== undefined) this.vars[a.answer.variable] = value;
+            else this.params[v.role][a.answer.param] = value;
+            this.say(a.answer.control + ' ' + event + ': ' + (a.answer.variable !== undefined ? 'game_var.' + a.answer.variable : a.answer.param) + ' = ' + value);
             // the answers again as the conditions say now, the one chosen stays chosen
             const keep = a.answer;
             const s = this.d.code[this.pc];
             const answers = s.answers.filter(x => !x.cond || this.value(x.cond, s.role) !== 0).map(x => ({
                 answer: x,
                 text: Dialogs.translate(this.po, this.d.name, x.msgid),
-                value: x.control ? this.params[s.role][x.param] || 0 : undefined
+                value: x.control ? this.controlValue(x, s.role) : undefined
             }));
             v.answers = answers;
             v.pick = Math.max(0, answers.findIndex(x => x.answer === keep));

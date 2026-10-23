@@ -6,6 +6,8 @@ pause
     say game "PAUSE  Score {score}  Best {best}"
 choose play
     "Continue" -> resume
+    "Music" control SLIDER game_var.music_volume
+    "Effects" control SLIDER game_var.effects_volume
     "New game" -> restart
 label resume
     end

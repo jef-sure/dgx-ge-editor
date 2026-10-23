@@ -16,11 +16,11 @@ CodeMirror.defineSimpleMode('dgx-anim', {
         token: [null, 'keyword'],
         sol: true
     }, {
-        regex: /^(\s*)(frame|dx|dy|flip|velocity|accel|signal|sound|masks|carry|contact|tell|press|clear|appear|vanish|goto|shoot|draw|stow|keep|timer|release|hit|branch|hold|set|add|path|sense|steer|action)\b/,
+        regex: /^(\s*)(frame|dx|dy|flip|rotate|music|velocity|accel|signal|sound|masks|carry|contact|tell|press|clear|appear|vanish|goto|shoot|draw|stow|keep|timer|release|hit|branch|hold|set|add|path|sense|steer|action)\b/,
         token: [null, 'builtin'],
         sol: true
     }, {
-        regex: /\b(if|on|off|now|branch|end|within|first|damage|event|recoil|with|and|or|not|at|none|holder|cell|start|stop|go|left|seen|into|where|to|from|angle|x|y|t)\b/,
+        regex: /\b(if|on|off|now|branch|end|within|first|damage|event|recoil|with|and|or|not|at|none|holder|cell|start|stop|go|left|seen|into|where|to|from|angle|volume|rotation|music|game_var|x|y|t)\b/,
         token: 'atom'
     }, {
         regex: /\b\d+(\.\d+)?(ms|s)?\b/,
@@ -241,8 +241,12 @@ const AnimText = {
             let out = new Set(['script', 'label', 'event', 'param', 'define', 'table', 'game', 'group', 'on', 'pockets', 'stack',
                 'frame', 'dx', 'dy', 'flip', 'velocity', 'accel', 'signal', 'sound', 'masks', 'carry', 'contact', 'tell', 'press',
                 'clear', 'appear', 'vanish', 'goto', 'shoot', 'draw', 'stow', 'keep', 'timer', 'release', 'hit', 'branch', 'hold',
-                'set', 'add', 'path', 'sense', 'steer', 'now', 'end', 'none', 'within', 'damage', 'recoil', 'with'
+                'set', 'add', 'path', 'sense', 'steer', 'now', 'end', 'none', 'within', 'damage', 'recoil', 'with',
+                'rotate', 'rotation', 'music', 'volume', 'stop'
             ]);
+            // the game's variables (game_var.<name>) and musics of the document
+            for (const v of Anim.packVariables()) out.add('game_var.' + v);
+            for (const m of Anim.packMusics()) out.add(m);
             for (const e of a.events) out.add(e);
             for (const p of a.params) out.add(p.name);
             for (const d of a.defines) out.add(d.name);

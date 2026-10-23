@@ -523,6 +523,231 @@
             }
         },
         {
+            "name": "SLIDER",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": -6,
+                "width": 43,
+                "height": 7
+            },
+            "frames": [
+                {
+                    "image": "bar_0.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_1.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_2.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_3.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_4.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_5.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_6.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_7.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_8.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_9.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                },
+                {
+                    "image": "bar_10.png",
+                    "width": 43,
+                    "height": 7,
+                    "origin": {
+                        "x": 0,
+                        "y": 6
+                    },
+                    "masks": {},
+                    "points": {}
+                }
+            ],
+            "animation": {
+                "events": [
+                    "more",
+                    "less"
+                ],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [
+                    {
+                        "name": "value",
+                        "value": 0
+                    },
+                    {
+                        "name": "least",
+                        "value": 0
+                    },
+                    {
+                        "name": "most",
+                        "value": 10
+                    },
+                    {
+                        "name": "step",
+                        "value": 1
+                    }
+                ],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "rest",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "expr": "SLIDER_BAR_0 + value",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "up",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "value",
+                                "value": "min(value + step, most)"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "rest"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "down",
+                        "lines": [
+                            {
+                                "op": "set",
+                                "param": "value",
+                                "value": "max(value - step, least)"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "rest"
+                            }
+                        ]
+                    }
+                ],
+                "rules": [
+                    {
+                        "event": "more",
+                        "source": "rest",
+                        "to": "up",
+                        "when": "now"
+                    },
+                    {
+                        "event": "less",
+                        "source": "rest",
+                        "to": "down",
+                        "when": "now"
+                    }
+                ],
+                "heads": {
+                    "event": {
+                        "above": [
+                            " A slider of the pause dialog: its value, 0..10, as a bar; more and less (right, left) move it a step."
+                        ]
+                    }
+                }
+            }
+        },
+        {
             "name": "PLAY",
             "defaultMask": null,
             "canvas": {
@@ -563,11 +788,6 @@
                         "name": "length",
                         "value": "START_LENGTH",
                         "note": " the snake grows a cell a step until it is so long"
-                    },
-                    {
-                        "name": "speed",
-                        "value": "STEP_MS",
-                        "note": " ms a step"
                     }
                 ],
                 "groups": [
@@ -628,7 +848,7 @@
                             },
                             {
                                 "op": "set",
-                                "param": "speed",
+                                "variable": "speed",
                                 "value": "STEP_MS"
                             },
                             {
@@ -678,8 +898,8 @@
                             },
                             {
                                 "op": "set",
-                                "param": "speed",
-                                "value": "max(FASTEST_MS, speed - FASTER_MS)"
+                                "variable": "speed",
+                                "value": "max(FASTEST_MS, game_var.speed - FASTER_MS)"
                             },
                             {
                                 "op": "sound",
@@ -798,6 +1018,11 @@
                                 "name": "star"
                             },
                             {
+                                "op": "music",
+                                "name": "stop",
+                                "ms": 800
+                            },
+                            {
                                 "op": "sound",
                                 "value": "SND_CRASH"
                             },
@@ -886,13 +1111,56 @@
                         "above": [
                             " The game itself as an actor: its phase (what moves now: PH_*), the score, the best, the length the snake is",
                             " to grow to, how fast it goes, when a star comes, the words it shows (GAME OVER: the game draws it in the zone",
-                            " message). The game moves the snake a cell every speed ms and tells this actor what the head found and where it",
+                            " message). The clock (CLOCK) moves the snake a cell every game_var.speed ms; the game tells this actor what the head found and where it",
                             " turned. Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over (the best is kept), SIG_STAR a star",
                             " comes (a cell of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays",
                             " the field anew)."
                         ]
                     }
                 }
+            }
+        },
+        {
+            "name": "CLOCK",
+            "defaultMask": null,
+            "canvas": {
+                "left": 0,
+                "top": 0,
+                "width": 1,
+                "height": 1
+            },
+            "frames": [],
+            "animation": {
+                "events": [],
+                "defines": [],
+                "tables": [],
+                "questions": [],
+                "params": [],
+                "groups": [],
+                "scripts": [
+                    {
+                        "name": "ticking",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": "(game_var.speed)"
+                            },
+                            {
+                                "op": "signal",
+                                "value": "SIG_STEP"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "ticking"
+                            }
+                        ],
+                        "above": [
+                            " The snake's clock: a step every game_var.speed ms (PLAY makes it shorter as the snake eats); the game moves it a cell."
+                        ]
+                    }
+                ],
+                "rules": []
             }
         }
     ],
@@ -1993,7 +2261,9 @@
                 "right": "",
                 "up": "",
                 "down": ""
-            }
+            },
+            "music": "groove",
+            "musicFade": 500
         }
     ],
     "styles": [
@@ -2002,9 +2272,9 @@
             "frame": "fill",
             "place": [
                 70,
-                88,
+                70,
                 180,
-                64
+                100
             ],
             "padding": [
                 8,
@@ -2072,7 +2342,7 @@
     "dialogs": [
         {
             "name": "pause",
-            "text": "dialog pause\nroles play PLAY\ngame PLAY\nstyle menu\npause\n    say game \"PAUSE  Score {score}  Best {best}\"\nchoose play\n    \"Continue\" -> resume\n    \"New game\" -> restart\nlabel resume\n    end\nlabel restart\n    tell play restart\n    end\n"
+            "text": "dialog pause\nroles play PLAY\ngame PLAY\nstyle menu\npause\n    say game \"PAUSE  Score {score}  Best {best}\"\nchoose play\n    \"Continue\" -> resume\n    \"Music\" control SLIDER game_var.music_volume\n    \"Effects\" control SLIDER game_var.effects_volume\n    \"New game\" -> restart\nlabel resume\n    end\nlabel restart\n    tell play restart\n    end\n"
         }
     ],
     "game": [
@@ -2098,6 +2368,7 @@
         "SIG_STAR": 3,
         "SIG_STAR_GONE": 4,
         "SIG_NEW": 5,
+        "SIG_STEP": 6,
         "SND_EAT": 0,
         "SND_STAR": 1,
         "SND_TURN": 2,
@@ -2156,5 +2427,23 @@
         }
     ],
     "chases": [],
-    "crops": []
+    "crops": [],
+    "variables": [
+        {
+            "name": "music_volume",
+            "value": 8
+        },
+        {
+            "name": "effects_volume",
+            "value": 10
+        },
+        {
+            "name": "speed",
+            "value": 150
+        }
+    ],
+    "synth": "fm",
+    "music": [
+        "groove"
+    ]
 }

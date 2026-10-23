@@ -1,0 +1,4 @@
+; Pac-Man's siren under the play: a tone gliding up and down, round and round
+#synth chip
+@1 wail = square 25% volume 7
+A t150 @wail o5 l16 $ c&d&e&f&g&a&b&a&g&f&e&d

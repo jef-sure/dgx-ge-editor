@@ -31,6 +31,12 @@
 //     whose first script says what it is) flies from the point at that velocity (x forward, like release)
 //   tell: {op, target: 'holder', event}: the event goes to the one holding this actor (a pot drunk), by the game
 //   release: {op, point, x, y}: the actor lets go what it holds at that point, at that velocity (x forward, like velocity)
+//   rotate: {op, value, to?: true}: turned by so many degrees clockwise (to: into that turn), to the nearest multiple of
+//     90; an expression worked out at the step. Everything said in the actor's axes turns with it (x forward, y down)
+//   music: {op, name: a music of the pack | 'stop', ms} | {op, volume: 0..100, ms}: the game plays a music (fading the
+//     one playing out over ms), or sets its level by design (reached over ms)
+//   set, add: {op, variable, value}: a variable of the game (the document's variables, game_var.<name>), not a param
+// A frame's ms may be an expression of the actor too (frame P (speed)ms): worked out as the frame begins (FRAME_MS)
 // A param is a number every actor keeps for itself (lives, what it is doing), with the value it starts with;
 // scripts set it or add to it. The text is checked as the assembler checks it, so what the editor exports is assembled
 const Anim = {
@@ -101,6 +107,8 @@ const Anim = {
         timer: {},
         draw: {},
         stow: {},
+        rotate: {},
+        music: {},
     },
     // bytes of a statement in the blob: the code is addressed by 16 bits
     size: {
@@ -130,7 +138,9 @@ const Anim = {
         keep: 1,
         timer: 3,
         draw: 4,
-        stow: 2
+        stow: 2,
+        rotate: 2, // ROTATE: a constant in quarter turns; ROTATE_X: 3 and the expression
+        music: 4 // MUSIC, MUSIC_LEVEL: the music (255 stop) or the percent, the time u16
     },
     maxScripts: 255,
     maxParams: 255,
@@ -369,6 +379,16 @@ const Anim = {
                 if (ctx.questions && !ctx.questions.includes(name)) throw new Error("no question '" + name + "': declare it first, game " + name);
                 return ['game', name];
             }
+            // game_var.<name>: a variable of the game (the document's variables), as the game's store has it at the step;
+            // not of a tile (laid again only when its cell changes, it would be seen stale) nor of a path
+            if (t === 'game_var' && peek() === '.') {
+                take('.');
+                const name = take();
+                if (ctx.actor === false) throw new Error('game_var.' + name + ": the game's variables are read by scripts and dialogs, not here");
+                if (!(ctx.gameVars || this.packVariables()).includes(name)) throw new Error('game_var.' + name + ': no such variable of the game (Pack.add_variable)');
+                if (ctx.allowT) throw new Error('game_var. is not for a path: its formula gives the place by t alone');
+                return ['game_var', name];
+            }
             // its.<name>: the one a sense found — a param of the kind looked for, or vx, vy, image, script, flip of a
             // body, tile, mod, cell of a cell; only inside a sense
             if (t === 'its' && peek() === '.') {
@@ -396,6 +416,18 @@ const Anim = {
                 take(')');
                 if (args.length !== this.funcs[t]) throw new Error(t + ' takes ' + this.funcs[t]);
                 return ['op', t === 'field' ? 'bitfield' : t, args];
+            }
+            // music: the music playing, its number (-1 none); rotation: the actor's turn, 0, 90, 180 or 270. Words only
+            // where nothing of that name is defined
+            const named = own || ctx.pictures && t in ctx.pictures;
+            if (t === 'music' && !named) {
+                if (ctx.allowT) throw new Error('music is not for a path: its formula gives the place by t alone');
+                return ['music'];
+            }
+            if (t === 'rotation' && !named) {
+                if (ctx.actor === false || !ctx.allowParams) throw new Error('rotation is the turn of an actor, there is none here');
+                if (ctx.allowT) throw new Error('rotation is not for a path: its formula gives the place by t alone');
+                return ['rotation'];
             }
             // a piece of tiles has no actor: its expressions know mod, variant and the fields only
             if ((t === 'vx' || t === 'vy' || t === 'now' || t === 'x' || t === 'y') && ctx.actor === false && !(ctx.params || []).includes(t))
@@ -568,6 +600,14 @@ const Anim = {
             case 'game':
                 // the game's answer; without one, 0 (as the runtime without a function)
                 return velocity && velocity.game ? velocity.game(node[1]) : 0;
+            case 'game_var':
+                // the game's store of variables, as the player keeps it; none: 0 (the engine without a store)
+                return velocity && velocity.gameVar ? velocity.gameVar(node[1]) : 0;
+            case 'music':
+                // the music playing, its number; none: -1
+                return velocity && velocity.music ? velocity.music() : -1;
+            case 'rotation':
+                return velocity && velocity.rotation || 0;
             case 'op':
                 if (node[1] === 'rnd') {
                     // the game's dice: the player's, as the engine casts them; elsewhere 0
@@ -617,6 +657,46 @@ const Anim = {
         const f = this.packFile();
         return f && Array.isArray(f.masks) ? Meets.names(f.masks) : {};
     },
+    // the game's variables (the file's field variables, Pack.add_variable) by their numbers: game_var.<name> reads one,
+    // set and add game_var.<name> write it
+    packVariables() {
+        const f = this.packFile();
+        return (f && Array.isArray(f.variables) ? f.variables : []).filter(v => v && typeof v.name === 'string').map(v => v.name);
+    },
+    // name -> the value a variable begins with
+    packVariableValues() {
+        const f = this.packFile();
+        let out = {};
+        for (const v of f && Array.isArray(f.variables) ? f.variables : [])
+            if (v && typeof v.name === 'string' && !(v.name in out)) out[v.name] = Number.isInteger(v.value) ? v.value : 0;
+        return out;
+    },
+    // the musics of the pack by their numbers, as the packer gives them: those the scripts of the sets name first (music
+    // <name>, the animations are made before the game's parts), then the rest of the file's field music
+    packMusics() {
+        const f = this.packFile();
+        let out = [];
+        for (const set of f && Array.isArray(f.sets) ? f.sets : [])
+            for (const s of set.animation && set.animation.scripts || [])
+                for (const l of s.lines)
+                    if (l.op === 'music' && l.name !== undefined && l.name !== 'stop' && !out.includes(l.name)) out.push(l.name);
+        for (const n of f && Array.isArray(f.music) ? f.music : [])
+            if (typeof n === 'string' && !out.includes(n)) out.push(n);
+        return out;
+    },
+    // the time of a frame without its unit, as the assembler reads it (without_ms): 83ms, (speed)ms, TICK ms; fall_ms is
+    // a name, not fall_ and ms
+    withoutMs(text) {
+        text = String(text).trim();
+        const m = /([A-Za-z0-9_]*)ms$/.exec(text);
+        return m && (!m[1] || /^[0-9]/.test(m[1])) ? text.slice(0, -2).replace(/\s+$/, '') : text;
+    },
+    // degrees clockwise as quarter turns 0..3, as the engine takes them (quarters_of): to the nearest multiple of 90, a
+    // half away from zero, round the circle; not a number 0
+    quarters(degrees) {
+        const q = this.halfAway(degrees / 90) % 4;
+        return q !== q ? 0 : (q + 4) % 4;
+    },
     // a mask where one goes (masks, hit, contact): its name in the pack stays a name, else a constant 0..15
     maskOperand(text, ctx) {
         text = String(text).trim();
@@ -638,10 +718,10 @@ const Anim = {
     },
     // names a define or a param cannot have
     reserved(name) {
-        return name === 't' || name === 'vx' || name === 'vy' || name === 'x' || name === 'y' || name === 'now' || name === 'its' || name === 'game' || name === 'and' || name === 'or' || name === 'not' || name in this.funcs;
+        return name === 't' || name === 'vx' || name === 'vy' || name === 'x' || name === 'y' || name === 'now' || name === 'its' || name === 'game' || name === 'game_var' || name === 'and' || name === 'or' || name === 'not' || name in this.funcs;
     },
     // what its.<name> may be in a sense, beyond the params of the kind looked for: of a body (an actor) or a cell
-    itsBody: ['vx', 'vy', 'image', 'script', 'flip'],
+    itsBody: ['vx', 'vy', 'image', 'script', 'flip', 'rotation'],
     itsCell: ['tile', 'mod', 'cell'],
     // the ways of steer: how many numbers before to/from/angle (speed, force[, radius or spread]), the word, how many after
     // axis(NAME): the axes of a pad in the order of DGX_GE_AXIS_* (dgx_ge_input.h), their numbers in the blob
@@ -709,6 +789,24 @@ const Anim = {
         else if (kind === 'const') throw new Error("'" + text + "' must be a constant");
         return text;
     },
+    // the time of a frame: its text without the unit (withoutMs); a number 1..65535, or an expression — of constants, as
+    // a number is kept (a plain frame), else of the actor, worked out as the frame begins (FRAME_MS)
+    frameTime(text, ctx) {
+        return this.operand(this.withoutMs(text), ctx, 1, 65535, 'param');
+    },
+    // is a frame's time worked out as the frame begins (an expression of the actor, not of constants)?
+    timeWorked(ms, ctx) {
+        if (typeof ms !== 'string') return false;
+        try {
+            return this.parseExpr(ms, Object.assign({}, ctx, {
+                allowParams: true,
+                allowT: false,
+                pictures: undefined
+            }))[0] !== 'num';
+        } catch (e) {
+            return false;
+        }
+    },
     // the value of an operand that holds only numbers and defines
     constValue(v, defines) {
         if (typeof v === 'number') return v;
@@ -754,7 +852,8 @@ const Anim = {
             defines: this.defineValues(a),
             params: (a.params || []).map(p => p.name),
             tables: this.tableValues(a),
-            questions: (a.questions || []).slice()
+            questions: (a.questions || []).slice(),
+            gameVars: this.packVariables()
         };
     },
 
@@ -792,7 +891,7 @@ const Anim = {
                     return {
                         op: 'frame',
                         expr: expr,
-                        ms: this.operand(rest.slice(end + 1).trim().replace(/\s*ms$/, ''), ctx, 1, 65535, 'const')
+                        ms: this.frameTime(rest.slice(end + 1), ctx)
                     };
                 }
                 const m = /^([\p{L}\p{N}_]+)\s+(.+?)(?:\s+at\s+(.+))?$/u.exec(rest);
@@ -805,7 +904,7 @@ const Anim = {
                 else if (/^\d+$/.test(m[1])) s.number = this.int(m[1], 0, 65535);
                 else if (images && images[m[1]] !== undefined) s.image = images[m[1]];
                 else s.name = m[1];
-                s.ms = this.operand(m[2].replace(/\s*ms$/, ''), ctx, 1, 65535, 'const');
+                s.ms = this.frameTime(m[2], ctx);
                 if (m[3] !== undefined) {
                     const at = this.splitTop(m[3]);
                     if (at.length !== 2) throw new Error('at <dx>, <dy>');
@@ -832,6 +931,17 @@ const Anim = {
                 };
             case 'set':
             case 'add': {
+                if (rest.startsWith('game_var.')) {
+                    // a variable of the game: always worked out as an expression, a constant within 2^24
+                    const m = /^game_var\.([\p{L}\p{N}_]+)\s+(.+)$/u.exec(rest);
+                    if (!m) throw new Error(word + ' game_var.<name> <value>');
+                    if (!(ctx.gameVars || this.packVariables()).includes(m[1])) throw new Error(word + ' game_var.' + m[1] + ': no such variable of the game (Pack.add_variable)');
+                    return {
+                        op: word,
+                        variable: m[1],
+                        value: this.operand(m[2], ctx, op.low, op.high, 'param')
+                    };
+                }
                 const m = /^([\p{L}\p{N}_]+)\s+(.+)$/u.exec(rest);
                 if (!m) throw new Error(word + ' <param> <value>');
                 if (ctx.params && !ctx.params.includes(m[1])) throw new Error("no param '" + m[1] + "' given before");
@@ -839,6 +949,42 @@ const Anim = {
                     op: word,
                     param: m[1],
                     value: this.operand(m[2], ctx, op.low, op.high, 'param')
+                };
+            }
+            case 'rotate': {
+                // rotate <degrees> | rotate to <degrees>: a constant is kept in quarter turns, an expression worked out at the step
+                const m = /^(to\s+)?([\s\S]+)$/.exec(rest);
+                if (!rest || !m) throw new Error('rotate <degrees>, or rotate to <degrees>');
+                let s = {
+                    op: word,
+                    value: this.operand(m[2], ctx, -Infinity, Infinity, 'param')
+                };
+                if (m[1]) s.to = true;
+                return s;
+            }
+            case 'music': {
+                // music <name> [<fade>] | music stop [<fade>] | music volume <percent>% [<time>]: times as 500ms or 2s
+                const words = rest.split(/\s+/).filter(w => w);
+                const ms = text => {
+                    const m = /^(\d+)(ms|s)$/.exec(text);
+                    if (!m || parseInt(m[1], 10) * (m[2] === 's' ? 1000 : 1) > 65535) throw new Error('a time of 0..65535 ms (500ms, 2s), not ' + text);
+                    return parseInt(m[1], 10) * (m[2] === 's' ? 1000 : 1);
+                };
+                if (words[0] === 'volume') {
+                    const m = words.length === 2 || words.length === 3 ? /^(\d+)%$/.exec(words[1]) : null;
+                    if (!m || parseInt(m[1], 10) > 100) throw new Error('music volume <0..100>% [<time>]');
+                    return {
+                        op: word,
+                        volume: parseInt(m[1], 10),
+                        ms: words.length === 3 ? ms(words[2]) : 0
+                    };
+                }
+                if (words.length !== 1 && words.length !== 2 || !/^[A-Za-z_][\p{L}\p{N}_]*$/u.test(words[0]))
+                    throw new Error('music <name> [<fade>], music stop [<fade>], or music volume <percent>% [<time>]');
+                return {
+                    op: word,
+                    name: words[0],
+                    ms: words.length === 2 ? ms(words[1]) : 0
                 };
             }
             case 'flip':
@@ -1221,7 +1367,13 @@ const Anim = {
                 return 'go ' + s.exit;
             case 'set':
             case 'add':
-                return s.op + ' ' + s.param + ' ' + s.value;
+                return s.op + ' ' + (s.variable !== undefined ? 'game_var.' + s.variable : s.param) + ' ' + s.value;
+            case 'rotate':
+                return 'rotate ' + (s.to ? 'to ' : '') + s.value;
+            case 'music': {
+                const time = s.ms ? ' ' + (s.ms % 1000 ? s.ms + 'ms' : s.ms / 1000 + 's') : '';
+                return 'music ' + (s.volume !== undefined ? 'volume ' + s.volume + '%' : s.name) + time;
+            }
             case 'velocity':
             case 'accel':
                 return s.op + ' ' + s.x + (typeof s.x === 'number' && typeof s.y === 'number' ? ' ' : ', ') + s.y;
@@ -1282,8 +1434,8 @@ const Anim = {
 
     // the expressions of a statement worked out on the board, with params or t
     expressionsOf(l) {
-        const fields = l.op === 'set' || l.op === 'add' ? [l.value] : l.op === 'velocity' || l.op === 'accel' || l.op === 'path' || l.op === 'release' || l.op === 'shoot' ? [l.x, l.y] :
-            l.op === 'frame' && l.expr !== undefined ? [l.expr] : l.op === 'goto' && l.cond !== undefined ? [l.cond] :
+        const fields = l.op === 'set' || l.op === 'add' || l.op === 'rotate' ? [l.value] : l.op === 'velocity' || l.op === 'accel' || l.op === 'path' || l.op === 'release' || l.op === 'shoot' ? [l.x, l.y] :
+            l.op === 'frame' ? [l.expr, l.ms] : l.op === 'goto' && l.cond !== undefined ? [l.cond] :
             l.op === 'tell' && l.target === 'cell' ? [l.cell, l.value] : l.op === 'press' || l.op === 'clear' ? [l.cell] :
             l.op === 'appear' ? [l.x, l.y, ...(l.with || []).map(w => w.value)] : l.op === 'steer' ? l.args : l.op === 'sense' ? [l.radius] : [];
         return fields.filter(v => typeof v === 'string');
@@ -1295,11 +1447,11 @@ const Anim = {
             high = 0;
         const emit = node => {
             if (node[0] === 'num' || node[0] === 'param' || node[0] === 't' || node[0] === 'vx' || node[0] === 'vy' || node[0] === 'now' || node[0] === 'x' || node[0] === 'y' ||
-                node[0] === 'amount' || node[0] === 'count' || node[0] === 'pic' || node[0] === 'timer' || node[0] === 'axis') {
+                node[0] === 'amount' || node[0] === 'count' || node[0] === 'pic' || node[0] === 'timer' || node[0] === 'axis' || node[0] === 'music' || node[0] === 'rotation') {
                 // a picture is its number, as a number is; axis: the step and the number of the axis
                 bytes += node[0] === 'num' || node[0] === 'pic' ? 5 : node[0] === 'param' || node[0] === 'timer' || node[0] === 'axis' ? 2 : node[0] === 'count' ? 3 : 1;
                 depth++;
-            } else if (node[0] === 'its' || node[0] === 'game') {
+            } else if (node[0] === 'its' || node[0] === 'game' || node[0] === 'game_var') {
                 bytes += 2;
                 depth++;
             } else if (node[0] === 'table') {
@@ -1328,23 +1480,33 @@ const Anim = {
         }));
         try {
             switch (l.op) {
-                case 'frame':
-                    if (l.expr !== undefined) {
-                        // pictures are numbers to the assembler: parts of them and numbers alone are worked out
-                        const t = this.foldExpr(this.picturesAsNumbers(this.parseExpr(l.expr, Object.assign({}, ctx, {
-                            allowParams: true,
-                            allowT: false,
-                            pictures: {}
-                        }))));
-                        // of pictures and numbers alone: a plain frame; else FRAME_X, ms and the expression
-                        return this.constantTree(t) ? 5 : 4 + this.exprCode(t).bytes;
+                case 'frame': {
+                    // pictures are numbers to the assembler: parts of them and numbers alone are worked out
+                    const t = l.expr !== undefined ? this.foldExpr(this.picturesAsNumbers(this.parseExpr(l.expr, Object.assign({}, ctx, {
+                        allowParams: true,
+                        allowT: false,
+                        pictures: {}
+                    })))) : ['num', 0];
+                    if (this.timeWorked(l.ms, ctx)) {
+                        // FRAME_MS: op, dx, dy, the picture (a number: 5 bytes) and the time, each expression with its length
+                        return 3 + 1 + (this.constantTree(t) ? 5 : this.exprCode(t).bytes) + 1 + this.exprCode(tree(l.ms)).bytes;
                     }
+                    // of pictures and numbers alone: a plain frame; else FRAME_X, ms and the expression
+                    if (l.expr !== undefined) return this.constantTree(t) ? 5 : 4 + this.exprCode(t).bytes;
                     return l.at ? 7 : 5;
+                }
+                case 'rotate': {
+                    // a constant in quarter turns; ROTATE_X: op, to, the expression with its length
+                    const t = tree(l.value);
+                    return t[0] === 'num' ? 2 : 3 + this.exprCode(t).bytes;
+                }
                 case 'goto':
                     // GOTO_IF: op, script or label, its number, the expression
                     return l.cond !== undefined ? 5 + this.exprCode(tree(l.cond)).bytes : 3;
                 case 'set':
                 case 'add': {
+                    // SET_VAR, ADD_VAR: op, the variable, the expression with its length, a constant too
+                    if (l.variable !== undefined) return 3 + this.exprCode(tree(l.value)).bytes;
                     // a constant within 16 bits in the step, another as an expression
                     const t = tree(l.value);
                     const h = t[0] === 'num' ? this.halfAway(t[1]) : null;
@@ -1448,6 +1610,29 @@ const Anim = {
             if (t.name === oldName) t.name = newName;
         this.renameInExpressions(a, oldName, newName);
     },
+    // a variable of the game renamed in the scripts: game_var.<old> in expressions, set and add game_var.<old>
+    renameGameVar(a, oldName, newName) {
+        const re = new RegExp('\\bgame_var\\s*\\.\\s*' + oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\p{L}\\p{N}_])', 'gu');
+        const fix = v => typeof v === 'string' ? v.replace(re, 'game_var.' + newName) : v;
+        for (const d of a.defines) d.value = fix(d.value);
+        for (const sc of a.scripts) {
+            for (const l of sc.lines) {
+                if ((l.op === 'set' || l.op === 'add') && l.variable === oldName) l.variable = newName;
+                for (const k of ['value', 'x', 'y', 'ms', 'expr', 'cond', 'where', 'cell', 'radius']) {
+                    if (k in l) l[k] = fix(l[k]);
+                }
+                for (const w of l.with || []) w.value = fix(w.value);
+                for (const c of l.copies || []) c.value = fix(c.value);
+                if (l.args) l.args = l.args.map(fix);
+            }
+        }
+    },
+    // a music renamed in the scripts that play it
+    renameMusic(a, oldName, newName) {
+        for (const sc of a.scripts)
+            for (const l of sc.lines)
+                if (l.op === 'music' && l.name === oldName) l.name = newName;
+    },
 
     ruleText(r) {
         return 'on ' + r.event + ': ' + r.source + ' -> ' + r.to + ' ' + r.when;
@@ -1533,6 +1718,7 @@ const Anim = {
                     for (const n of names) {
                         if (!this.isIdent(n) || a.questions.includes(n) || n in ctx.defines || ctx.params.includes(n) || n in ctx.tables || this.reserved(n))
                             throw new Error("game: '" + n + "' is no name, or it is taken");
+                        if (this.packVariables().includes(n)) throw new Error('game ' + n + ': ' + n + ' is a variable of the game (game_var.' + n + '), not a question to it');
                         if (a.questions.length === 255) throw new Error('255 questions at most');
                         a.questions.push(n);
                         ctx.questions.push(n);
@@ -1788,6 +1974,74 @@ const Anim = {
         return true;
     },
 
+    // The answers of the game a kind would lose, as tools/dgx_ge_explain.py lost_answers finds them: [{script, signals,
+    // onto}], in the order of the scripts. The game answers a signal from its say at once (dgx_ge_actor_event), and the
+    // actor is then still in the script whose step signalled: one no rule names (by itself or in a group) drops the
+    // answer. Told when, after a signal, it goes on into another script (goto, goto if); one that stays in itself
+    // (hold, a goto of its own labels or of itself) is not, nor a kind of no rules. A goto to a label (of any script)
+    // and a run past the end into the next script keep the script followed; what follows vanish is not followed
+    lostAnswers(a) {
+        if (!a.rules.length) return [];
+        let flat = []; // the statements of all the scripts in order, each script begun by {op: 'script', name}
+        for (const s of a.scripts) flat.push({
+            op: 'script',
+            name: s.name
+        }, ...s.lines);
+        let starts = new Map(),
+            labels = new Map();
+        flat.forEach((x, i) => {
+            if (x.op === 'script') starts.set(x.name, i);
+            else if (x.op === 'label') labels.set(x.name, i);
+        });
+        const groups = new Map(a.groups.map(g => [g.name, g.scripts]));
+        const answering = new Set(a.rules.flatMap(r => groups.get(r.source) || [r.source]));
+        let out = [];
+        for (const [name, start] of starts) {
+            if (answering.has(name)) continue;
+            let signals = [],
+                onto = [],
+                seen = new Set(),
+                todo = [
+                    [start + 1, []]
+                ];
+            while (todo.length) {
+                let [i, said] = todo.pop();
+                while (i < flat.length && !seen.has(i + '\u0001' + said.join('\u0001'))) {
+                    seen.add(i + '\u0001' + said.join('\u0001'));
+                    const x = flat[i];
+                    if (x.op === 'signal' && !said.includes(String(x.value))) said = [...said, String(x.value)];
+                    if (x.op === 'hold' || x.op === 'vanish') break;
+                    if (x.op === 'goto') {
+                        const to = x.target,
+                            cond = x.cond !== undefined;
+                        if (labels.has(to) || to === name) {
+                            const at = labels.has(to) ? labels.get(to) : start;
+                            if (cond) todo.push([at + 1, said]);
+                            else {
+                                i = at + 1;
+                                continue;
+                            }
+                        } else if (starts.has(to)) {
+                            if (said.length) {
+                                for (const s of said)
+                                    if (!signals.includes(s)) signals.push(s);
+                                if (!onto.includes(to)) onto.push(to);
+                            }
+                            if (!cond) break;
+                        }
+                    }
+                    i++;
+                }
+            }
+            if (signals.length) out.push({
+                script: name,
+                signals: signals,
+                onto: onto
+            });
+        }
+        return out;
+    },
+
     // what the assembler would refuse (errors) and what is likely a mistake (warnings):
     // [{kind: 'script' | 'rule' | 'event' | 'group' | null, name, line, text}]
     check(set, allSets) {
@@ -1813,7 +2067,8 @@ const Anim = {
             defines: this.packConstants(),
             params: [],
             tables: this.tableValues(a),
-            questions: (a.questions || []).slice()
+            questions: (a.questions || []).slice(),
+            gameVars: this.packVariables()
         };
         const paramNames = new Set(a.params.map(p => p.name));
         // the questions to the game: names of their own, 255 at most
@@ -1822,6 +2077,9 @@ const Anim = {
             if (!this.isIdent(q) || this.reserved(q) || paramNames.has(q) || a.defines.some(d => d.name === q) || (a.tables || []).some(t => t.name === q)) err('game', q, null, "bad question name '" + q + "': letters, digits, _, not a define, a param, a table or a word of the language");
             if (this.constantTaken(q)) err('game', q, null, this.constantTaken(q));
             if (seenQ.has(q)) err('game', q, null, "the question '" + q + "' is given twice");
+            // a variable of the game is no question to it (alike in capitals: one name of the header)
+            const v = ctx.gameVars.find(n => this.nameOf(n) === this.nameOf(q));
+            if (v !== undefined) err('game', q, null, 'game ' + q + ': ' + v + ' is a variable of the game (game_var.' + v + '), not a question to it');
             seenQ.add(q);
         }
         if ((a.questions || []).length > 255) err('game', null, null, '255 questions at most');
@@ -1955,6 +2213,11 @@ const Anim = {
                 if (l.op === 'contact' && l.off !== undefined) sent(s, i, 'contact off', l.off, true);
                 if (l.op === 'tell') sent(s, i, l.target === 'cell' ? 'tell cell' : 'tell holder', l.event, false);
                 if (l.op === 'appear') sent(s, i, 'appear', l.event, false);
+                // a music the document has not is a name only: the pack numbers it, it plays nothing
+                if (l.op === 'music' && l.name !== undefined && l.name !== 'stop') {
+                    const doc = this.packFile();
+                    if (doc && !(doc.music || []).includes(l.name)) warn('script', s.name, i, 'music ' + l.name + ': no music of that name in the document (Game → Music): a name only, it plays nothing');
+                }
                 if (l.op === 'goto') {
                     gotoTargets.add(l.target);
                     if (!names[l.target]) err('script', s.name, i, "goto: no script or label '" + l.target + "'");
@@ -2021,7 +2284,7 @@ const Anim = {
                         const c = this.exprCode(this.parseExpr(v, Object.assign({}, ctx, {
                             allowParams: true,
                             allowT: l.op === 'path',
-                            pictures: l.op === 'frame' ? {} : undefined
+                            pictures: l.op === 'frame' && v === l.expr ? {} : undefined
                         })));
                         if (c.bytes > 255 || c.depth > 16) err('script', s.name, i, "the expression '" + v + "' is too large for the engine");
                     }
@@ -2090,6 +2353,10 @@ const Anim = {
         for (const e of a.events) {
             if (!Object.values(matrix).some(row => row[e])) warn('event', e, null, 'the event does nothing anywhere');
         }
+        // the game's answer to a signal lost: the script signals and goes on, answering no event itself (dgx_ge_explain.py)
+        for (const l of this.lostAnswers(a))
+            warn('state', l.script, null, 'gives signal ' + l.signals.join(', ') + ' and goes on to ' + l.onto.join(', ') + ', but answers no event itself: an event the game answers the signal with at once finds the actor still in ' +
+                l.script + ' and is lost. If the game answers so, name ' + l.script + ' in the rules of that event (itself or a group it is in)');
         // pictures of different files must have different names in the pack
         let packNames = {};
         for (const other of allSets || [set]) {
@@ -2261,6 +2528,11 @@ const Anim = {
                 } : null;
             case 'set':
             case 'add':
+                if (typeof l.variable === 'string') return isInt(l.value) ? {
+                    op: l.op,
+                    variable: l.variable,
+                    value: l.value
+                } : null;
                 return typeof l.param === 'string' && isInt(l.value) ? {
                     op: l.op,
                     param: l.param,
@@ -2274,6 +2546,28 @@ const Anim = {
                     x: l.x,
                     y: l.y
                 } : null;
+            case 'rotate': {
+                if (!isInt(l.value)) return null;
+                let s = {
+                    op: l.op,
+                    value: l.value
+                };
+                if (l.to === true) s.to = true;
+                return s;
+            }
+            case 'music': {
+                const ms = Number.isInteger(l.ms) && l.ms >= 0 && l.ms <= 65535 ? l.ms : 0;
+                if (Number.isInteger(l.volume)) return l.volume >= 0 && l.volume <= 100 ? {
+                    op: l.op,
+                    volume: l.volume,
+                    ms: ms
+                } : null;
+                return typeof l.name === 'string' && l.name ? {
+                    op: l.op,
+                    name: l.name,
+                    ms: ms
+                } : null;
+            }
             case 'masks':
                 return Array.isArray(l.indexes) && l.indexes.every(maskOf) ? {
                     op: l.op,
@@ -2601,9 +2895,11 @@ class AnimRunner {
             params: (animation.params || []).map(p => p.name),
             tables: Anim.tableValues(animation),
             questions: (animation.questions || []).slice(),
+            gameVars: Anim.packVariables(),
             allowParams: true
         };
         this.answers = {}; // the game's answers to its questions, as the player is told: name -> number
+        this.musics = Anim.packMusics(); // the musics of the pack by their numbers: what music reads
         this.trees = new Map(); // the text of an expression -> its tree
         // all scripts as one code: a script that ends goes on into the code of the next one
         this.code = [];
@@ -2635,6 +2931,7 @@ class AnimRunner {
             x: 0, // pixels
             y: 0,
             flip: false,
+            turn: 0, // quarter turns clockwise, after the mirror (rotate): the actor's orientation is AnimRunner.orient
             vx: 0, // pixels a second, as they are on the screen: already turned
             vy: 0,
             ax: 0,
@@ -2647,7 +2944,7 @@ class AnimRunner {
             holding: false,
             pending: null, // {to, when, event} a transition waits for its place
             params: Object.fromEntries((this.a.params || []).map(p => [p.name, Anim.constValue(p.value, this.defines)])), // as they start
-            path: null, // {x, y: trees, sign, start, x0, y0}: the place by a formula of t
+            path: null, // {x, y: trees, orient, start, x0, y0}: the place by a formula of t, in the axes it began in
             contact: false, // it looks for touches of the terrain
             contactEvent: null, // the event a touch sends to the actor itself
             hits: [], // the hits of the masks now: they hold until the next ones, masks or another script
@@ -2659,6 +2956,9 @@ class AnimRunner {
             pockets: [], // the carry statements of what was stowed (stow), as the player knows them
             counts: Object.assign({}, this.startCounts || {}), // things in the pockets by kind: count(KIND), draw and stow take them
             masks: null,
+            vars: Anim.packVariableValues(), // the game's store of its variables (game_var.<name>), as they begin
+            music: -1, // the number of the music playing (music), -1 none
+            musicLevel: 100, // its level by design, percent (music volume)
             log: [],
         };
         if (!(scriptName in this.scriptStart)) {
@@ -2726,12 +3026,32 @@ class AnimRunner {
         }
         return t;
     }
-    // the velocity of the actor now, x forward as the scripts write it
+    // the orientation of an actor (dgx_ge_orient): mirrored (bit 0), then turned clockwise by quarters (bits 1-2), the
+    // eight of DGX
+    static orient(flip, turn) {
+        return (flip ? 1 : 0) | (turn & 3) << 1;
+    }
+    // a vector of its axes (x forward, y down) in the scene, as dgx_ge_orient_apply: [x, y]
+    static apply(o, x, y) {
+        const a = 0x5A >> (o & 7) & 1 ? -x : x,
+            b = 0x3C >> (o & 7) & 1 ? -y : y;
+        return o & 2 ? [b, a] : [a, b];
+    }
+    // the orientation that undoes it: a mirror is its own, a quarter turn the other way
+    static inverse(o) {
+        o &= 7;
+        return o === 2 ? 6 : o === 6 ? 2 : o;
+    }
+    // the velocity of the actor now, x forward as the scripts write it (of its axes, as it faces now)
     velocity() {
         const st = this.state;
+        const [vx, vy] = AnimRunner.apply(AnimRunner.inverse(AnimRunner.orient(st.flip, st.turn)), st.vx, st.vy);
         return {
-            vx: st.flip ? -st.vx : st.vx,
-            vy: st.vy,
+            vx: vx,
+            vy: vy,
+            rotation: (st.turn & 3) * 90,
+            music: () => st.music,
+            gameVar: name => st.vars && st.vars[name] || 0,
             x: Math.trunc(st.x), // where the actor is, whole points of the scene (the engine: x >> 8), x as on the screen
             y: Math.trunc(st.y),
             // the clock of the game is the clock of the player here; whole seconds exact, as the engine has now
@@ -2760,10 +3080,13 @@ class AnimRunner {
         const v = this.velocity();
         const fx = Anim.evalExpr(p.x, st.params, t, v),
             fy = Anim.evalExpr(p.y, st.params, t, v);
-        st.x = p.x0 + p.sign * fx;
-        st.y = p.y0 + fy;
-        st.vx = AnimRunner.fine(p.sign * (Anim.evalExpr(p.x, st.params, t + h, v) - fx) / h);
-        st.vy = AnimRunner.fine((Anim.evalExpr(p.y, st.params, t + h, v) - fy) / h);
+        // of the axes it faced when it began
+        const [dx, dy] = AnimRunner.apply(p.orient, fx, fy);
+        const [wx, wy] = AnimRunner.apply(p.orient, (Anim.evalExpr(p.x, st.params, t + h, v) - fx) / h, (Anim.evalExpr(p.y, st.params, t + h, v) - fy) / h);
+        st.x = p.x0 + dx;
+        st.y = p.y0 + dy;
+        st.vx = AnimRunner.fine(wx);
+        st.vy = AnimRunner.fine(wy);
     }
     // the motion up to a moment, as the engine counts it (dgx_ge_anim.c move_to): the place and the velocity in
     // whole 1/256 of a point, what a call moves beyond them kept (rest), so it adds up the same however time is cut
@@ -2807,6 +3130,10 @@ class AnimRunner {
         }
         return out;
     }
+    // the time of a frame as the engine takes it as the frame begins: below 1 (not a number too) 1 ms, above 65535 65535
+    static frameMs(t) {
+        return t >= 65535 ? 65535 : t >= 1 ? Anim.halfAway(t) : 1;
+    }
     // a value as a param holds it (param_of, dgx_ge_param of the engine): rounded, within 32 bits, not a number 0
     static paramOf(v) {
         return v !== v ? 0 : v >= 2147483648 ? 2147483647 : v <= -2147483648 ? -2147483648 : Anim.halfAway(v);
@@ -2816,14 +3143,13 @@ class AnimRunner {
         return Anim.halfAway(v * 256) / 256;
     }
     // the velocity steered as dgx_ge_anim.c steer() does: the wanted velocity by the way, the change clipped to the
-    // force, the result clipped to the speed; x forward of the actor
-    steer(l, sign) {
+    // force, the result clipped to the speed; of the actor's axes (o, its orientation), x forward
+    steer(l, o) {
         const st = this.state;
         const v = l.args.map(a => this.value(a, 0));
         const speed = v[0] > 0 ? v[0] : 0,
             force = v[1] > 0 ? v[1] : 0;
-        let vx = sign * st.vx,
-            vy = st.vy,
+        let [vx, vy] = AnimRunner.apply(AnimRunner.inverse(o), st.vx, st.vy),
             wx = 0,
             wy = 0;
         if (l.way === 'wander') {
@@ -2863,8 +3189,7 @@ class AnimRunner {
         };
         let [sx, sy] = noLonger(wx - vx, wy - vy, force);
         [vx, vy] = noLonger(vx + sx, vy + sy, speed);
-        st.vx = sign * AnimRunner.fine(vx);
-        st.vy = AnimRunner.fine(vy);
+        [st.vx, st.vy] = AnimRunner.apply(o, AnimRunner.fine(vx), AnimRunner.fine(vy));
         st.ax = st.ay = 0;
         st.path = null;
         this.say('steer ' + l.way + ' → v ' + st.vx.toFixed(1) + ', ' + st.vy.toFixed(1));
@@ -2876,7 +3201,8 @@ class AnimRunner {
         for (let n = 0; n < 256; ++n) {
             if (st.pc >= this.code.length) break;
             const l = this.code[st.pc];
-            const sign = st.flip ? -1 : 1; // forward is the way the actor faces now, after a flip in this very step too
+            // its axes as it faces now, after a flip or a turn in this very step too
+            const o = AnimRunner.orient(st.flip, st.turn);
             switch (l.op) {
                 case 'frame':
                     // a picture worked out now: its number, by the pictures the player knows (this.pictures)
@@ -2894,26 +3220,50 @@ class AnimRunner {
                         };
                     } else st.frame = l;
                     st.frameLine = this.lineOf[st.pc];
-                    st.due += Math.max(1, Anim.constValue(l.ms, this.defines));
+                    st.due += AnimRunner.frameMs(typeof l.ms === 'number' ? l.ms : Anim.evalExpr(this.tree(l.ms), st.params, 0, this.velocity()));
                     st.pc++;
                     return true;
-                case 'dx': {
-                    const v = sign * Anim.constValue(l.value, this.defines);
-                    st.x += v;
-                    if (st.path) st.path.x0 += v; // a path goes on from the new place
-                    break;
-                }
+                case 'dx':
                 case 'dy': {
+                    // of its axes: forward, down, as it faces
                     const v = Anim.constValue(l.value, this.defines);
-                    st.y += v;
-                    if (st.path) st.path.y0 += v;
+                    const [dx, dy] = AnimRunner.apply(o, l.op === 'dx' ? v : 0, l.op === 'dy' ? v : 0);
+                    st.x += dx;
+                    st.y += dy;
+                    if (st.path) {
+                        // a path goes on from the new place
+                        st.path.x0 += dx;
+                        st.path.y0 += dy;
+                    }
                     break;
                 }
                 case 'flip':
                     st.flip = !st.flip;
                     break;
+                case 'rotate': {
+                    // turned by so many quarters, or into so many (to), the degrees worked out now
+                    const q = Anim.quarters(Anim.evalExpr(this.tree(l.value), st.params, 0, this.velocity()));
+                    st.turn = ((l.to ? 0 : st.turn) + q) & 3;
+                    this.say('rotation ' + st.turn * 90);
+                    break;
+                }
+                case 'music':
+                    // the game plays it; here the number playing is kept for music in expressions, and said
+                    if (l.volume !== undefined) st.musicLevel = l.volume;
+                    else st.music = l.name === 'stop' ? -1 : this.musics.indexOf(l.name);
+                    this.say(Anim.statementText(l));
+                    break;
                 case 'set':
                 case 'add': {
+                    if (l.variable !== undefined) {
+                        // a variable of the game, in the player's store: within 32 bits; told when it changes
+                        const was = st.vars[l.variable] || 0;
+                        const v = AnimRunner.paramOf(Anim.evalExpr(this.tree(l.value), st.params, 0, this.velocity()));
+                        const now = Math.max(-2147483648, Math.min(2147483647, v + (l.op === 'add' ? was : 0)));
+                        if (now !== was) this.say('game_var.' + l.variable + ' = ' + now);
+                        st.vars[l.variable] = now;
+                        break;
+                    }
                     // rounded half away from 0, by the assembler for a constant and by the board for an expression
                     // (param_of: within 32 bits, not a number 0); the value stops at the ends of 32 bits, as in the engine
                     const tree = this.tree(l.value);
@@ -2927,8 +3277,7 @@ class AnimRunner {
                 }
                 case 'velocity':
                 case 'accel': {
-                    const x = sign * this.value(l.x, 0),
-                        y = this.value(l.y, 0);
+                    const [x, y] = AnimRunner.apply(o, this.value(l.x, 0), this.value(l.y, 0));
                     // out of a path: on as it went
                     if (st.path) {
                         st.ax = st.ay = 0;
@@ -2947,7 +3296,7 @@ class AnimRunner {
                     st.path = {
                         x: this.tree(l.x, true),
                         y: this.tree(l.y, true),
-                        sign: sign,
+                        orient: o,
                         start: st.time,
                         x0: st.x,
                         y0: st.y
@@ -3017,11 +3366,12 @@ class AnimRunner {
                 }
                 case 'shoot': {
                     // the game fires it; here it is only said, its velocity turned as the actor is
+                    const [vx, vy] = AnimRunner.apply(o, this.value(l.x, 0), this.value(l.y, 0));
                     st.shot = {
                         point: l.point,
                         kind: l.kind,
-                        vx: sign * this.value(l.x, 0),
-                        vy: this.value(l.y, 0)
+                        vx: vx,
+                        vy: vy
                     };
                     this.say('shoot ' + l.point + ' ' + l.kind + ' at ' + Math.round(st.shot.vx) + ', ' + Math.round(st.shot.vy));
                     break;
@@ -3094,7 +3444,7 @@ class AnimRunner {
                     break;
                 }
                 case 'steer':
-                    this.steer(l, sign);
+                    this.steer(l, o);
                     break;
                 case 'vanish':
                     this.say('vanish');
@@ -3105,8 +3455,7 @@ class AnimRunner {
                     const k = st.carried.findIndex(c => c.point === l.point);
                     if (k < 0) break;
                     const held = st.carried.splice(k, 1)[0];
-                    const vx = sign * this.value(l.x, 0),
-                        vy = this.value(l.y, 0);
+                    const [vx, vy] = AnimRunner.apply(o, this.value(l.x, 0), this.value(l.y, 0));
                     st.released = {
                         point: l.point,
                         picture: held.picture,

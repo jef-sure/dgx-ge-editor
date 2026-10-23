@@ -9,6 +9,7 @@ GAME          := pacman
 GAME_SRCS     := main/main.c
 GAME_INCLUDES := main
 GAME_EMBED    := main/assets/pacman.pack
+GAME_DEFINES  := DGX_GE_ANIM_NOW_EVENTS=4 DGX_GE_SYNTH_CHIP=1 # as dgx_ge_now_events, dgx_ge_synths in main/CMakeLists.txt
 GAME_PACK_H   := main/assets/pacman_pack.h
 HOST_DISPLAY  ?= 240x320
 HOST_MM       ?= 43x58

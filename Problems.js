@@ -21,6 +21,11 @@ const Problems = {
                 page: 'frames',
                 set: set.name
             });
+            const palette = Game.paletteProblem(sprites, set);
+            if (palette) say(true, set.name, palette, {
+                page: 'frames',
+                set: set.name
+            });
             const missing = set.frames.filter(f => !FrameImages.get(set.name, f.image)).length;
             if (missing) say(false, set.name, missing + (missing === 1 ? ' frame has' : ' frames have') + ' no picture: load the PNG files of the kind', {
                 page: 'frames',
@@ -64,7 +69,7 @@ const Problems = {
                         const names = s.params || [s.param];
                         const t = po[r.dialog.name + '\u0004' + s.msgid];
                         for (const text of Array.isArray(t) ? t : t ? [t] : [])
-                            for (const m of text.matchAll(/\{(\w+)\}/g))
+                            for (const m of text.matchAll(/\{((?:game_var\.)?\w+)\}/g))
                                 if (!names.includes(m[1])) say(true, 'dialog ' + d.name, lang + ".po: '" + text + "' shows {" + m[1] + '}, a number the line has not', {
                                     page: 'dialogs',
                                     dialog: d.name
@@ -95,7 +100,8 @@ const Problems = {
         return list;
     },
     // the colors of a set as the packer takes them: a value has the color the palettes of the pictures that use it
-    // give it, all alike; a value a picture uses beyond its palette has none (0 is transparent)
+    // give it, all alike; a value a picture uses beyond its palette has none (0 is transparent). A set of a ready
+    // palette brings every color to the palette's nearest: its frames need not share their values
     colors(set) {
         let out = [],
             said = []; // value -> [color, file] of the first picture that uses it
@@ -110,6 +116,7 @@ const Problems = {
                     out.push(f.image + ': value ' + i + ' has no color in its palette (of ' + p.palette.length + ')');
                     break;
                 }
+                if (set.palette !== undefined) continue;
                 const color = '(' + c[0] + ', ' + c[1] + ', ' + c[2] + ')';
                 if (!said[i]) said[i] = [color, f.image];
                 else if (said[i][0] !== color && !said[i][2]) {
@@ -187,6 +194,9 @@ const Problems = {
         group('SOUND_', (sprites.sounds || []).map(n => [n, {
             gamePart: 'sounds'
         }]), 'game: sounds', true);
+        group('MUSIC_', Game.musics(sprites).map(n => [n, {
+            gamePart: 'music'
+        }]), 'game: music', true);
         group('TIMER_', (sprites.timers || []).map(t => [t.name, {
             gamePart: 'timers'
         }]), 'game: timers');

@@ -1,0 +1,4 @@
+; while the ghosts are blue: a quick wobble, round and round
+#synth chip
+@1 wobble = square 12.5% volume 6
+A t150 @wobble o6 l32 $ c&g&c&g&c&g&c&g
