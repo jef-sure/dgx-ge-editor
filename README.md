@@ -64,3 +64,7 @@ All drawn and written for this repository, and all in the editor's choice **Exam
 - `examples/walk.json`: the tiny example of the format description.
 
 See [examples/README.md](examples/README.md).
+
+## License
+
+MIT: see [LICENSE](LICENSE).
