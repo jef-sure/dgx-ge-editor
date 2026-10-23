@@ -1,17 +1,19 @@
-# The game itself as an actor: the score, the lines, the level and how fast the pieces fall, worked out
-# here, and the waits of the game. The game tells it: landed (a piece lies on something: it locks after a
-# while), lifted (it moved off), full (lines are full: they flash a while), taken with given set (the lines
-# it took away at once), dropped with given set (cells a piece was dropped by hand), topped (no room).
-# Its signals: SIG_NUMBERS the numbers changed, SIG_LEVEL a new level (a row falls as the game's fall_<level> says),
-# SIG_OVER the game is over, SIG_LOCK the piece is locked, SIG_CLEAR the full lines go, SIG_NEW a new game
-# (the game empties the well).
-event start, landed, lifted, lock, full, cleared, taken, dropped, topped, restart
+# The game itself as an actor: its phase (what moves now: PH_*), the score, the lines, the level and how fast the
+# pieces fall, worked out here, and the waits of the game. The game tells it: moved and turned (the piece did),
+# landed (a piece lies on something: it locks after a while), lifted (it moved off), full (lines are full: they
+# flash a while), taken with given set (the lines it took away at once), dropped with given set (cells a piece was
+# dropped by hand), topped (no room). Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over, SIG_LOCK
+# the piece is locked, SIG_CLEAR the full lines go, SIG_NEW a new game (the game empties the well).
+event start, landed, lifted, lock, full, cleared, taken, dropped, topped, restart, moved, turned
 
 table line_points 0 40 100 300 1200
+table fall_ms 800 717 633 550 467 383 300 217 133 100 83 83 83 67 67  # by level, from 1
 
+param phase PH_TITLE
 param score 0
 param lines 0
 param level 1
+param fall 800  # ms a row falls at this level
 param given 0  # what the game gives with its event: the lines taken, the cells dropped
 
 script idle
@@ -19,12 +21,13 @@ script idle
     hold
 
 script new_game
+    set phase PH_PLAYING
     set score 0
     set lines 0
     set level 1
+    set fall fall_ms[0]
     signal SIG_NEW
     signal SIG_NUMBERS
-    signal SIG_LEVEL
     goto idle
 
 script landing
@@ -36,14 +39,17 @@ script lifting
     goto idle
 
 script locking
+    sound SND_LOCK
     signal SIG_LOCK
     goto idle
 
-script flashing
+script flashing  # the full lines flash a while; nothing falls
+    set phase PH_CLEARING
     timer start clear
     goto idle
 
-script clearing
+script clearing  # the game takes them away and tells what it took (taken): that goes on from here
+    set phase PH_PLAYING
     signal SIG_CLEAR
     goto idle
 
@@ -62,8 +68,9 @@ script counted
     signal SIG_NUMBERS
     goto idle if lines < level * LINES_PER_LEVEL or level >= TOP_LEVEL
     add level 1
+    set fall fall_ms[level - 1]
     sound SND_LEVEL_UP
-    signal SIG_LEVEL
+    signal SIG_NUMBERS
     goto idle
 
 script count_drop
@@ -71,18 +78,33 @@ script count_drop
     signal SIG_NUMBERS
     goto idle
 
+script moving
+    sound SND_MOVE
+    goto idle
+
+script turning
+    sound SND_TURN
+    goto idle
+
 script over
+    set phase PH_OVER
+    timer stop lock
     sound SND_GAME_OVER
     signal SIG_OVER
     goto idle
 
-on start: idle -> new_game now
-on restart: idle -> new_game now
-on taken: idle -> count_lines now
-on dropped: idle -> count_drop now
-on topped: idle -> over now
-on landed: idle -> landing now
-on lifted: idle -> lifting now
-on lock: idle -> locking now
-on full: idle -> flashing now
-on cleared: idle -> clearing now
+# every script passes on: the game answers some of its signals with an event at once (SIG_CLEAR: taken, SIG_LOCK: full)
+group any: idle, new_game, landing, lifting, locking, flashing, clearing, count_lines, four, counted, count_drop, moving, turning, over
+
+on start: any -> new_game now
+on restart: any -> new_game now
+on taken: any -> count_lines now
+on dropped: any -> count_drop now
+on topped: any -> over now
+on landed: any -> landing now
+on lifted: any -> lifting now
+on lock: any -> locking now
+on full: any -> flashing now
+on cleared: any -> clearing now
+on moved: any -> moving now
+on turned: any -> turning now

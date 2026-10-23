@@ -1,27 +1,35 @@
-# The game itself as an actor: the score, the length the snake is to grow to, how fast it goes, when a star
-# comes. The game moves the snake a cell every speed ms and tells this actor what the head found.
-# Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over, SIG_STAR a star comes (a cell
-# of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays the
-# snake and an apple anew).
-event start, ate, star, crash, star_gone, restart
+# The game itself as an actor: its phase (what moves now: PH_*), the score, the best, the length the snake is
+# to grow to, how fast it goes, when a star comes, the words it shows (GAME OVER: the game draws it in the zone
+# message). The game moves the snake a cell every speed ms and tells this actor what the head found and where it
+# turned. Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over (the best is kept), SIG_STAR a star
+# comes (a cell of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays
+# the field anew).
+event start, ate, star, crash, star_gone, restart, turned
 
+param phase PH_TITLE
 param score 0
-param best 0
+param best 0  # the game gives it what it kept
 param length START_LENGTH  # the snake grows a cell a step until it is so long
 param speed STEP_MS  # ms a step
 
-script idle
+script title  # the title show plays (the game's)
+    set phase PH_TITLE
     frame none 1000ms
     hold
 
 script new_game
+    set phase PH_PLAYING
     set score 0
     set length START_LENGTH
     set speed STEP_MS
     timer stop star
     signal SIG_NEW
     signal SIG_NUMBERS
-    goto idle
+    goto playing
+
+script playing
+    frame none 1000ms
+    hold
 
 script apple  # each apple: longer and faster
     add score APPLE_SCORE
@@ -38,7 +46,7 @@ script star_comes
 
 script star_goes
     signal SIG_STAR_GONE
-    goto idle
+    goto playing
 
 script bonus  # a star: only points
     add score STAR_SCORE
@@ -49,16 +57,31 @@ script bonus  # a star: only points
 script counted
     set best max(best, score)
     signal SIG_NUMBERS
-    goto idle
+    goto playing
 
-script crashed
+script turning
+    sound SND_TURN
+    goto playing
+
+script crashed  # GAME OVER; a start in its first second is not taken
+    set phase PH_OVER
+    timer stop star
     sound SND_CRASH
     signal SIG_OVER
-    goto idle
+    frame WORDS_GAME_OVER 1000ms
+    goto over
 
-on start: idle -> new_game now
-on restart: idle -> new_game now
-on ate: idle -> apple now
-on star: idle -> bonus now
-on crash: idle -> crashed now
-on star_gone: idle -> star_goes now
+script over
+    frame WORDS_GAME_OVER 1000ms
+    hold
+
+group any: title, new_game, playing, apple, star_comes, star_goes, bonus, counted, turning, crashed, over
+
+on start: title -> new_game now
+on start: over -> new_game now
+on restart: any -> new_game now
+on ate: playing -> apple now
+on star: playing -> bonus now
+on turned: playing -> turning now
+on crash: playing -> crashed now
+on star_gone: playing -> star_goes now

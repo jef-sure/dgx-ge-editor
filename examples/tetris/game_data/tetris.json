@@ -1677,7 +1677,9 @@
                     "taken",
                     "dropped",
                     "topped",
-                    "restart"
+                    "restart",
+                    "moved",
+                    "turned"
                 ],
                 "defines": [],
                 "tables": [
@@ -1690,10 +1692,35 @@
                             300,
                             1200
                         ]
+                    },
+                    {
+                        "name": "fall_ms",
+                        "values": [
+                            800,
+                            717,
+                            633,
+                            550,
+                            467,
+                            383,
+                            300,
+                            217,
+                            133,
+                            100,
+                            83,
+                            83,
+                            83,
+                            67,
+                            67
+                        ],
+                        "note": " by level, from 1"
                     }
                 ],
                 "questions": [],
                 "params": [
+                    {
+                        "name": "phase",
+                        "value": "PH_TITLE"
+                    },
                     {
                         "name": "score",
                         "value": 0
@@ -1707,12 +1734,40 @@
                         "value": 1
                     },
                     {
+                        "name": "fall",
+                        "value": 800,
+                        "note": " ms a row falls at this level"
+                    },
+                    {
                         "name": "given",
                         "value": 0,
                         "note": " what the game gives with its event: the lines taken, the cells dropped"
                     }
                 ],
-                "groups": [],
+                "groups": [
+                    {
+                        "name": "any",
+                        "scripts": [
+                            "idle",
+                            "new_game",
+                            "landing",
+                            "lifting",
+                            "locking",
+                            "flashing",
+                            "clearing",
+                            "count_lines",
+                            "four",
+                            "counted",
+                            "count_drop",
+                            "moving",
+                            "turning",
+                            "over"
+                        ],
+                        "above": [
+                            " every script passes on: the game answers some of its signals with an event at once (SIG_CLEAR: taken, SIG_LOCK: full)"
+                        ]
+                    }
+                ],
                 "scripts": [
                     {
                         "name": "idle",
@@ -1732,6 +1787,11 @@
                         "lines": [
                             {
                                 "op": "set",
+                                "param": "phase",
+                                "value": "PH_PLAYING"
+                            },
+                            {
+                                "op": "set",
                                 "param": "score",
                                 "value": 0
                             },
@@ -1746,16 +1806,17 @@
                                 "value": 1
                             },
                             {
+                                "op": "set",
+                                "param": "fall",
+                                "value": "fall_ms[0]"
+                            },
+                            {
                                 "op": "signal",
                                 "value": "SIG_NEW"
                             },
                             {
                                 "op": "signal",
                                 "value": "SIG_NUMBERS"
-                            },
-                            {
-                                "op": "signal",
-                                "value": "SIG_LEVEL"
                             },
                             {
                                 "op": "goto",
@@ -1795,6 +1856,10 @@
                         "name": "locking",
                         "lines": [
                             {
+                                "op": "sound",
+                                "value": "SND_LOCK"
+                            },
+                            {
                                 "op": "signal",
                                 "value": "SIG_LOCK"
                             },
@@ -1808,6 +1873,11 @@
                         "name": "flashing",
                         "lines": [
                             {
+                                "op": "set",
+                                "param": "phase",
+                                "value": "PH_CLEARING"
+                            },
+                            {
                                 "op": "timer",
                                 "action": "start",
                                 "name": "clear"
@@ -1816,11 +1886,17 @@
                                 "op": "goto",
                                 "target": "idle"
                             }
-                        ]
+                        ],
+                        "note": " the full lines flash a while; nothing falls"
                     },
                     {
                         "name": "clearing",
                         "lines": [
+                            {
+                                "op": "set",
+                                "param": "phase",
+                                "value": "PH_PLAYING"
+                            },
                             {
                                 "op": "signal",
                                 "value": "SIG_CLEAR"
@@ -1829,7 +1905,8 @@
                                 "op": "goto",
                                 "target": "idle"
                             }
-                        ]
+                        ],
+                        "note": " the game takes them away and tells what it took (taken): that goes on from here"
                     },
                     {
                         "name": "count_lines",
@@ -1890,12 +1967,17 @@
                                 "value": 1
                             },
                             {
+                                "op": "set",
+                                "param": "fall",
+                                "value": "fall_ms[level - 1]"
+                            },
+                            {
                                 "op": "sound",
                                 "value": "SND_LEVEL_UP"
                             },
                             {
                                 "op": "signal",
-                                "value": "SIG_LEVEL"
+                                "value": "SIG_NUMBERS"
                             },
                             {
                                 "op": "goto",
@@ -1922,8 +2004,44 @@
                         ]
                     },
                     {
+                        "name": "moving",
+                        "lines": [
+                            {
+                                "op": "sound",
+                                "value": "SND_MOVE"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "turning",
+                        "lines": [
+                            {
+                                "op": "sound",
+                                "value": "SND_TURN"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "idle"
+                            }
+                        ]
+                    },
+                    {
                         "name": "over",
                         "lines": [
+                            {
+                                "op": "set",
+                                "param": "phase",
+                                "value": "PH_OVER"
+                            },
+                            {
+                                "op": "timer",
+                                "action": "stop",
+                                "name": "lock"
+                            },
                             {
                                 "op": "sound",
                                 "value": "SND_GAME_OVER"
@@ -1942,75 +2060,86 @@
                 "rules": [
                     {
                         "event": "start",
-                        "source": "idle",
+                        "source": "any",
                         "to": "new_game",
                         "when": "now"
                     },
                     {
                         "event": "restart",
-                        "source": "idle",
+                        "source": "any",
                         "to": "new_game",
                         "when": "now"
                     },
                     {
                         "event": "taken",
-                        "source": "idle",
+                        "source": "any",
                         "to": "count_lines",
                         "when": "now"
                     },
                     {
                         "event": "dropped",
-                        "source": "idle",
+                        "source": "any",
                         "to": "count_drop",
                         "when": "now"
                     },
                     {
                         "event": "topped",
-                        "source": "idle",
+                        "source": "any",
                         "to": "over",
                         "when": "now"
                     },
                     {
                         "event": "landed",
-                        "source": "idle",
+                        "source": "any",
                         "to": "landing",
                         "when": "now"
                     },
                     {
                         "event": "lifted",
-                        "source": "idle",
+                        "source": "any",
                         "to": "lifting",
                         "when": "now"
                     },
                     {
                         "event": "lock",
-                        "source": "idle",
+                        "source": "any",
                         "to": "locking",
                         "when": "now"
                     },
                     {
                         "event": "full",
-                        "source": "idle",
+                        "source": "any",
                         "to": "flashing",
                         "when": "now"
                     },
                     {
                         "event": "cleared",
-                        "source": "idle",
+                        "source": "any",
                         "to": "clearing",
+                        "when": "now"
+                    },
+                    {
+                        "event": "moved",
+                        "source": "any",
+                        "to": "moving",
+                        "when": "now"
+                    },
+                    {
+                        "event": "turned",
+                        "source": "any",
+                        "to": "turning",
                         "when": "now"
                     }
                 ],
                 "heads": {
                     "event": {
                         "above": [
-                            " The game itself as an actor: the score, the lines, the level and how fast the pieces fall, worked out",
-                            " here, and the waits of the game. The game tells it: landed (a piece lies on something: it locks after a",
-                            " while), lifted (it moved off), full (lines are full: they flash a while), taken with given set (the lines",
-                            " it took away at once), dropped with given set (cells a piece was dropped by hand), topped (no room).",
-                            " Its signals: SIG_NUMBERS the numbers changed, SIG_LEVEL a new level (a row falls as the game's fall_<level> says),",
-                            " SIG_OVER the game is over, SIG_LOCK the piece is locked, SIG_CLEAR the full lines go, SIG_NEW a new game",
-                            " (the game empties the well)."
+                            " The game itself as an actor: its phase (what moves now: PH_*), the score, the lines, the level and how fast the",
+                            " pieces fall, worked out here, and the waits of the game. The game tells it: moved and turned (the piece did),",
+                            " landed (a piece lies on something: it locks after a while), lifted (it moved off), full (lines are full: they",
+                            " flash a while), taken with given set (the lines it took away at once), dropped with given set (cells a piece was",
+                            " dropped by hand), topped (no room). Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over, SIG_LOCK",
+                            " the piece is locked, SIG_CLEAR the full lines go, SIG_NEW a new game (the game empties the well)."
                         ]
                     }
                 }
@@ -2848,80 +2977,8 @@
             "value": 50240
         },
         {
-            "name": "fall_1",
-            "value": 800
-        },
-        {
-            "name": "fall_2",
-            "value": 717
-        },
-        {
-            "name": "fall_3",
-            "value": 633
-        },
-        {
-            "name": "fall_4",
-            "value": 550
-        },
-        {
-            "name": "fall_5",
-            "value": 467
-        },
-        {
-            "name": "fall_6",
-            "value": 383
-        },
-        {
-            "name": "fall_7",
-            "value": 300
-        },
-        {
-            "name": "fall_8",
-            "value": 217
-        },
-        {
-            "name": "fall_9",
-            "value": 133
-        },
-        {
-            "name": "fall_10",
-            "value": 100
-        },
-        {
-            "name": "fall_11",
-            "value": 83
-        },
-        {
-            "name": "fall_12",
-            "value": 83
-        },
-        {
-            "name": "fall_13",
-            "value": 83
-        },
-        {
-            "name": "fall_14",
-            "value": 67
-        },
-        {
-            "name": "fall_15",
-            "value": 67
-        },
-        {
-            "name": "cols",
-            "value": 10
-        },
-        {
-            "name": "rows",
-            "value": 20
-        },
-        {
             "name": "spawn_col",
             "value": 3
-        },
-        {
-            "name": "lock_ms",
-            "value": 500
         },
         {
             "name": "repeat_after_ms",
@@ -2934,13 +2991,20 @@
         {
             "name": "soft_drop_ms",
             "value": 40
+        },
+        {
+            "name": "voices",
+            "value": 4
         }
     ],
     "constants": {
         "LINES_PER_LEVEL": 10,
         "TOP_LEVEL": 15,
+        "PH_TITLE": 0,
+        "PH_PLAYING": 1,
+        "PH_CLEARING": 2,
+        "PH_OVER": 3,
         "SIG_NUMBERS": 1,
-        "SIG_LEVEL": 2,
         "SIG_OVER": 3,
         "SIG_LOCK": 4,
         "SIG_CLEAR": 5,

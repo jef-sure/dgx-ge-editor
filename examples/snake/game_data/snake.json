@@ -539,19 +539,25 @@
                     "star",
                     "crash",
                     "star_gone",
-                    "restart"
+                    "restart",
+                    "turned"
                 ],
                 "defines": [],
                 "tables": [],
                 "questions": [],
                 "params": [
                     {
+                        "name": "phase",
+                        "value": "PH_TITLE"
+                    },
+                    {
                         "name": "score",
                         "value": 0
                     },
                     {
                         "name": "best",
-                        "value": 0
+                        "value": 0,
+                        "note": " the game gives it what it kept"
                     },
                     {
                         "name": "length",
@@ -564,11 +570,33 @@
                         "note": " ms a step"
                     }
                 ],
-                "groups": [],
+                "groups": [
+                    {
+                        "name": "any",
+                        "scripts": [
+                            "title",
+                            "new_game",
+                            "playing",
+                            "apple",
+                            "star_comes",
+                            "star_goes",
+                            "bonus",
+                            "counted",
+                            "turning",
+                            "crashed",
+                            "over"
+                        ]
+                    }
+                ],
                 "scripts": [
                     {
-                        "name": "idle",
+                        "name": "title",
                         "lines": [
+                            {
+                                "op": "set",
+                                "param": "phase",
+                                "value": "PH_TITLE"
+                            },
                             {
                                 "op": "frame",
                                 "none": true,
@@ -577,11 +605,17 @@
                             {
                                 "op": "hold"
                             }
-                        ]
+                        ],
+                        "note": " the title show plays (the game's)"
                     },
                     {
                         "name": "new_game",
                         "lines": [
+                            {
+                                "op": "set",
+                                "param": "phase",
+                                "value": "PH_PLAYING"
+                            },
                             {
                                 "op": "set",
                                 "param": "score",
@@ -612,7 +646,20 @@
                             },
                             {
                                 "op": "goto",
-                                "target": "idle"
+                                "target": "playing"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "playing",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "none": true,
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
                             }
                         ]
                     },
@@ -678,7 +725,7 @@
                             },
                             {
                                 "op": "goto",
-                                "target": "idle"
+                                "target": "playing"
                             }
                         ]
                     },
@@ -720,13 +767,36 @@
                             },
                             {
                                 "op": "goto",
-                                "target": "idle"
+                                "target": "playing"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "turning",
+                        "lines": [
+                            {
+                                "op": "sound",
+                                "value": "SND_TURN"
+                            },
+                            {
+                                "op": "goto",
+                                "target": "playing"
                             }
                         ]
                     },
                     {
                         "name": "crashed",
                         "lines": [
+                            {
+                                "op": "set",
+                                "param": "phase",
+                                "value": "PH_OVER"
+                            },
+                            {
+                                "op": "timer",
+                                "action": "stop",
+                                "name": "star"
+                            },
                             {
                                 "op": "sound",
                                 "value": "SND_CRASH"
@@ -736,8 +806,27 @@
                                 "value": "SIG_OVER"
                             },
                             {
+                                "op": "frame",
+                                "name": "WORDS_GAME_OVER",
+                                "ms": 1000
+                            },
+                            {
                                 "op": "goto",
-                                "target": "idle"
+                                "target": "over"
+                            }
+                        ],
+                        "note": " GAME OVER; a start in its first second is not taken"
+                    },
+                    {
+                        "name": "over",
+                        "lines": [
+                            {
+                                "op": "frame",
+                                "name": "WORDS_GAME_OVER",
+                                "ms": 1000
+                            },
+                            {
+                                "op": "hold"
                             }
                         ]
                     }
@@ -745,37 +834,49 @@
                 "rules": [
                     {
                         "event": "start",
-                        "source": "idle",
+                        "source": "title",
+                        "to": "new_game",
+                        "when": "now"
+                    },
+                    {
+                        "event": "start",
+                        "source": "over",
                         "to": "new_game",
                         "when": "now"
                     },
                     {
                         "event": "restart",
-                        "source": "idle",
+                        "source": "any",
                         "to": "new_game",
                         "when": "now"
                     },
                     {
                         "event": "ate",
-                        "source": "idle",
+                        "source": "playing",
                         "to": "apple",
                         "when": "now"
                     },
                     {
                         "event": "star",
-                        "source": "idle",
+                        "source": "playing",
                         "to": "bonus",
                         "when": "now"
                     },
                     {
+                        "event": "turned",
+                        "source": "playing",
+                        "to": "turning",
+                        "when": "now"
+                    },
+                    {
                         "event": "crash",
-                        "source": "idle",
+                        "source": "playing",
                         "to": "crashed",
                         "when": "now"
                     },
                     {
                         "event": "star_gone",
-                        "source": "idle",
+                        "source": "playing",
                         "to": "star_goes",
                         "when": "now"
                     }
@@ -783,11 +884,12 @@
                 "heads": {
                     "event": {
                         "above": [
-                            " The game itself as an actor: the score, the length the snake is to grow to, how fast it goes, when a star",
-                            " comes. The game moves the snake a cell every speed ms and tells this actor what the head found.",
-                            " Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over, SIG_STAR a star comes (a cell",
-                            " of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays the",
-                            " snake and an apple anew)."
+                            " The game itself as an actor: its phase (what moves now: PH_*), the score, the best, the length the snake is",
+                            " to grow to, how fast it goes, when a star comes, the words it shows (GAME OVER: the game draws it in the zone",
+                            " message). The game moves the snake a cell every speed ms and tells this actor what the head found and where it",
+                            " turned. Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over (the best is kept), SIG_STAR a star",
+                            " comes (a cell of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays",
+                            " the field anew)."
                         ]
                     }
                 }
@@ -1099,6 +1201,15 @@
                             "y": 2,
                             "width": 60,
                             "height": 16
+                        },
+                        {
+                            "type": "zone",
+                            "name": "message",
+                            "kind": "message",
+                            "x": 60,
+                            "y": 96,
+                            "width": 200,
+                            "height": 24
                         }
                     ]
                 }
@@ -1966,12 +2077,8 @@
     ],
     "game": [
         {
-            "name": "start_col",
-            "value": 10
-        },
-        {
-            "name": "start_row",
-            "value": 11
+            "name": "voices",
+            "value": 2
         }
     ],
     "constants": {
@@ -1983,6 +2090,9 @@
         "APPLE_SCORE": 10,
         "STAR_SCORE": 50,
         "STAR_EVERY": 5,
+        "PH_TITLE": 0,
+        "PH_PLAYING": 1,
+        "PH_OVER": 2,
         "SIG_NUMBERS": 1,
         "SIG_OVER": 2,
         "SIG_STAR": 3,

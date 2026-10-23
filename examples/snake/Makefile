@@ -22,7 +22,7 @@ ENGINE_DIR    := $(abspath $(ENGINE))
 
 # the pack made again before anything else whenever what the editor saved is newer (the engine's host.mk reads its
 # header as it is read itself); the game's C again when the header changes
-PACK_INPUTS := $(wildcard game_data/*.json game_data/*/*.png game_data/*.anim game_data/dialogs/*.dlg) tools/pack.py
+PACK_INPUTS := $(wildcard game_data/*.json game_data/*/*.png game_data/*.anim game_data/dialogs/*.dlg game_data/sounds/*.wav) tools/pack.py
 ifneq ($(shell [ -f $(GAME_PACK_H) ] && [ -z "$$(find $(PACK_INPUTS) -newer $(GAME_PACK_H))" ] && echo fresh),fresh)
 ifneq ($(shell python3 tools/pack.py $(ENGINE_DIR) 1>&2; echo $$?),0)
 $(error the pack of game_data/ could not be made: see above)

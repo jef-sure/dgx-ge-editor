@@ -93,13 +93,33 @@ Copy an example's folder (Snake is the smallest) and rename it:
   side and nothing needs to be said.
 - **python3 with Pillow** for the packer: the system's. ESP-IDF's own Python has no Pillow; the board's build finds
   the system's `python3` itself.
-- For a board: **ESP-IDF** 5.3 or later (the examples are built with 6.0.1). **DGX** 0.8 and **DGX-DI** 0.1.2 come
-  from the registry by themselves.
+- For a board: **ESP-IDF** 5.3 or later (the examples are built with 6.0.1). **DGX** and **DGX-DI** come from the
+  registry by themselves.
 - For the computer: **SDL2** (`libsdl2-dev`), GNU make 4.3+, a C compiler; DGX and DGX-DI as an `idf.py` build of the
   game downloaded them (into its `managed_components/`), or checkouts of
   [esp32-component-dgx](https://github.com/jef-sure/esp32-component-dgx) and
   [esp32-component-dgx-di](https://github.com/jef-sure/esp32-component-dgx-di) beside the editor's folder, or
   `make DGX=… DGX_DI=…`.
+
+### Versions
+
+The least each part must be for the examples to build and play, and what they were checked with:
+
+| Part | At least | Why | Checked with |
+| --- | --- | --- | --- |
+| DGX-GE | 0.3.0 | Pac-Man: `game.*` told who asks, the constants in the pack's header, a walker bound to an actor, hits from the registry of bodies. Snake and Tetris need 0.2.0 (boards as directories, the computer's board) | 0.3.0 |
+| DGX | 0.8.0 | DGX-GE asks for `^0.8.0` | 0.8.1 |
+| DGX-DI | 0.1.2 | the games' `idf_component.yml` | 0.1.2 |
+| ESP-IDF | 5.3 | DGX-GE's least | 6.0.1, with DGX-GE 0.2.0; with 0.3.0 only the computer's build |
+| `atanisoft/esp_lcd_touch_xpt2046` (the CYD) | 1.0 | the games' `idf_component.yml` | — |
+| `espressif/esp_codec_dev`, `espressif/esp_lcd_touch_gt911` (the P4 boards) | 1.6.2, 1.0 | the games' `idf_component.yml` | — |
+| python3, Pillow | — | the packer | Python 3.14, Pillow 12.1 |
+| GNU make | 4.3 | DGX-GE's `host.mk` | 4.4.1 |
+| SDL2 | — | the computer's board | 2.32 |
+| node | — | `examples/editor_check.js`, `make_games.py`, `check_games.py` only | 24 |
+
+A dash: nothing older is known not to work, but nothing older was tried. The games' `main/idf_component.yml` ask
+for these DGX-GE versions too (`^0.3.0` Pac-Man, `>=0.2.0` the others).
 
 ## The CYD's touch
 

@@ -1,10 +1,10 @@
 /*
  * Tetris on DGX-GE, made in the sprite editor: its pictures, the well and the boxes beside it, the tiles of blocks
- * (a block's piece is its cell's modifier), the shapes of the pieces and the speeds of the levels (numbers of the
- * game), the game's actor PLAY (the score, the lines, the level, how long a piece lies before it locks, how long full
- * lines flash), the title show and the pause dialog are data of game_data/ (the pack the build makes of it). This file
- * is what data cannot say: the piece falls, turns and moves in the well as the buttons or the finger say, lies on
- * what is below it, and full lines go; PLAY is told what happened, its signals say what follows.
+ * (a block's piece is its cell's modifier), the shapes of the pieces (numbers of the game), the game's actor PLAY (its
+ * phases, the score, the lines, the level and how fast it falls, how long a piece lies before it locks, how long full
+ * lines flash), the sounds, the title show and the pause dialog are data of game_data/ (the pack the build makes of
+ * it). This file is what data cannot say: the piece falls, turns and moves in the well as the buttons or the finger
+ * say, lies on what is below it, and full lines go; PLAY is told what happened, its signals say what follows.
  *
  * The same file builds for a board of the engine (idf.py: the CYD) and for the computer (make). The touch is DGX-DI's
  * (the CYD's own, cyd_touch.c): a finger drawn sideways moves the piece a column for each column it goes, a tap turns
@@ -24,6 +24,7 @@
 #include "dgx_ge_input.h"
 #include "dgx_ge_label.h"
 #include "dgx_ge_layout.h"
+#include "dgx_ge_mixer.h"
 #include "dgx_ge_pack.h"
 #include "dgx_ge_pockets.h"
 #include "dgx_ge_scene.h"
@@ -45,12 +46,9 @@ static const char *TAG = "tetris";
 extern const uint8_t tetris_pack_start[] asm("_binary_tetris_pack_start");
 extern const uint8_t tetris_pack_end[] asm("_binary_tetris_pack_end");
 
-/* what PLAY signals: the constants SIG_* of game_data/tetris.json */
-enum { SIG_NUMBERS = 1, SIG_LEVEL = 2, SIG_OVER = 3, SIG_LOCK = 4, SIG_CLEAR = 5, SIG_NEW = 6 };
-enum { PIECES = 7, TURNS = 4, LEVELS = 15 };
+enum { PIECES = 7, TURNS = 4 };
 enum { COLS_MAX = 16, ROWS_MAX = 32 };
 enum { STEP_US = 16000 };
-enum { TITLE, PLAYING, CLEARING, PAUSED, OVER };
 enum { SWIPE_MM = 2 };
 
 static dgx_ge_pack_t      pack;
@@ -79,9 +77,12 @@ static dgx_ge_strings_t   strings;
 static dgx_ge_talk_t      talk;
 static dgx_ge_talk_view_t view;
 static dgx_font_t        *fonts[TETRIS_FONT_COUNT];
+static dgx_ge_sounds_t    sounds;
+static dgx_ge_mixer_t     mixer;
+static dgx_ge_sound_t     sound; /* the mixer as the game's output; none: nothing plays */
 
-static int      state = TITLE, was = PLAYING; /* was: what the pause dialog goes back to */
-static uint32_t clock_ms;
+static bool     paused;
+static uint32_t clock_ms; /* the game's time: it stands while the pause dialog is open */
 static bool     relay_all;
 static uint32_t seed = 1;
 
@@ -93,6 +94,11 @@ static uint32_t fall_ms;                              /* when it goes down a row
 static bool     full[ROWS_MAX];                       /* the lines that go */
 static uint8_t  bag[PIECES];
 static int      bag_left;
+
+static int phase(void)
+{
+    return (int)play.params[TETRIS_PLAY_PARAM_PHASE];
+}
 
 static int rnd(int n)
 {
@@ -141,15 +147,16 @@ static int drop_row(void)
     return r;
 }
 
-/* The set of the scene: its pictures as laid in the editor, the pieces of the grids. */
-static void lay_set(void)
+/* The set of the scene laid anew (its pictures as laid in the editor, the pieces of the grids), drawn anew where it changed: the places, or all (n < 0). */
+static void lay_set(const dgx_ge_rect_t *places, int n)
 {
     dgx_ge_scene_set_begin(scene);
     dgx_ge_layout_scene(&layout, scene, &pack, map_of, layout_images);
     dgx_ge_grid_add(&well, scene);
     dgx_ge_grid_add(&next, scene);
     dgx_ge_scene_set_end(scene);
-    dgx_ge_scene_invalidate(scene, 0, dgx_ge_rect(0, 0, dgx_ge_frame_width(frame), dgx_ge_frame_height(frame)));
+    if (n < 0) dgx_ge_scene_invalidate(scene, 0, dgx_ge_rect(0, 0, dgx_ge_frame_width(frame), dgx_ge_frame_height(frame)));
+    for (int i = 0; i < n; ++i) dgx_ge_scene_invalidate(scene, 0, places[i]);
     relay_all = false;
 }
 
@@ -173,7 +180,7 @@ static void show_well(void)
             tile[i]     = board[r][c] ? (full[r] ? TETRIS_TETRIS_TILE_GOING : TETRIS_TETRIS_TILE_BLOCK) : 0;
             mod[i]      = board[r][c] ? board[r][c] - 1 : 0;
         }
-    if (state == PLAYING || (state == PAUSED && was == PLAYING)) {
+    if (phase() == TETRIS_PH_PLAYING) {
         const int land = drop_row();
         for (int pass = 0; pass < 2; ++pass)
             for (int r = 0; r < 4; ++r)
@@ -188,16 +195,15 @@ static void show_well(void)
     /* the next one, the top two rows of its first turn */
     for (int r = 0; r < 2; ++r)
         for (int c = 0; c < 4; ++c) {
-            const bool on = state != TITLE && cell_of_shape(coming, 0, c, r);
+            const bool on = phase() != TETRIS_PH_TITLE && cell_of_shape(coming, 0, c, r);
             put(&next, r * 4 + c, on ? TETRIS_TETRIS_TILE_BLOCK : 0, on ? coming : 0);
         }
 }
 
+/* ms a row falls: PLAY's, by the level */
 static uint32_t fall_every(void)
 {
-    int level = (int)play.params[TETRIS_PLAY_PARAM_LEVEL];
-    level     = level < 1 ? 1 : level > LEVELS ? LEVELS : level;
-    return (uint32_t)dgx_ge_game_value(&game, TETRIS_GAME_FALL_1 + level - 1, 800);
+    return (uint32_t)play.params[TETRIS_PLAY_PARAM_FALL];
 }
 
 static void say(dgx_ge_actor_t *actor, dgx_ge_anim_say_t what, uint8_t value, uint32_t at_ms, void *ctx);
@@ -221,12 +227,10 @@ static void spawn(uint32_t at_ms)
     at_row = -1;
     lying  = false;
     if (!fits(piece, turn, at_col, at_row) && !fits(piece, turn, at_col, ++at_row)) {
-        state = OVER;
         dgx_ge_actor_event(&play, TETRIS_PLAY_EVENT_TOPPED, at_ms, say, NULL);
         dgx_ge_actor_event(&message, TETRIS_EVENT_OVER, at_ms, say, NULL);
         return;
     }
-    state   = PLAYING;
     fall_ms = at_ms + fall_every();
     settle(at_ms);
 }
@@ -245,10 +249,8 @@ static void lock(uint32_t at_ms)
         for (int c = 0; c < cols && full[r]; ++c) full[r] = board[r][c] != 0;
         any += full[r];
     }
-    if (any) {
-        state = CLEARING;
-        dgx_ge_actor_event(&play, TETRIS_PLAY_EVENT_FULL, at_ms, say, NULL);
-    } else spawn(at_ms);
+    if (any) dgx_ge_actor_event(&play, TETRIS_PLAY_EVENT_FULL, at_ms, say, NULL); /* PLAY: they flash a while, nothing falls */
+    else spawn(at_ms);
 }
 
 /* The full lines go, those above come down; PLAY counts them. */
@@ -285,19 +287,30 @@ static void labels(void)
     dgx_ge_label_number(&level_label, play.params[TETRIS_PLAY_PARAM_LEVEL]);
 }
 
-/* What PLAY (and the dialog's tell to it) says: its signals, its timers, its sounds (none made yet). */
+/* What PLAY (and the dialog's tell to it) says: its sounds, its timers, its signals. */
 static void say(dgx_ge_actor_t *actor, dgx_ge_anim_say_t what, uint8_t value, uint32_t at_ms, void *ctx)
 {
     (void)ctx;
+    if (what == DGX_GE_ANIM_SOUND) {
+        dgx_ge_sound_play(&sound, value);
+        return;
+    }
     if (what >= DGX_GE_ANIM_TIMER_START && what <= DGX_GE_ANIM_TIMER_GO) {
         dgx_ge_timers_said(&timers, what, value, DGX_GE_OWNER_ACTOR, 0, 0, 0, at_ms);
         return;
     }
     if (what != DGX_GE_ANIM_SIGNAL || actor != &play) return;
-    if (value == SIG_NUMBERS) labels();
-    if (value == SIG_NEW) new_game(at_ms);
-    if (value == SIG_LOCK && state == PLAYING && lying) lock(at_ms);
-    if (value == SIG_CLEAR && state == CLEARING) clear_lines(at_ms);
+    if (value == TETRIS_SIG_NUMBERS) labels();
+    if (value == TETRIS_SIG_NEW) {
+        if (title.cast) {
+            dgx_ge_show_stop(&title);
+            dgx_ge_scene_reset(scene, 0);
+            lay_set(NULL, -1);
+        }
+        new_game(at_ms);
+    }
+    if (value == TETRIS_SIG_LOCK && phase() == TETRIS_PH_PLAYING && lying) lock(at_ms);
+    if (value == TETRIS_SIG_CLEAR) clear_lines(at_ms);
 }
 
 static void fire(const dgx_ge_timer_t *timer, uint32_t at_ms, void *ctx)
@@ -311,6 +324,7 @@ static bool shift(int dc, uint32_t at_ms)
 {
     if (!fits(piece, turn, at_col + dc, at_row)) return false;
     at_col += dc;
+    dgx_ge_actor_event(&play, TETRIS_PLAY_EVENT_MOVED, at_ms, say, NULL);
     settle(at_ms);
     return true;
 }
@@ -322,6 +336,7 @@ static void rotate(uint32_t at_ms)
     for (unsigned i = 0; i < sizeof kicks / sizeof kicks[0]; ++i)
         if (fits(piece, t, at_col + kicks[i], at_row)) {
             turn = t, at_col += kicks[i];
+            dgx_ge_actor_event(&play, TETRIS_PLAY_EVENT_TURNED, at_ms, say, NULL);
             settle(at_ms);
             return;
         }
@@ -341,7 +356,7 @@ static void fall(uint32_t now, bool soft)
 {
     const uint32_t every = soft ? (uint32_t)dgx_ge_game_value(&game, TETRIS_GAME_SOFT_DROP_MS, 40) : fall_every();
     if (soft && (int32_t)(fall_ms - (now + every)) > 0) fall_ms = now + every;
-    while (state == PLAYING && (int32_t)(now - fall_ms) >= 0) {
+    while (phase() == TETRIS_PH_PLAYING && (int32_t)(now - fall_ms) >= 0) {
         const uint32_t at = fall_ms;
         fall_ms += every;
         if (fits(piece, turn, at_col, at_row + 1)) {
@@ -374,7 +389,6 @@ static void show_actor(const dgx_ge_actor_t *a, dgx_image_t *image, int layer)
 
 static void start_title(uint32_t now)
 {
-    state = TITLE;
     dgx_ge_scene_reset(scene, 0);
     size_t         size;
     const uint8_t *blob = dgx_ge_pack_blob(&pack, TETRIS_BLOB_TITLE, &size);
@@ -385,37 +399,30 @@ static void start_title(uint32_t now)
     }
 }
 
-static void start_game(uint32_t now)
-{
-    if (state == TITLE) {
-        dgx_ge_show_stop(&title);
-        dgx_ge_scene_reset(scene, 0);
-        lay_set();
-    }
-    dgx_ge_actor_event(&play, TETRIS_PLAY_EVENT_START, now, say, NULL); /* PLAY: SIG_NEW empties the well */
-}
-
 /* The finger (DGX-DI's touch): drawn sideways, a column for each column it goes; a swipe down drops; a tap turns. */
 static dgx_di_touch_t touch;
 static bool           steered; /* this touch has done what it does */
 static int            swipe_px, cell_px, drawn_x;
 
-static void control(const dgx_ge_input_t *input, uint32_t real, uint32_t now)
+static void control(dgx_ge_input_t *input, uint32_t real, uint32_t now)
 {
     static uint32_t repeat_ms;
     if (touch.pressed) steered = false, drawn_x = touch.x;
     const bool tap = touch.released && !steered && !touch.told;
     const bool go  = input->pressed & (DGX_GE_KEY_START | DGX_GE_KEY_A);
-    if (state == TITLE || state == OVER) {
-        if (go || tap) start_game(now);
+    const int  ph  = phase();
+    if (!paused && (ph == TETRIS_PH_TITLE || ph == TETRIS_PH_OVER)) {
+        if (go || tap) dgx_ge_actor_event(&play, TETRIS_PLAY_EVENT_START, now, say, NULL); /* PLAY: SIG_NEW empties the well */
         return;
     }
-    if (state == PAUSED) {
+    if (paused) {
+        talk.ahead_ms = real - now; /* the game stands, the talk goes on: what it tells lands at the game's moment */
         if (input->pressed & DGX_GE_KEY_UP) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_PREV, real);
         if (input->pressed & DGX_GE_KEY_DOWN) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_NEXT, real);
         if (go) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_ACTIVATE, real);
         if (input->pressed & (DGX_GE_KEY_B | DGX_GE_KEY_BACK)) dgx_ge_talk_view_event(&view, &talk, DGX_GE_UI_BACK, real);
         if (!steered || !(touch.down || touch.released)) dgx_ge_talk_view_pointer(&view, &talk, &input->pointer, real);
+        dgx_ge_input_spend(input, input->pressed); /* what the dialog took moves nothing */
         return;
     }
     if ((input->pressed & (DGX_GE_KEY_START | DGX_GE_KEY_BACK)) || (touch.long_press && !steered)) {
@@ -424,12 +431,12 @@ static void control(const dgx_ge_input_t *input, uint32_t real, uint32_t now)
         dgx_ge_cast_t   cast    = {.roles = roles, .game = &play};
         dgx_ge_talk_start(&talk, &pause_dialog, &cast, TETRIS_STYLE_MENU, real, say, NULL);
         talk.ahead_ms = real - now;
-        was           = state;
-        state         = PAUSED;
+        paused        = true;
         dgx_ge_actor_event(&message, TETRIS_EVENT_PAUSED, now, say, NULL);
+        dgx_ge_input_spend(input, input->pressed);
         return;
     }
-    if (state != PLAYING) return;
+    if (ph != TETRIS_PH_PLAYING) return;
     /* the buttons: left and right again and again while held, up or A turns, B or X drops, down falls faster */
     const int dir = input->held & DGX_GE_KEY_LEFT ? -1 : input->held & DGX_GE_KEY_RIGHT ? 1 : 0;
     if (input->pressed & (DGX_GE_KEY_LEFT | DGX_GE_KEY_RIGHT)) {
@@ -526,7 +533,7 @@ void app_main(void)
     dgx_ge_kinds_init(&kinds, &pack, 8);
     uint32_t now = (uint32_t)(esp_timer_get_time() / 1000);
     seed         = now | 1;
-    dgx_ge_actor_start(&play, dgx_ge_kind(&kinds, TETRIS_BLOB_PLAY), TETRIS_PLAY_SCRIPT_IDLE, 0, 0, now);
+    dgx_ge_actor_start(&play, dgx_ge_kind(&kinds, TETRIS_BLOB_PLAY), TETRIS_PLAY_SCRIPT_IDLE, 0, 0, now); /* its phase: the title */
     dgx_ge_actor_start(&prompt, dgx_ge_kind(&kinds, TETRIS_BLOB_WORDS), TETRIS_WORDS_SCRIPT_BLINK, w / 2, h - 30, now);
     dgx_ge_rect_t place;
     int           kind;
@@ -564,19 +571,28 @@ void app_main(void)
     cell_px  = tiles.cell_w * scale;
     const bool padded = pointing && board_pad_able && !board_buttons_able &&
                         board_pad_show(lcd, dgx_di_pad_layout_classic, dgx_di_pad_layout_classic_size, 120);
-    ESP_LOGI(TAG, "a frame of %dx%d, x%d, on a display of %dx%d; %s%s", w, h, scale, lcd->width, lcd->height,
+    /* the sound, where the board has it: the mixer at the board's rate, the board's task (on the computer, SDL) pulls it */
+    blob = dgx_ge_pack_blob(&pack, TETRIS_BLOB_SOUNDS, &size);
+    if (board_sound_rate && blob && dgx_ge_sounds_open(&sounds, blob, size) &&
+        dgx_ge_mixer_init(&mixer, &sounds, dgx_ge_game_value(&game, TETRIS_GAME_VOICES, 4), board_sound_rate, 1)) {
+        if (board_sound_start(&mixer)) {
+            sound = dgx_ge_mixer_output(&mixer);
+            dgx_ge_mixer_volume(&mixer, board_sound_volume);
+        } else dgx_ge_mixer_free(&mixer);
+    }
+    ESP_LOGI(TAG, "a frame of %dx%d, x%d, on a display of %dx%d; %s%s%s", w, h, scale, lcd->width, lcd->height, sound.play ? "sound, " : "",
              padded ? "a pad" : board_buttons_able ? "buttons" : pointing ? "a pointer" : "no input", cyd ? " (the CYD's touch)" : "");
 
     start_title(now);
     dgx_ge_input_t     input     = {0};
-    uint32_t           paused_ms = 0, last = now;
+    uint32_t           last  = now;
     static dgx_image_t pictures[8];
+    clock_ms = now;
     for (;;) {
         const int64_t  t0   = esp_timer_get_time();
         const uint32_t real = (uint32_t)(t0 / 1000);
-        if (state == PAUSED) paused_ms += real - last;
-        last     = real;
-        clock_ms = real - paused_ms;
+        if (!paused) clock_ms += real - last;
+        last = real;
         if (pointing) {
             int x = 0, y = 0;
 #ifdef GAME_CYD
@@ -590,37 +606,40 @@ void app_main(void)
         dgx_ge_input_update(&input, board_buttons() | (padded ? board_pad_buttons() : 0));
         control(&input, real, clock_ms);
 
-        if (state == PAUSED) {
+        if (paused) {
+            talk.ahead_ms = real - clock_ms;
             dgx_ge_talk_view_play(&view, &talk, &strings, real);
-            if (talk.state == DGX_GE_TALK_OVER && state == PAUSED) {
-                state = was;
+            if (talk.state == DGX_GE_TALK_OVER) {
+                paused = false;
                 dgx_ge_actor_event(&message, TETRIS_EVENT_RESUME, clock_ms, say, NULL);
             }
         } else {
             dgx_ge_timers_play(&timers, clock_ms);
             dgx_ge_actor_advance(&play, clock_ms, say, NULL);
-            if (state == TITLE) dgx_ge_show_play(&title, clock_ms, say, NULL);
+            if (phase() == TETRIS_PH_TITLE) dgx_ge_show_play(&title, clock_ms, say, NULL);
             else {
                 dgx_ge_actor_advance(&message, clock_ms, say, NULL);
                 dgx_ge_actor_advance(&prompt, clock_ms, say, NULL);
             }
+            /* the lines going flash: the set laid anew, drawn anew where they changed */
             dgx_ge_rect_t places[8];
-            if (state != TITLE && dgx_ge_grid_animate(&well, clock_ms, places, 8)) relay_all = true; /* the lines going flash */
+            const int     changed = phase() != TETRIS_PH_TITLE ? dgx_ge_grid_animate(&well, clock_ms, places, 8) : 0;
+            if (changed && !relay_all) lay_set(places, changed > 8 ? -1 : changed);
         }
-        if (state != TITLE) show_well();
-        if (relay_all) lay_set();
+        if (phase() != TETRIS_PH_TITLE) show_well();
+        if (relay_all) lay_set(NULL, -1);
 
         dgx_ge_scene_actors_begin(scene);
         int p = 0;
-        if (state == TITLE) {
+        if (phase() == TETRIS_PH_TITLE) {
             dgx_ge_show_items(&title, &pack, map_of, scene, NULL, NULL);
         } else {
             dgx_ge_label_show(&score_label, scene);
             dgx_ge_label_show(&lines_label, scene);
             dgx_ge_label_show(&level_label, scene);
             show_actor(&message, &pictures[p++], TETRIS_SCENE_WELL_LAYER_TEXT);
-            if (state == OVER) show_actor(&prompt, &pictures[p++], TETRIS_SCENE_WELL_LAYER_TEXT);
-            if (state == PAUSED) dgx_ge_talk_view_show(&view, &talk, scene, TETRIS_SCENE_WELL_LAYER_TEXT);
+            if (phase() == TETRIS_PH_OVER) show_actor(&prompt, &pictures[p++], TETRIS_SCENE_WELL_LAYER_TEXT);
+            if (paused) dgx_ge_talk_view_show(&view, &talk, scene, TETRIS_SCENE_WELL_LAYER_TEXT);
         }
         dgx_ge_scene_render(scene);
 

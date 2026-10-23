@@ -4,7 +4,7 @@
 // would; the packer reads them from the JSON (Pack.add_sprites).
 //   game:   [{name, value}]                                   constants of the game, in this order (the header names them)
 //   constants: {name: value}                                  names of numbers the scripts write (add_constants): at
-//                                                             packing only, in no blob and no header
+//                                                             packing, in no blob; the header gives them to C (PREFIX_NAME)
 //   timers: [{name, once | every [, until], reset, event, start}]  times as "500ms" or "2s"; reset never | scene | map;
 //                                                             event '' none; start 'game' or ''
 //   sounds: [name]                                            sounds by name, the order is their numbers
@@ -20,9 +20,9 @@ const Game = {
             'Числа',
             'Числа игры (поле game, add_game): числа, которые части движка берут как есть (kinds, lives, records, boxes…) и свои числа игры. Лежат в пакете (блоб GAME), в заголовке — PREFIX_GAME_ИМЯ, в этом порядке'],
         ['packConstants', 'Constants',
-            'Constants (field constants, add_constants): names of numbers the texts of scripts write instead of the numbers (TICK_MS, TILE_FLOOR) — wherever a number may stand, like their own define; and conditions of dialog answers (if board & BOARD_PAD). The packer makes them numbers: they go neither into the pack nor into the header. A script cannot redefine such a name',
+            'Constants (field constants, add_constants): names of numbers the texts of scripts write instead of the numbers (TICK_MS, TILE_FLOOR) — wherever a number may stand, like their own define; and conditions of dialog answers (if board & BOARD_PAD). The packer makes them numbers: they are in no blob; the header gives them to C as PREFIX_NAME (DGX-GE 0.3.0), so a name must be no other name of the header. A script cannot redefine such a name',
             'Константы',
-            'Константы (поле constants, add_constants): имена чисел, которые пишут тексты скриптов вместо самих чисел (TICK_MS, TILE_FLOOR) — везде, где может стоять число, как свои define; и условия ответов диалогов (if board & BOARD_PAD). Числами их делает упаковщик: в пакет и в заголовок они не идут. Переопределить такое имя в скрипте нельзя'],
+            'Константы (поле constants, add_constants): имена чисел, которые пишут тексты скриптов вместо самих чисел (TICK_MS, TILE_FLOOR) — везде, где может стоять число, как свои define; и условия ответов диалогов (if board & BOARD_PAD). Числами их делает упаковщик: в блобы они не идут; заголовок даёт их C как PREFIX_ИМЯ (DGX-GE 0.3.0), так что имя не должно совпадать с другим именем заголовка. Переопределить такое имя в скрипте нельзя'],
         ['timers', 'Timers',
             'Timers of the game: go off once after so long, or every so often (up to a limit); reset on leaving a scene or a map; an event to the owner; timer(NAME) in expressions of scripts reads its milliseconds',
             'Таймеры',
@@ -171,6 +171,108 @@ const Game = {
         for (const c of doc.crops || []) names.push(c.name);
         return names;
     },
+    // the names of the pack's header but the constants', as the packer writes them (header of dgx_ge_pack.py): name -> what
+    // it names; without the prefix (<PREFIX>_). A constant is <PREFIX>_<NAME> there, so its name must be none of these
+    headerNames(doc) {
+        let out = new Map();
+        const put = (name, what) => {
+            if (!out.has(name)) out.set(name, what);
+        };
+        const N = t => Anim.nameOf(String(t));
+        const kinds = this.kinds(doc);
+        // the sets (and the palettes), the pictures, the blobs, each with a COUNT
+        for (const s of doc.sets) put('SET_' + N(s.name), 'the set ' + s.name);
+        for (const p of doc.palettes || []) put('SET_' + N(p.name), 'the palette ' + p.name);
+        for (const p of this.pictureNames(doc)) put('IMG_' + N(p), 'the picture ' + p);
+        let blobs = kinds.map(s => s.name).concat((doc.tilesets || []).map(t => t.name), (doc.dialogs || []).map(d => d.name),
+            (doc.shows || []).map(s => s.name), (doc.scenes || []).map(s => 'SCENE_' + s.name));
+        const graph = (doc.maps || []).length && doc.graph && doc.graph.name; /* without maps no graph goes into the file (Maps.saved) */
+        if (graph) {
+            blobs.push(graph);
+            for (const m of doc.maps || []) blobs.push(graph + '_' + m.name + '_LINKS');
+        }
+        if ((doc.dialogs || []).length) blobs.push('STRINGS');
+        if ((doc.game || []).length) blobs.push('GAME');
+        if ((doc.chases || []).length) blobs.push('CHASE');
+        if ((doc.timers || []).length) blobs.push('TIMERS');
+        if ((doc.styles || []).length) blobs.push('STYLES');
+        if ((doc.sounds || []).length) blobs.push('SOUNDS');
+        for (const b of blobs) put('BLOB_' + N(b), 'the blob ' + b);
+        for (const k of ['SET', 'IMG', 'BLOB']) put(k + '_COUNT', 'how many ' + k.toLowerCase() + 's');
+        // the tiles of the tile sets and the layers their pieces go to (slots)
+        for (const ts of doc.tilesets || []) {
+            let slots = [];
+            for (const t of ts.tiles || []) {
+                put(N(ts.name) + '_TILE_' + N(t.name), 'the tile ' + t.name + ' of ' + ts.name);
+                for (const p of t.pieces || [])
+                    if (p.layer && !slots.includes(p.layer)) slots.push(p.layer);
+            }
+            for (const sl of slots) put(N(ts.name) + '_SLOT_' + N(sl), 'the slot ' + sl + ' of ' + ts.name);
+        }
+        for (const c of doc.game || []) put('GAME_' + N(c.name), 'the number of the game ' + c.name);
+        // the graph of scenes: its exits, entries, maps
+        if (graph) {
+            const names = Maps.names(doc);
+            for (const e of names.exits || []) put(N(graph) + '_EXIT_' + N(e), 'the exit ' + e);
+            for (const e of names.entries || []) put(N(graph) + '_ENTRY_' + N(e), 'the entry ' + e);
+            for (const m of doc.maps || []) put(N(graph) + '_MAP_' + N(m.name), 'the map ' + m.name);
+        }
+        for (const m of doc.masks || [])
+            if (m.name) put('MASK_' + N(m.name), 'the mask ' + m.name);
+        for (const s of doc.sets)
+            for (const f of s.frames)
+                for (const p of Object.keys(f.points || {})) put('POINT_' + N(p), 'the point ' + p);
+        for (const s of doc.sounds || []) put('SOUND_' + N(s), 'the sound ' + s);
+        if ((doc.sounds || []).length) put('SOUND_COUNT', 'how many sounds');
+        for (const t of doc.timers || []) put('TIMER_' + N(t.name), 'the timer ' + t.name);
+        for (const e of this.events(doc)) put('EVENT_' + N(e), 'the event ' + e);
+        // the kinds' animations: their scripts, events (the pack's, as many as are known as the kind is made, kind by kind),
+        // params, questions
+        if (kinds.length) put('ANIM_PARAMS', 'how many params an actor keeps');
+        let known = [];
+        for (const s of kinds) {
+            const a = s.animation;
+            for (const e of a.events)
+                if (!known.includes(e)) known.push(e);
+            for (const [what, items] of [['SCRIPT', a.scripts.map(x => x.name)], ['EVENT', known], ['PARAM', a.params.map(x => x.name)],
+                    ['GAME', a.questions || []]])
+                for (const n of items) put(N(s.name) + '_' + what + '_' + N(n), 'the ' + what.toLowerCase() + ' ' + n + ' of ' + s.name);
+        }
+        // the styles and the fonts they name, the dialogs' roles
+        let fonts = [];
+        for (const st of doc.styles || []) {
+            put('STYLE_' + N(st.name), 'the style ' + st.name);
+            if (st.font && !fonts.includes(st.font)) fonts.push(st.font);
+        }
+        for (const f of fonts) put('FONT_' + N(f), 'the font ' + f);
+        if (fonts.length) {
+            put('FONTS', 'the table of the fonts');
+            put('FONT_COUNT', 'how many fonts');
+        }
+        for (const d of doc.dialogs || []) {
+            const r = Dialogs.parse(d.text);
+            for (const role of r.dialog ? r.dialog.roles : []) put(N(d.name) + '_ROLE_' + N(role.role), 'the role ' + role.role + ' of ' + d.name);
+        }
+        if (doc.screen) {
+            put('SCREEN_WIDTH', 'the width of the screen');
+            put('SCREEN_HEIGHT', 'the height of the screen');
+        }
+        // the scenes: the kinds of their zones, their layers, pictures, actors, zones, entries, grids by name
+        for (const sc of doc.scenes || [])
+            for (const o of Scene.objects(sc))
+                if (o.type === 'zone' && o.kind) put('ZONE_' + N(o.kind), 'the kind of zones ' + o.kind);
+        for (const sc of doc.scenes || []) {
+            const at = 'SCENE_' + N(sc.name) + '_';
+            for (const l of sc.layers || []) put(at + 'LAYER_' + N(l.name), 'the layer ' + l.name + ' of ' + sc.name);
+            for (const o of Scene.objects(sc)) {
+                const kind = {picture: 'PICTURE', actor: 'ACTOR', zone: 'ZONE', entry: 'ENTRY'}[o.type];
+                if (kind && o.name) put(at + kind + '_' + N(o.name), 'the ' + o.type + ' ' + o.name + ' of ' + sc.name);
+            }
+            for (const g of sc.grids || [])
+                if (g.name) put(at + 'GRID_' + N(g.name), 'the grid ' + g.name + ' of ' + sc.name);
+        }
+        return out;
+    },
     freeName(list, base) {
         return Scene.freeName(list.map(x => typeof x === 'string' ? {
             name: x
@@ -195,9 +297,17 @@ const Game = {
             seen.add(c.name);
             if (!Number.isInteger(c.value) || c.value < -(2 ** 31) || c.value >= 2 ** 31) say('constants', c.name, c.name + ': ' + c.value + ' is no 32-bit number');
         }
+        // a constant is <PREFIX>_<NAME> in the pack's header (DGX-GE 0.3.0): the packer refuses one that names another thing
+        const header = this.headerNames(doc),
+            prefix = Anim.nameOf(doc.name || 'PACK') + '_';
+        let macros = new Map();
         for (const [n, v] of Object.entries(doc.constants || {})) {
+            const macro = Anim.nameOf(n);
             if (!this.isIdent(n)) say('packConstants', n, "'" + n + "' is no name: letters, digits and _");
             else if (Anim.reserved(n)) say('packConstants', n, "'" + n + "' is a word of the language of scripts: they cannot name it", false);
+            else if (macros.has(macro)) say('packConstants', n, 'the constant ' + n + ': its name in the header, ' + prefix + macro + ', is the constant ' + macros.get(macro) + "'s too");
+            else if (header.has(macro)) say('packConstants', n, 'the constant ' + n + ': its name in the header, ' + prefix + macro + ', is ' + header.get(macro) + "'s");
+            macros.set(macro, n);
             if (!Number.isInteger(v) || v < -(2 ** 31) || v >= 2 ** 31) say('packConstants', n, n + ': ' + v + ' is no 32-bit number');
         }
         seen = new Set();

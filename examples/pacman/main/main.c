@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "assets/pacman_names.h"
 #include "assets/pacman_pack.h"
 #include "dgx_di.h"
 #include "dgx_di_pad.h"
@@ -67,8 +66,8 @@ enum { MAX_CELLS = 28 * 31 };
 enum { BODY_PAC, BODY_GHOST, BODY_FRUIT = BODY_GHOST + GHOSTS, BODIES };
 
 typedef struct {
-    dgx_ge_walker_t walker; /* in the maze (its state hunting, blue, eyes): the game walks it */
-    dgx_ge_actor_t  actor;  /* all else: its scripts (GHOST) */
+    dgx_ge_walk_bind_t walk;  /* in the maze (its state hunting, blue, eyes): its walker moves it */
+    dgx_ge_actor_t     actor; /* all else: its scripts (GHOST) */
 } ghost_t;
 
 static dgx_ge_pack_t      pack;
@@ -91,8 +90,7 @@ static dgx_ge_game_t      game;
 static dgx_ge_actor_t     play;  /* the game's own actor: PLAY, shown in the zone message */
 static dgx_ge_actor_t     modes; /* the schedule of the ghosts' modes: MODES */
 static dgx_ge_actor_t     pac;
-static dgx_ge_walker_t    pac_walker;
-static int8_t             pac_way; /* the way he goes, or went last */
+static dgx_ge_walk_bind_t pac_walk; /* his walker moves him */
 static ghost_t            ghosts[GHOSTS];
 static dgx_ge_actor_t     fruit;
 static dgx_ge_actor_t     prompt; /* PRESS START, blinking under GAME OVER */
@@ -137,21 +135,9 @@ static int32_t number(int index, int32_t otherwise)
 
 static void say(dgx_ge_actor_t *actor, dgx_ge_anim_say_t what, uint8_t value, uint32_t at_ms, void *ctx);
 
-/* An actor told an event, moved on: a ghost's questions are its own (the context of dgx_ge_expr_ask). */
 static void tell(dgx_ge_actor_t *actor, int event, uint32_t at_ms)
 {
-    void *was            = dgx_ge_expr_ask_ctx;
-    dgx_ge_expr_ask_ctx  = actor;
     dgx_ge_actor_event(actor, event, at_ms, say, NULL);
-    dgx_ge_expr_ask_ctx = was;
-}
-
-static void advance(dgx_ge_actor_t *actor, uint32_t now)
-{
-    void *was           = dgx_ge_expr_ask_ctx;
-    dgx_ge_expr_ask_ctx = actor;
-    dgx_ge_actor_advance(actor, now, say, NULL);
-    dgx_ge_expr_ask_ctx = was;
 }
 
 static int phase(void)
@@ -223,14 +209,6 @@ static bool in_zones(int kind, int col, int row)
     return false;
 }
 
-/* An actor where its walker is: at rest, its place is the game's to set. */
-static void place(dgx_ge_actor_t *actor, const dgx_ge_walker_t *w)
-{
-    int x, y;
-    dgx_ge_walk_xy(w, &ways, &x, &y);
-    actor->x = x * 256, actor->y = (grid.y + y) * 256;
-}
-
 /* ---- the ghosts ---- */
 
 static ghost_t *ghost_of(const void *actor)
@@ -243,13 +221,6 @@ static ghost_t *ghost_of(const void *actor)
 static int state_of(const ghost_t *g)
 {
     return (int)g->actor.params[PACMAN_GHOST_PARAM_STATE];
-}
-
-/* Walked by the game: hunting, frightened, its eyes going home. */
-static bool in_maze(const ghost_t *g)
-{
-    const int s = state_of(g);
-    return s == PACMAN_ST_HUNTING || s == PACMAN_ST_BLUE || s == PACMAN_ST_EYES;
 }
 
 static bool frightened(void)
@@ -267,17 +238,18 @@ static int next_home(void)
     return -1;
 }
 
-/* What a ghost asks (game.<name> of GHOST), the asking actor the context: only the game knows it. */
-static float ask(int what, void *ctx)
+/* What a ghost asks (game.<name> of GHOST) of itself: only the game knows it. */
+static float ask(int what, const dgx_ge_actor_t *who, void *ctx)
 {
-    const ghost_t *g = ghost_of(ctx);
+    (void)ctx;
+    const ghost_t *g = ghost_of(who);
     int            col, row;
     switch (what) {
     case PACMAN_GHOST_GAME_PAC_COL:
     case PACMAN_GHOST_GAME_PAC_ROW:
         cell_of(dgx_ge_actor_x(&pac), dgx_ge_actor_y(&pac), &col, &row);
         return what == PACMAN_GHOST_GAME_PAC_COL ? col : row;
-    case PACMAN_GHOST_GAME_PAC_WAY: return pac_way;
+    case PACMAN_GHOST_GAME_PAC_WAY: return pac_walk.side < 0 ? DGX_GE_SIDE_LEFT : pac_walk.side; /* the way he goes, or went last */
     case PACMAN_GHOST_GAME_BLINKY_COL:
     case PACMAN_GHOST_GAME_BLINKY_ROW:
         cell_of(dgx_ge_actor_x(&ghosts[BLINKY].actor), dgx_ge_actor_y(&ghosts[BLINKY].actor), &col, &row);
@@ -302,46 +274,32 @@ static float ask(int what, void *ctx)
     }
 }
 
-/* At the middle of a cell: toward the cell it aims at, at its speed (its scripts say both); its eyes at the door go in. */
+/* At the middle of a cell: toward the cell it aims at (its scripts say); its eyes at the door go in, its own path from there. */
 static void ghost_arrive(dgx_ge_walker_t *w, uint32_t at_ms, void *ctx)
 {
     (void)ctx;
     ghost_t       *g = &ghosts[w->kind - 1];
     const int32_t *p = g->actor.params;
     if (p[PACMAN_GHOST_PARAM_STATE] == PACMAN_ST_EYES && w->row == (door_y - grid.y) / cell && (w->col == door_x / cell || w->col == door_x / cell - 1)) {
-        w->dir = DGX_GE_WALK_STILL, w->want = -1;
-        place(&g->actor, w);
+        g->walk.actor = NULL;
         tell(&g->actor, PACMAN_EVENT_ENTER, at_ms);
         return;
     }
-    w->want  = (int8_t)dgx_ge_walk_toward(w, &ways, p[PACMAN_GHOST_PARAM_TCOL], p[PACMAN_GHOST_PARAM_TROW]);
-    w->speed = (uint32_t)p[PACMAN_GHOST_PARAM_SPEED];
+    w->want = (int8_t)dgx_ge_walk_toward(w, &ways, p[PACMAN_GHOST_PARAM_TCOL], p[PACMAN_GHOST_PARAM_TROW]);
 }
 
-/* Out of the house (its script says): above the door, going left, half a cell on its way. */
+/* Out of the house (its script says): its walker moves it from above the door, going left. */
 static void ghost_out(ghost_t *g, uint32_t at_ms)
 {
-    const int col = door_x / cell, row = (door_y - grid.y) / cell;
-    dgx_ge_walk_start(&g->walker, col, row, (uint32_t)g->actor.params[PACMAN_GHOST_PARAM_SPEED], at_ms);
-    g->walker.dir = DGX_GE_SIDE_LEFT;
-    g->walker.pos = (door_x - (col * cell + cell / 2)) * -256;
+    dgx_ge_walk_bind_start(&g->walk, &g->actor, &ways, DGX_GE_SIDE_LEFT, at_ms);
 }
 
 /* Back the way it goes, at once (the modes change, a fright begins). */
 static void reverse(ghost_t *g, uint32_t now)
 {
     const int s = state_of(g);
-    if ((s != PACMAN_ST_HUNTING && s != PACMAN_ST_BLUE) || g->walker.dir < 0) return;
-    dgx_ge_walk_want(&g->walker, &ways, g->walker.dir ^ 1, now, ghost_arrive, NULL);
-}
-
-/* Its way, as the walker goes: told to it (its looks follow; frightened, it keeps it for after). */
-static void ghost_look(ghost_t *g, uint32_t now)
-{
-    const int dir = g->walker.dir;
-    if (dir < 0 || dir == g->actor.params[PACMAN_GHOST_PARAM_WAY]) return;
-    g->actor.params[PACMAN_GHOST_PARAM_WAY] = dir;
-    tell(&g->actor, PACMAN_EVENT_LEFT + dir, now);
+    if ((s != PACMAN_ST_HUNTING && s != PACMAN_ST_BLUE) || g->walk.walker.dir < 0) return;
+    dgx_ge_walk_bind_want(&g->walk, &ways, g->walk.walker.dir ^ 1, now, ghost_arrive, say, NULL);
 }
 
 static void frighten(uint32_t now)
@@ -359,20 +317,6 @@ static void hide_all(uint32_t now)
 }
 
 /* ---- Pac-Man ---- */
-
-static void pac_look(uint32_t now)
-{
-    const int dir = pac_walker.dir;
-    if (dir < 0) {
-        tell(&pac, PACMAN_EVENT_STOP, now);
-        return;
-    }
-    const int  s     = pac.script;
-    const bool still = s == PACMAN_PAC_SCRIPT_WHOLE || (s >= PACMAN_PAC_SCRIPT_STILL_RIGHT && s <= PACMAN_PAC_SCRIPT_STILL_DOWN);
-    if (dir == pac_way && !still) return; /* chomping that way already */
-    pac_way = (int8_t)dir;
-    tell(&pac, PACMAN_EVENT_LEFT + dir, now);
-}
 
 /* What PLAY's score was before it was told something: the points it gave are shown where it happened. */
 static void points_at(const dgx_ge_actor_t *where, int32_t before)
@@ -405,18 +349,18 @@ static void pac_arrive(dgx_ge_walker_t *w, uint32_t at_ms, void *ctx)
 /* Everyone where the editor put them, as at the start of a life: the ghosts and the fruit in their first scripts. */
 static void put_actors(uint32_t now)
 {
+    /* he is told the way he goes (his scripts chomp that way) and that he stands; his speed is the game's */
     dgx_ge_layout_actor_start(&layout, PACMAN_SCENE_MAZE_ACTOR_PAC, &pac, &kinds, now);
-    const int x = dgx_ge_actor_x(&pac), y = dgx_ge_actor_y(&pac) - grid.y;
-    dgx_ge_walk_start(&pac_walker, x / cell, y / cell, (uint32_t)number(PACMAN_GAME_PAC_SPEED, 0), now);
-    pac_walker.dir    = DGX_GE_SIDE_LEFT;
-    pac_walker.pos    = (x - (pac_walker.col * cell + cell / 2)) * -256;
-    pac_walker.corner = (uint8_t)number(PACMAN_GAME_CORNER_POINTS, 0);
-    pac_way           = DGX_GE_SIDE_LEFT;
+    pac_walk = (dgx_ge_walk_bind_t){.dy = (int16_t)grid.y, .turn = PACMAN_EVENT_LEFT, .stop = PACMAN_EVENT_STOP, .speed = -1, .way = -1};
+    pac_walk.walker.speed  = (uint32_t)number(PACMAN_GAME_PAC_SPEED, 0);
+    pac_walk.walker.corner = (uint8_t)number(PACMAN_GAME_CORNER_POINTS, 0);
+    dgx_ge_walk_bind_start(&pac_walk, &pac, &ways, DGX_GE_SIDE_LEFT, now);
+    /* a ghost is told its way (its param way too, for after a fright); its speed is its param's */
     for (int i = 0; i < GHOSTS; ++i) {
         ghost_t *g = &ghosts[i];
-        memset(&g->walker, 0, sizeof g->walker);
-        g->walker.kind = (uint8_t)(i + 1);
-        g->walker.dir  = DGX_GE_WALK_STILL;
+        g->walk    = (dgx_ge_walk_bind_t){
+               .dy = (int16_t)grid.y, .turn = PACMAN_EVENT_LEFT, .stop = -1, .speed = PACMAN_GHOST_PARAM_SPEED, .way = PACMAN_GHOST_PARAM_WAY};
+        g->walk.walker.kind = (uint8_t)(i + 1);
         dgx_ge_layout_actor_start(&layout, PACMAN_SCENE_MAZE_ACTOR_BLINKY + i, &g->actor, &kinds, now);
     }
     dgx_ge_layout_actor_start(&layout, PACMAN_SCENE_MAZE_ACTOR_FRUIT, &fruit, &kinds, now);
@@ -553,55 +497,28 @@ static dgx_ge_actor_t *body_actor(int handle)
     return handle == BODY_PAC ? &pac : handle == BODY_FRUIT ? &fruit : &ghosts[handle - BODY_GHOST].actor;
 }
 
-/* What a mask of one does to a mask of another it meets, as its script says (hit): an event to the other, one to itself. */
-static void hit(int handle, int mask, int other, int other_mask)
+/* A hit their scripts say (caught, eaten, the fruit) is sent while the game plays: one that stands it all stops the rest. */
+static dgx_ge_hit_verdict_t judge(int by, dgx_ge_actor_t *actor, int on, dgx_ge_actor_t *other, dgx_ge_hit_t *hit, void *ctx)
 {
-    dgx_ge_actor_t *a = body_actor(handle);
-    dgx_ge_hit_t    h;
-    if (phase() != PACMAN_PH_PLAYING || !dgx_ge_actor_hit(a, mask, other_mask, &h)) return; /* one meeting at a time stands it all */
-    if (h.event >= 0) tell(body_actor(other), h.event, maze_ms);
-    if (h.recoil >= 0) tell(a, h.recoil, maze_ms);
+    (void)by, (void)actor, (void)on, (void)other, (void)hit, (void)ctx;
+    return phase() == PACMAN_PH_PLAYING ? DGX_GE_HIT_SEND : DGX_GE_HIT_STOP;
 }
 
-static void meet(int handle_a, int index_a, int handle_b, int index_b, const dgx_ge_area_t *areas, int count, void *ctx)
-{
-    (void)areas, (void)count, (void)ctx;
-    hit(handle_a, index_a, handle_b, index_b);
-    hit(handle_b, index_b, handle_a, index_a);
-}
-
-/* The bodies as they are now (Pac-Man's side apart from the others'), and who of them meets whom. */
+/* The bodies as they are drawn (Pac-Man's side apart from the others'), and what those that meet do to each other. */
 static void look(void)
 {
-    for (int i = 0; i < BODIES; ++i) {
-        const dgx_ge_actor_t *a = body_actor(i);
-        if (a->image < 0 || !a->masks) {
-            dgx_ge_collisions_remove(bodies, i);
-            continue;
-        }
-        const dgx_ge_body_t b = {&pack, a->image, dgx_ge_actor_x(a), dgx_ge_actor_y(a), a->flip, a->masks};
-        dgx_ge_collisions_set(bodies, i, &b, (uint16_t)(i + 1), i == BODY_PAC ? 1 : 2);
-    }
-    dgx_ge_collisions_look(bodies, meet, NULL);
+    for (int i = 0; i < BODIES; ++i) dgx_ge_collisions_set_actor(bodies, i, &pack, body_actor(i), (uint16_t)(i + 1), i == BODY_PAC ? 1 : 2);
+    dgx_ge_collisions_hits(bodies, maze_ms, judge, say, NULL);
 }
 
 /* The maze on to now: Pac-Man and the ghosts walked, the schedule, who meets whom. */
 static void playing(uint32_t now)
 {
-    dgx_ge_walk_play(&pac_walker, &ways, now, pac_arrive, NULL);
-    pac_walker.speed = (uint32_t)number(frightened() ? PACMAN_GAME_PAC_FRIGHT_SPEED : PACMAN_GAME_PAC_SPEED, 0);
-    place(&pac, &pac_walker);
-    pac_look(now);
-    advance(&modes, modes_ms);
-    for (int i = 0; i < GHOSTS; ++i) {
-        ghost_t *g = &ghosts[i];
-        if (!in_maze(g)) continue;
-        g->walker.speed = (uint32_t)g->actor.params[PACMAN_GHOST_PARAM_SPEED];
-        dgx_ge_walk_play(&g->walker, &ways, now, ghost_arrive, NULL);
-        if (!in_maze(g)) continue; /* its eyes in at the door: its own path from there */
-        place(&g->actor, &g->walker);
-        ghost_look(g, now);
-    }
+    pac_walk.walker.speed = (uint32_t)number(frightened() ? PACMAN_GAME_PAC_FRIGHT_SPEED : PACMAN_GAME_PAC_SPEED, 0);
+    dgx_ge_walk_bind_play(&pac_walk, &ways, now, pac_arrive, say, NULL);
+    dgx_ge_actor_advance(&modes, modes_ms, say, NULL);
+    for (int i = 0; i < GHOSTS; ++i)
+        if (ghosts[i].walk.actor) dgx_ge_walk_bind_play(&ghosts[i].walk, &ways, now, ghost_arrive, say, NULL);
 }
 
 /* ---- the screen ---- */
@@ -723,8 +640,8 @@ static void control(dgx_ge_input_t *input, uint32_t real)
     for (int s = 0; s < 4 && w < 0; ++s)
         if (input->held & keys[s]) w = s;
     if (w >= 0) {
-        if (ph == PACMAN_PH_PLAYING) dgx_ge_walk_want(&pac_walker, &ways, w, maze_ms, pac_arrive, NULL);
-        else pac_walker.want = (int8_t)w; /* READY!: taken as he goes */
+        if (ph == PACMAN_PH_PLAYING) dgx_ge_walk_bind_want(&pac_walk, &ways, w, maze_ms, pac_arrive, say, NULL);
+        else pac_walk.walker.want = (int8_t)w; /* READY!: taken as he goes */
     }
 }
 
@@ -918,9 +835,9 @@ void app_main(void)
                 if (ph == PACMAN_PH_PLAYING || ph == PACMAN_PH_DYING || ph == PACMAN_PH_OVER) maze_ms += dt;
                 if (ph == PACMAN_PH_PLAYING && !frightened()) modes_ms += dt;
                 if (ph == PACMAN_PH_PLAYING) playing(maze_ms);
-                advance(&pac, maze_ms);
-                for (int i = 0; i < GHOSTS; ++i) advance(&ghosts[i].actor, maze_ms);
-                advance(&fruit, maze_ms);
+                dgx_ge_actor_advance(&pac, maze_ms, say, NULL);
+                for (int i = 0; i < GHOSTS; ++i) dgx_ge_actor_advance(&ghosts[i].actor, maze_ms, say, NULL);
+                dgx_ge_actor_advance(&fruit, maze_ms, say, NULL);
                 if (ph == PACMAN_PH_PLAYING) look();
                 if (ph == PACMAN_PH_OVER) dgx_ge_actor_advance(&prompt, game_ms, say, NULL);
                 /* the energizers blink: the set laid anew, drawn anew where they changed */

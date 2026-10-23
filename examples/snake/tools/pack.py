@@ -3,6 +3,9 @@
 The pack of the game from game_data/, the folder the sprite editor keeps (its document, its pictures by kind,
 <KIND>.anim, dialogs/*.dlg), by the engine's packer: main/assets/<name>.pack and its header <name>_pack.h. The builds
 call it (make and idf.py alike), nobody needs to: python3 tools/pack.py <engine> [<the game's folder>]
+
+One thing more than the editor keeps: the samples of the sounds the document names, from sounds/<name>.wav beside it
+(the editor keeps their names only). The constants of the document reach the C in the pack's header, <NAME>_<CONSTANT>.
 """
 import glob
 import os
@@ -23,6 +26,10 @@ out = os.path.join(game, "main", "assets")
 os.makedirs(out, exist_ok=True)
 pack = Pack(name.upper())
 pack.add_sprites(docs[0])
+for sound in list(pack.sounds):
+    wav = os.path.join(data, "sounds", sound + ".wav")
+    if os.path.exists(wav):
+        pack.add_sound(sound, wav=wav)
 pack.write(os.path.join(out, name + ".pack"), os.path.join(out, name + "_pack.h"))
 for w in pack.warnings:
     print("warning:", w)

@@ -1242,43 +1242,54 @@ def tetris_game():
                   {'name': 'next', 'tileset': 'TETRIS', 'x': box_x + 22, 'y': 36, 'cols': 4, 'rows': 2, 'cells': nrows, 'mods': nmods, 'variants': {}}],
         'exits': [], 'links': []})
 
+    # the shapes and the hand (how a held button repeats, how fast down drops) are the code's numbers; how fast a level
+    # falls is PLAY's (its table fall_ms)
     d['game'] = [{'name': f'{k}_{t}', 'value': shape_bits(s)} for k, turns in PIECES.items() for t, s in enumerate(turns)] + [
-        {'name': f'fall_{i + 1}', 'value': v} for i, v in enumerate((800, 717, 633, 550, 467, 383, 300, 217, 133, 100, 83, 83, 83, 67, 67))] + [
-        {'name': n, 'value': v} for n, v in (('cols', 10), ('rows', 20), ('spawn_col', 3), ('lock_ms', 500), ('repeat_after_ms', 170),
-                                             ('repeat_ms', 50), ('soft_drop_ms', 40))]
-    d['constants'] = {'LINES_PER_LEVEL': 10, 'TOP_LEVEL': 15, 'SIG_NUMBERS': 1, 'SIG_LEVEL': 2, 'SIG_OVER': 3, 'SIG_LOCK': 4, 'SIG_CLEAR': 5,
-                      'SIG_NEW': 6}
-    d['sounds'] = ['move', 'turn', 'lock', 'line', 'four', 'level_up', 'game_over']
+        {'name': n, 'value': v} for n, v in (('spawn_col', 3), ('repeat_after_ms', 170), ('repeat_ms', 50), ('soft_drop_ms', 40), ('voices', 4))]
+    d['constants'] = {'LINES_PER_LEVEL': 10, 'TOP_LEVEL': 15, 'PH_TITLE': 0, 'PH_PLAYING': 1, 'PH_CLEARING': 2, 'PH_OVER': 3,
+                      'SIG_NUMBERS': 1, 'SIG_OVER': 3, 'SIG_LOCK': 4, 'SIG_CLEAR': 5, 'SIG_NEW': 6}
+    sq, tri = 'square', 'triangle'
+    for name, notes in (('move', [(220, 220, 18, .12, sq)]),
+                        ('turn', [(440, 660, 30, .14, sq)]),
+                        ('lock', [(160, 90, 60, .25, sq)]),
+                        ('line', [(660, 990, 90, .22, tri), (990, 1320, 90, .22, tri)]),
+                        ('four', [(f, f, 70, .25, sq) for f in (523, 659, 784, 1047, 1319, 1568)]),
+                        ('level_up', [(f, f, 80, .22, tri) for f in (784, 988, 1175, 1568)]),
+                        ('game_over', [(f, f - 40, 220, .25, tri) for f in (523, 466, 415, 392)] + [(330, 200, 500, .25, tri)])):
+        p.sound(name, synth(notes))
     d['constants'].update({f'SND_{s.upper()}': i for i, s in enumerate(d['sounds'])})
     d['timers'] = [
         {'name': 'lock', 'once': '500ms', 'reset': 'scene', 'event': 'lock', 'start': ''},
         {'name': 'clear', 'once': '360ms', 'reset': 'scene', 'event': 'cleared', 'start': ''},
     ]
-    p.anim('PLAY', """# The game itself as an actor: the score, the lines, the level and how fast the pieces fall, worked out
-# here, and the waits of the game. The game tells it: landed (a piece lies on something: it locks after a
-# while), lifted (it moved off), full (lines are full: they flash a while), taken with given set (the lines
-# it took away at once), dropped with given set (cells a piece was dropped by hand), topped (no room).
-# Its signals: SIG_NUMBERS the numbers changed, SIG_LEVEL a new level (a row falls as the game's fall_<level> says),
-# SIG_OVER the game is over, SIG_LOCK the piece is locked, SIG_CLEAR the full lines go, SIG_NEW a new game
-# (the game empties the well).
-event start, landed, lifted, lock, full, cleared, taken, dropped, topped, restart
+    p.anim('PLAY', """# The game itself as an actor: its phase (what moves now: PH_*), the score, the lines, the level and how fast the
+# pieces fall, worked out here, and the waits of the game. The game tells it: moved and turned (the piece did),
+# landed (a piece lies on something: it locks after a while), lifted (it moved off), full (lines are full: they
+# flash a while), taken with given set (the lines it took away at once), dropped with given set (cells a piece was
+# dropped by hand), topped (no room). Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over, SIG_LOCK
+# the piece is locked, SIG_CLEAR the full lines go, SIG_NEW a new game (the game empties the well).
+event start, landed, lifted, lock, full, cleared, taken, dropped, topped, restart, moved, turned
+param phase PH_TITLE
 param score 0
 param lines 0
 param level 1
+param fall 800                # ms a row falls at this level
 param given 0                 # what the game gives with its event: the lines taken, the cells dropped
 table line_points 0 40 100 300 1200
+table fall_ms 800 717 633 550 467 383 300 217 133 100 83 83 83 67 67   # by level, from 1
 
 script idle
     frame none 1000ms
     hold
 
 script new_game
+    set phase PH_PLAYING
     set score 0
     set lines 0
     set level 1
+    set fall fall_ms[0]
     signal SIG_NEW
     signal SIG_NUMBERS
-    signal SIG_LEVEL
     goto idle
 
 script landing
@@ -1290,14 +1301,17 @@ script lifting
     goto idle
 
 script locking
+    sound SND_LOCK
     signal SIG_LOCK
     goto idle
 
-script flashing
+script flashing               # the full lines flash a while; nothing falls
+    set phase PH_CLEARING
     timer start clear
     goto idle
 
-script clearing
+script clearing               # the game takes them away and tells what it took (taken): that goes on from here
+    set phase PH_PLAYING
     signal SIG_CLEAR
     goto idle
 
@@ -1316,8 +1330,9 @@ script counted
     signal SIG_NUMBERS
     goto idle if lines < level * LINES_PER_LEVEL or level >= TOP_LEVEL
     add level 1
+    set fall fall_ms[level - 1]
     sound SND_LEVEL_UP
-    signal SIG_LEVEL
+    signal SIG_NUMBERS
     goto idle
 
 script count_drop
@@ -1325,21 +1340,35 @@ script count_drop
     signal SIG_NUMBERS
     goto idle
 
+script moving
+    sound SND_MOVE
+    goto idle
+
+script turning
+    sound SND_TURN
+    goto idle
+
 script over
+    set phase PH_OVER
+    timer stop lock
     sound SND_GAME_OVER
     signal SIG_OVER
     goto idle
 
-on start: idle -> new_game now
-on restart: idle -> new_game now
-on taken: idle -> count_lines now
-on dropped: idle -> count_drop now
-on topped: idle -> over now
-on landed: idle -> landing now
-on lifted: idle -> lifting now
-on lock: idle -> locking now
-on full: idle -> flashing now
-on cleared: idle -> clearing now
+# every script passes on: the game answers some of its signals with an event at once (SIG_CLEAR: taken, SIG_LOCK: full)
+group any: idle, new_game, landing, lifting, locking, flashing, clearing, count_lines, four, counted, count_drop, moving, turning, over
+on start: any -> new_game now
+on restart: any -> new_game now
+on taken: any -> count_lines now
+on dropped: any -> count_drop now
+on topped: any -> over now
+on landed: any -> landing now
+on lifted: any -> lifting now
+on lock: any -> locking now
+on full: any -> flashing now
+on cleared: any -> clearing now
+on moved: any -> moving now
+on turned: any -> turning now
 """)
     p.anim('WORDS', """# Words in the well: the prompt of the title blinks, GAME OVER drops into the middle, PAUSED blinks.
 event over, paused, resume, restart
@@ -1557,40 +1586,57 @@ def snake_game():
             layer('cells'),
             layer('actors', [entry('start', 10 * SC, FIELD_Y + r0 * SC + SC - 1)]),
             layer('text', [picture('WORDS', 'score.png', 30, 13, 'score_words'), picture('WORDS', 'best.png', 220, 13, 'best_words'),
-                           zone('score', 'label', 64, 2, 60, 16), zone('best', 'label', 246, 2, 60, 16)]),
+                           zone('score', 'label', 64, 2, 60, 16), zone('best', 'label', 246, 2, 60, 16),
+                           zone('message', 'message', 60, 96, 200, 24)]),  # what PLAY shows: GAME OVER
         ],
         'grids': [{'name': 'field', 'tileset': 'SNAKE', 'x': 0, 'y': FIELD_Y, 'cols': FIELD_COLS, 'rows': FIELD_ROWS, 'cells': cells,
                    'mods': mods, 'variants': {}}],
         'exits': [], 'links': []})
-    d['game'] = [{'name': n, 'value': v} for n, v in (('start_col', 10), ('start_row', r0))]
+    # the snake starts as it is laid here, START_LENGTH long, the apple where it lies; the star comes by the timer
+    d['game'] = [{'name': 'voices', 'value': 2}]
     d['constants'] = {'START_LENGTH': 5, 'STEP_MS': 150, 'FASTEST_MS': 60, 'FASTER_MS': 4, 'GROW': 3, 'APPLE_SCORE': 10, 'STAR_SCORE': 50,
-                      'STAR_EVERY': 5, 'SIG_NUMBERS': 1, 'SIG_OVER': 2, 'SIG_STAR': 3, 'SIG_STAR_GONE': 4, 'SIG_NEW': 5}
-    d['sounds'] = ['eat', 'star', 'turn', 'crash']
+                      'STAR_EVERY': 5, 'PH_TITLE': 0, 'PH_PLAYING': 1, 'PH_OVER': 2,
+                      'SIG_NUMBERS': 1, 'SIG_OVER': 2, 'SIG_STAR': 3, 'SIG_STAR_GONE': 4, 'SIG_NEW': 5}
+    sq, tri = 'square', 'triangle'
+    for name, notes in (('eat', [(520, 880, 60, .25, sq), (880, 1320, 60, .22, sq)]),
+                        ('star', [(f, f, 55, .22, tri) for f in (1047, 1319, 1568, 2093)]),
+                        ('turn', [(330, 300, 25, .12, sq)]),
+                        ('crash', [(400, 60, 450, .3, sq)])):
+        p.sound(name, synth(notes))
     d['constants'].update({f'SND_{s.upper()}': i for i, s in enumerate(d['sounds'])})
     d['timers'] = [{'name': 'star', 'once': '6000ms', 'reset': 'scene', 'event': 'star_gone', 'start': ''}]
-    p.anim('PLAY', """# The game itself as an actor: the score, the length the snake is to grow to, how fast it goes, when a star
-# comes. The game moves the snake a cell every speed ms and tells this actor what the head found.
-# Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over, SIG_STAR a star comes (a cell
-# of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays the
-# snake and an apple anew).
-event start, ate, star, crash, star_gone, restart
+    play = ['title', 'new_game', 'playing', 'apple', 'star_comes', 'star_goes', 'bonus', 'counted', 'turning', 'crashed', 'over']
+    p.anim('PLAY', """# The game itself as an actor: its phase (what moves now: PH_*), the score, the best, the length the snake is
+# to grow to, how fast it goes, when a star comes, the words it shows (GAME OVER: the game draws it in the zone
+# message). The game moves the snake a cell every speed ms and tells this actor what the head found and where it
+# turned. Its signals: SIG_NUMBERS the numbers changed, SIG_OVER the game is over (the best is kept), SIG_STAR a star
+# comes (a cell of the game's choosing), SIG_STAR_GONE it is gone (the timer star), SIG_NEW a new game (the game lays
+# the field anew).
+event start, ate, star, crash, star_gone, restart, turned
+param phase PH_TITLE
 param score 0
-param best 0
+param best 0                   # the game gives it what it kept
 param length START_LENGTH      # the snake grows a cell a step until it is so long
 param speed STEP_MS            # ms a step
 
-script idle
+script title                   # the title show plays (the game's)
+    set phase PH_TITLE
     frame none 1000ms
     hold
 
 script new_game
+    set phase PH_PLAYING
     set score 0
     set length START_LENGTH
     set speed STEP_MS
     timer stop star
     signal SIG_NEW
     signal SIG_NUMBERS
-    goto idle
+    goto playing
+
+script playing
+    frame none 1000ms
+    hold
 
 script apple                    # each apple: longer and faster
     add score APPLE_SCORE
@@ -1607,7 +1653,7 @@ script star_comes
 
 script star_goes
     signal SIG_STAR_GONE
-    goto idle
+    goto playing
 
 script bonus                    # a star: only points
     add score STAR_SCORE
@@ -1618,19 +1664,33 @@ script bonus                    # a star: only points
 script counted
     set best max(best, score)
     signal SIG_NUMBERS
-    goto idle
+    goto playing
 
-script crashed
+script turning
+    sound SND_TURN
+    goto playing
+
+script crashed                  # GAME OVER; a start in its first second is not taken
+    set phase PH_OVER
+    timer stop star
     sound SND_CRASH
     signal SIG_OVER
-    goto idle
+    frame WORDS_GAME_OVER 1000ms
+    goto over
 
-on start: idle -> new_game now
-on restart: idle -> new_game now
-on ate: idle -> apple now
-on star: idle -> bonus now
-on crash: idle -> crashed now
-on star_gone: idle -> star_goes now
+script over
+    frame WORDS_GAME_OVER 1000ms
+    hold
+
+group any: """ + ', '.join(play) + """
+on start: title -> new_game now
+on start: over -> new_game now
+on restart: any -> new_game now
+on ate: playing -> apple now
+on star: playing -> bonus now
+on turned: playing -> turning now
+on crash: playing -> crashed now
+on star_gone: playing -> star_goes now
 """)
     p.anim('SPARKLE', """# Where the snake ate: sparks fly out and are gone.
 script pop
