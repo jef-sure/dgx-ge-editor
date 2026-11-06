@@ -194,11 +194,12 @@ mygame/
       ru.po              translations
 
   main/main.c            the game's code: whatever the data does not say
-  main/CMakeLists.txt    board build (idf.py): makes the pack from game_data/
-  main/idf_component.yml the engine, DGX-DI and what the board needs
-  CMakeLists.txt         the ESP-IDF project, choice of board
-  Makefile               desktop build (make): also makes the pack itself
-  tools/pack.py          the engine's packer over game_data/ (the builds call it)
+  main/CMakeLists.txt    the build (idf.py), for a board and the computer: makes the pack from game_data/
+  main/idf_component.yml the engine, the boards (jef-sure/boards), DGX-DI
+  CMakeLists.txt         the ESP-IDF project: the board a preset chose, where the engine is
+  sdkconfig.defaults.<board>, CMakePresets.json
+                         the boards, as board_select.py of jef-sure/boards wrote them
+  tools/pack.py          the engine's packer over game_data/ (the build calls it)
 ```
 
 There are no fonts in the folder: the editor needs a DGX font only to
@@ -235,8 +236,8 @@ it may rearrange the text when it writes it.
 
 ```
 editor:   Open folder… → edits (saved into mygame/game_data/ by themselves)
-mygame/:  idf.py build flash        flash the board (CYD; another board: -D GAME_BOARD=…)
-          make && make run          the same in a window on the computer (SDL2)
+mygame/:  idf.py build flash        flash the board (CYD; another: idf.py --preset <board> build flash)
+          idf.py --preset host build   the same in a window on the computer (SDL2): ./build/host/mygame.elf
 ```
 
 The build makes the pack (`main/assets/mygame.pack` and the header
@@ -250,9 +251,9 @@ pictures, the tiles (the snake is drawn with tiles chosen by the cell
 modifier), a scene, a title show, a pause dialog and the PLAY actor with the
 game's rules (score, length, speed, the star). `main/main.c` contains only
 what the data does not say: moving cell by cell, turning, what the head ran
-into. The engine does not enable the CYD's touch screen, so Snake reads it
-itself (`main/cyd_touch.c`, the XPT2046 through DGX-DI): a swipe turns, a tap
-to the side of the head turns that way, a long press pauses.
+into. The touch is the board's (jef-sure/boards; the CYD's XPT2046 too, the
+mouse on the computer), its gestures DGX-DI's: a swipe turns, a tap to the
+side of the head turns that way, a long press pauses.
 
 Pictures are indexed PNG files, one per frame, with index 0 transparent. The
 editor does not change pixels except in two cases: moving an area with the

@@ -47,8 +47,8 @@ reads.
 
 ```
 editor:   Open folder… → edit (every change is written into mygame/game_data/ by itself)
-mygame/:  idf.py build flash         the board (the CYD; another: -D GAME_BOARD=…)
-          make && make run           the same in a window on the computer (SDL2)
+mygame/:  idf.py build flash         the board (the CYD; another: idf.py --preset <board> build flash)
+          idf.py --preset host build the same in a window on the computer (SDL2): ./build/host/mygame.elf
 ```
 
 The builds make the pack from `game_data/` themselves. The whole way, what is needed and what to do when something
@@ -58,8 +58,9 @@ goes wrong: [workflow.md](workflow.md).
 
 All drawn and written for this repository, and all in the editor's choice **Example…**:
 
-- `examples/snake/`, `examples/tetris/`, `examples/pacman/`: whole games, data and code, that build for the CYD and
-  the computer and run there;
+- `examples/snake/`, `examples/tetris/`, `examples/pacman/`: whole games, data and code, that build for the boards of
+  [jef-sure/boards](https://github.com/jef-sure/esp32-component-boards) (the CYD, Guition's 10", 7" and 4.3") and the
+  computer and run there;
 - `examples/wanderer/`: 19 frames of a figure with a sword, with masks, points and animations;
 - `examples/walk.json`: the tiny example of the format description.
 

@@ -1,0 +1,21 @@
+# board_select.py host --as cyd_s028r
+# from jef-sure/boards 0.0.5, commit 2857470: board_select.py --again PROJECT_DIR makes it again when the component changes
+# The computer, chosen by tools/board_select.py of jef-sure/boards: a window as large as cyd_s028r
+# Read before the project's own sdkconfig.defaults. Made from the data of the component: do not edit.
+CONFIG_IDF_TARGET="linux"
+CONFIG_BOARD_SELECT_HOST=y
+CONFIG_BOARD_HOST_SHOWS="cyd_s028r"
+CONFIG_BOARD_HOST_WIDTH=320
+CONFIG_BOARD_HOST_HEIGHT=240
+CONFIG_BOARD_HOST_MM_W=58
+CONFIG_BOARD_HOST_MM_H=43
+CONFIG_BOARD_HOST_COLOR_BITS=16
+CONFIG_BOARD_HOST_DIR_X=-1
+CONFIG_BOARD_HOST_DIR_Y=1
+CONFIG_BOARD_HOST_SWAP=1
+CONFIG_BOARD_HOST_TURN=270
+CONFIG_BOARD_HOST_BUS_HZ=40000000
+CONFIG_BOARD_HOST_BUS_LINES=1
+CONFIG_BOARD_HOST_BUTTONS="boot"
+# the window of DGX needs 48 KB of stack left in the task that starts the display: app_main's, in words of 8 bytes here
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384

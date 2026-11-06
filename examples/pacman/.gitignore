@@ -1,9 +1,10 @@
-# made by the builds (the lock of the dependencies too: it records where the engine lies on this machine)
-main/assets/
+# made by the builds, each board in build/<board> (the pack too, from game_data/; the locks of the components: they
+# record where a checkout of the engine lies on this machine)
 build/
-build-*/
 managed_components/
 sdkconfig
 sdkconfig.old
-nvs/
-dependencies.lock.*
+dependencies.lock*
+main/assets/
+# the 10"'s touch panel's firmware: the game's own, never given away
+main/jc8012p4a1c_touch.fw

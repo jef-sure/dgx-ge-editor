@@ -5,33 +5,41 @@ them are in the choice **Example…** at the top. Русский: [README-ru.md]
 
 | Folder | What it is |
 | --- | --- |
-| [`snake/`](snake) | Snake: a whole game, data and code, for the CYD and the computer |
-| [`tetris/`](tetris) | Tetris: a whole game, data and code, for the CYD and the computer |
-| [`pacman/`](pacman) | Pac-Man: a whole game, data and code, for the CYD (standing up) and the computer |
+| [`snake/`](snake) | Snake: a whole game, data and code, for the boards and the computer |
+| [`tetris/`](tetris) | Tetris: a whole game, data and code, for the boards and the computer |
+| [`pacman/`](pacman) | Pac-Man: a whole game, data and code, for the boards (the CYD standing up) and the computer |
 | [`wanderer/`](wanderer) | A figure with a sword: 19 frames with masks, points and animations (sprites only) |
 | `walk.json`, `walk.anim`, `walk-*.png` | The tiny example of the format description ([sprite-format-ru.md](../sprite-format-ru.md)) |
 
 ## The games
 
 Each game is a folder as [workflow.md](../workflow.md) describes: its data in `game_data/` (the editor opens it),
-its code and builds beside it.
+its code and build beside it. They build for the boards of
+[jef-sure/boards](https://github.com/jef-sure/esp32-component-boards), each in `build/<board>`: the CYD
+(`cyd_s028r`, the current board), Guition's 10" (`jc8012p4a1c`), 7" (`jc1060p470c`) and 4.3" (`jc4827w543c`), and
+the computer (`host`, a window of the CYD's display).
 
 ```sh
 cd examples/snake
-make && make run           # in a window (SDL2)
-idf.py build flash         # on the CYD
+idf.py build flash monitor                       # on the CYD
+idf.py --preset jc8012p4a1c build flash monitor  # on another board
+idf.py --preset host build && ./build/host/snake.elf   # in a window (SDL2)
 ```
 
-The builds make the pack from `game_data/` themselves. The engine: `DGX_GE`, else a checkout of
-`esp32-component-dgx-ge` beside the editor's folder; see [workflow.md](../workflow.md#what-is-needed).
+The build makes the pack from `game_data/` itself. The engine: `DGX_GE`, else a checkout of
+`esp32-component-dgx-ge` beside the editor's folder, else the registry's; see
+[workflow.md](../workflow.md#what-is-needed).
 
-| Game | Keys (computer) | Touch (CYD) |
+| Game | Keys (computer) | Touch (a board; the mouse on the computer) |
 | --- | --- | --- |
-| Snake | arrows; Enter: start, pause | swipe: turn; tap beside the head: turn that way; long press: pause; tap: start |
-| Tetris | ← →: move, ↑ or Shift: turn, Z or X: drop, ↓: faster; Enter: start, pause | drag sideways: move; tap: turn; swipe down: drop; long press: pause; tap: start |
-| Pac-Man | arrows (a turn may be asked ahead); Enter: start, pause | swipe: turn; tap beside him: turn that way; long press: pause; tap: start |
+| Snake | arrows or WASD; Enter: start, pause | swipe: turn; tap beside the head: turn that way; long press: pause; tap: start |
+| Tetris | ← →: move, ↑ or Space: turn, Backspace or K: drop, ↓: faster; Enter: start, pause | drag sideways: move; tap: turn; swipe down: drop; long press: pause; tap: start |
+| Pac-Man | arrows or WASD (a turn may be asked ahead); Enter: start, pause | swipe: turn; tap beside him: turn that way; long press: pause; tap: start |
 
-Shift is A, Z and X are B and X of the engine's host board; the mouse is a finger.
+The keys are the buttons of a gamepad as jef-sure/boards' board `host` gives them (Space and J are A, Backspace and K
+are B, Tab is SELECT, which pauses too); a board's button of no gamepad's name, the CYD's BOOT (on the computer the key
+B), is START. Where the touch follows several fingers and the board has no arrows (the 10", the 7", the 4.3"), DGX-DI's
+pad is drawn over the game.
 
 ### What is data, what is code
 

@@ -1,24 +1,11 @@
-## IDF Component Manager Manifest File: the engine, and what the boards need beyond it
+## IDF Component Manager Manifest File: the engine, the boards, and DGX-DI for the touch's gestures
 dependencies:
+  # the registry's; a checkout of the engine ($DGX_GE, else esp32-component-dgx-ge beside the editor's folder), a
+  # component of the project (CMakeLists.txt), takes its place
   jef-sure/dgx-ge:
-    version: "^0.4.0"
-    # the folder of the engine: $DGX_GE (CMakeLists.txt sets it when it is not); a game of its own may take the
-    # registry's instead, its version without this line
-    override_path: "$DGX_GE"
-  # the touch of a board: its fingers, the pad and the keyboard on the display
-  jef-sure/dgx-di: "^0.1.2"
-  # the CYD's resistive touch, the game's own (cyd_touch.c)
-  atanisoft/esp_lcd_touch_xpt2046:
-    version: "^1"
-    rules:
-      - if: "target == esp32"
-  # the P4 boards' sound, an ES8311
-  espressif/esp_codec_dev:
-    version: "~1.6.2"
-    rules:
-      - if: "target == esp32p4"
-  # the 7"'s touch panel, a GT911
-  espressif/esp_lcd_touch_gt911:
-    version: "^1"
-    rules:
-      - if: "target == esp32p4"
+    version: "^0.5.0"
+  # the hardware: the display, the touch, the sound of the board the build chose (sdkconfig.defaults.<board>); it
+  # brings what that board needs (DGX-DI for a touch, the drivers of its sound) and nothing else
+  jef-sure/boards: ">=0.0.5"
+  # the game's own use of DGX-DI on every board: the gestures of the finger (dgx_di_touch_t) and the pad's layout
+  jef-sure/dgx-di: "^0.1.5"

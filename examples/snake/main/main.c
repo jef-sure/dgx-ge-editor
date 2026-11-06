@@ -4,26 +4,30 @@
  * length, the speed, the star, GAME OVER), the sounds, the title show and the pause dialog are data of snake.json (the
  * pack the build makes of it, assets/snake.pack). This file is what data cannot say: the snake goes a cell every
  * speed ms the way the arrows turn it, and what its head finds it tells PLAY; PLAY's signals say what follows. The
- * best score is kept in NVS (on the computer: a file).
+ * best score is kept in NVS (on the computer: ESP-IDF's, its flash the file build/host/flash.bin).
  *
- * The same file builds for a board of the engine (idf.py: the CYD) and for the computer (make): it talks to the
- * hardware through dgx_ge_board.h, and the CYD's touch, which the engine's board leaves out, through cyd_touch.c.
- * The touch is DGX-DI's: a finger (the mouse on the computer) swipes the snake round, or taps beside its head the way
- * it is to turn; a long press pauses; a tap starts a game. The pad of DGX-DI is drawn on the display where a board can
- * show one and has no buttons.
+ * The same file builds for every board of jef-sure/boards and for the computer, its board host (CMakeLists.txt): it
+ * talks to the hardware through boards.h only, and asks for its parts by kind, never by the name of a board. What it
+ * does over the board is the engine's: the touch, the pad on the display (dgx_ge_input_di.h), the sound and the pace of
+ * the loop (dgx_ge_freertos.h). The touch's gestures are DGX-DI's: a finger (the mouse on the computer) swipes the
+ * snake round, or taps beside its head the way it is to turn; a long press pauses; a tap starts a game. The pad of
+ * DGX-DI is drawn on the display where the touch follows several fingers and the board has no arrows of its own.
  */
 #include <string.h>
 
 #include "assets/snake_pack.h"
+#include "boards.h"
+#include "boards_dgx.h"
 #include "dgx_di.h"
 #include "dgx_di_pad.h"
 #include "dgx_ge_anim.h"
-#include "dgx_ge_board.h"
 #include "dgx_ge_dialog.h"
 #include "dgx_ge_frame.h"
+#include "dgx_ge_freertos.h"
 #include "dgx_ge_game.h"
 #include "dgx_ge_glue.h"
 #include "dgx_ge_input.h"
+#include "dgx_ge_input_di.h"
 #include "dgx_ge_label.h"
 #include "dgx_ge_layout.h"
 #include "dgx_ge_mixer.h"
@@ -39,14 +43,21 @@
 #include "esp_timer.h"
 #include "fonts/TerminusTTFMedium12.h"
 #include "nvs_flash.h"
-#ifdef GAME_CYD
-#include "cyd_touch.h"
+#include "sdkconfig.h"
+#if CONFIG_BOARD_TOUCH /* a board with touch: its pointer of DGX-DI */
+#include "boards_dgx_di.h"
 #endif
 
 static const char *TAG = "snake";
 
 extern const uint8_t snake_pack_start[] asm("_binary_snake_pack_start");
 extern const uint8_t snake_pack_end[] asm("_binary_snake_pack_end");
+#if GAME_TOUCH_FW /* the 10"'s touch panel's firmware, the game's own (main/CMakeLists.txt) */
+extern const uint8_t touch_fw_start[] asm("_binary_jc8012p4a1c_touch_fw_start");
+extern const uint8_t touch_fw_end[] asm("_binary_jc8012p4a1c_touch_fw_end");
+#endif
+enum { VOLUME = 32 };           /* the mixer's (1..255) where the board tells no level of its speaker */
+enum { DSI_BAND = 128 * 1024 }; /* the frame sent to a panel of MIPI-DSI, in memory, 128 KB at a time */
 
 /* the sides of a cell: a body's modifier has a bit of each it goes on to; a head's or a tail's, the number of the side its body is on */
 enum { SIDE_UP, SIDE_RIGHT, SIDE_DOWN, SIDE_LEFT };
@@ -207,7 +218,7 @@ static void numbers(void)
     dgx_ge_label_number(&best_label, play.params[SNAKE_PLAY_PARAM_BEST]);
 }
 
-/* The best score over a restart, in NVS (on the computer: a file, the engine's boards/host/host_nvs.c): PLAY's param best. */
+/* The best score over a restart, in NVS (on the computer: ESP-IDF's, in build/host/flash.bin): PLAY's param best. */
 static void best_load(void)
 {
     esp_err_t e = nvs_flash_init();
@@ -243,8 +254,8 @@ static void volumes(void)
 }
 
 /*
- * The settings over a restart: the variables as the engine saves them (a chunk VARS), in NVS (on the computer: a file,
- * the engine's boards/host/host_nvs.c). A save names the pack it was made of: a pack made anew begins with its own.
+ * The settings over a restart: the variables as the engine saves them (a chunk VARS), in NVS (on the computer:
+ * ESP-IDF's, in build/host/flash.bin). A save names the pack it was made of: a pack made anew begins with its own.
  */
 static void settings_load(void)
 {
@@ -459,10 +470,29 @@ static void control(dgx_ge_input_t *input, uint32_t real)
     if (w >= 0) want = w;
 }
 
+/*
+ * The board's buttons held now, as the engine's: those of a gamepad's names (up, left, a, start…, on the computer its
+ * keys) as their bits, another (BOOT) as START: it starts a game, pauses, takes an answer.
+ */
+static uint32_t board_keys(void)
+{
+    uint32_t held = 0;
+    for (int i = 0; i < board_button_count(); ++i) {
+        bool down = false;
+        if (!board_button_at(i, &down) || !down) continue;
+        const uint32_t key = dgx_ge_key_named(board_button_name(i));
+        held |= key ? key : DGX_GE_KEY_START;
+    }
+    return held;
+}
+
 void app_main(void)
 {
-    board_t board;
-    if (!board_display_init(&board)) {
+#if GAME_TOUCH_FW
+    board_touch_firmware_set(touch_fw_start, (size_t)(touch_fw_end - touch_fw_start)); /* before its touch starts */
+#endif
+    board_display_t display;
+    if (!board_display_init(&display)) {
         ESP_LOGE(TAG, "no display");
         return;
     }
@@ -482,10 +512,12 @@ void app_main(void)
         ESP_LOGE(TAG, "no numbers of the game");
         return;
     }
-    /* the game's screen, the editor's: as large as the display lets it be, in its middle */
-    dgx_screen_t *lcd = board.lcd;
-    const int     w = SNAKE_SCREEN_WIDTH, h = SNAKE_SCREEN_HEIGHT;
-    frame               = dgx_ge_frame_fit(lcd, w, h, 0, board_band);
+    /* the game's screen, the editor's: as large as the display lets it be, in its middle; sent in bands to a panel of
+       MIPI-DSI, a strip a row to a panel on a bus (SPI, QSPI) */
+    dgx_screen_t              *lcd = board_dgx_screen(&display);
+    const dgx_bus_protocols_t *bus = board_dgx_bus(&display);
+    const int                  w = SNAKE_SCREEN_WIDTH, h = SNAKE_SCREEN_HEIGHT;
+    frame = dgx_ge_frame_fit(lcd, w, h, 0, bus && bus->bus_type == DGX_BUS_DSI ? DSI_BAND : 0);
     dgx_ge_layout_grid_t lg;
     if (!dgx_ge_layout_grid(&layout, SNAKE_SCENE_FIELD_GRID_FIELD, &lg) || lg.cols * lg.rows > MAX_CELLS) {
         ESP_LOGE(TAG, "no grid field");
@@ -541,30 +573,34 @@ void app_main(void)
     dgx_ge_talk_view_init(&view, blob, blob ? size : 0, frame, fonts, SNAKE_FONT_COUNT);
     dgx_ge_talk_view_pictures(&view, &pack, map_of);
 
-    /* the sound, where the board has it: the mixer at the board's rate, the board's task (on the computer, SDL) pulls it */
+    /* the sound, where the board has it: the mixer at the board's rate, the board's task (on the computer too) pulls it,
+       at the level the board tells (in percent of full scale: the one the person chose last, else its speaker's) */
     blob = dgx_ge_pack_blob(&pack, SNAKE_BLOB_SOUNDS, &size);
-    sound = board_sound_open(&mixer, &sounds, blob, size, dgx_ge_game_value(&game, SNAKE_GAME_VOICES, 2));
+    board_sound_t speaker;
+    if (board_sound_init(&speaker))
+        sound = dgx_ge_sound_open(&mixer, &sounds, blob, size, dgx_ge_game_value(&game, SNAKE_GAME_VOICES, 2), speaker.rate,
+                                  speaker.mixer_volume > 0 ? (uint8_t)(speaker.mixer_volume * 255 / 100) : VOLUME, board_sound_start);
     dgx_ge_expr_sound = &sound; /* the music a script waits for (music in expressions) */
     blob              = dgx_ge_pack_blob(&pack, SNAKE_BLOB_VARIABLES, &size);
     if (blob && dgx_ge_vars_open(&vars, blob, size)) dgx_ge_game_vars = &vars;
     settings_load();
     volumes();
 
-    /* the touch: the board's (the mouse on the computer), else the CYD's own; its gestures by the display's size */
-    bool pointing = board_pointer_start(lcd);
-#ifdef GAME_CYD
-    const bool cyd = !pointing && cyd_touch_start(lcd);
-    pointing       = pointing || cyd;
-#else
-    const bool cyd = false;
+    /* the touch, where the board has one (the computer's mouse), its gestures by the display's size; the pad of DGX-DI
+       over it where the touch follows several fingers (the pad's and the game's) and the board has no arrows of its own
+       (the computer's are its keys) */
+    const bool arrows   = board_button_find("left") >= 0 && board_button_find("right") >= 0;
+    bool       pointing = false, padded = false;
+#if CONFIG_BOARD_TOUCH
+    board_touch_t touch_panel;
+    pointing = board_touch_start(&display, &touch_panel) && dgx_ge_di_start(board_dgx_di_pointer(&touch_panel), display.mm_w, display.mm_h);
+    padded   = pointing && !arrows && touch_panel.fingers > 1 &&
+             dgx_ge_pad_show(lcd, dgx_di_pad_layout_classic, dgx_di_pad_layout_classic_size, 120);
 #endif
-    dgx_di_touch_display(&touch, lcd, board_mm_w, board_mm_h);
-    swipe_px = board_mm_w > 0 ? SWIPE_MM * lcd->width / board_mm_w : 11;
-    /* the pad of DGX-DI on the display where the board can show one and has no buttons of its own */
-    const bool padded = pointing && board_pad_able && !board_buttons_able &&
-                        board_pad_show(lcd, dgx_di_pad_layout_classic, dgx_di_pad_layout_classic_size, 120);
-    ESP_LOGI(TAG, "a frame of %dx%d, x%d, on a display of %dx%d; %s%s%s", w, h, frame->scale, lcd->width, lcd->height, sound.play ? "sound, " : "",
-             padded ? "a pad" : board_buttons_able ? "buttons" : pointing ? "a pointer" : "no input", cyd ? " (the CYD's touch)" : "");
+    dgx_di_touch_display(&touch, lcd, display.mm_w, display.mm_h);
+    swipe_px = display.mm_w > 0 ? SWIPE_MM * lcd->width / display.mm_w : 11;
+    ESP_LOGI(TAG, "a frame of %dx%d, x%d, on a display of %dx%d of %s; %s%s%s", w, h, frame->scale, lcd->width, lcd->height, board_info()->name,
+             sound.play ? "sound, " : "", pointing ? "a pointer, " : "", padded ? "a pad" : arrows ? "buttons" : "no pad");
 
     lay_set(true); /* the scene's paper, the title on it */
     start_title(now);
@@ -578,16 +614,12 @@ void app_main(void)
         if (!paused) clock_ms += real - last;
         last = real;
         if (pointing) {
-            int x = 0, y = 0;
-#ifdef GAME_CYD
-            const bool down = cyd ? cyd_touch(real, &x, &y) : board_pointer(real, &x, &y);
-#else
-            const bool down = board_pointer(real, &x, &y);
-#endif
+            int        x = 0, y = 0;
+            const bool down = dgx_ge_di_read(real, &x, &y);
             dgx_ge_input_pointer(&input, x, y, down);
             dgx_di_touch_take(&touch, x, y, down, real);
         }
-        dgx_ge_input_update(&input, board_buttons() | (padded ? board_pad_buttons() : 0));
+        dgx_ge_input_update(&input, board_keys() | dgx_ge_pad_buttons());
         control(&input, real);
 
         if (paused) {
@@ -628,6 +660,6 @@ void app_main(void)
         }
         dgx_ge_scene_render(scene);
 
-        board_pace(t0, STEP_US); /* the rest of the step waited, a tick given up at least */
+        dgx_ge_pace(t0, STEP_US); /* the rest of the step waited, a tick given up at least */
     }
 }

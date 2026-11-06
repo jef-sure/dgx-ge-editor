@@ -1,9 +1,10 @@
 # От редактора до платы
 
-Как игра, сделанная в этом редакторе, попадает на плату DGX-GE: что где лежит, что делаете вы, что делают сборки.
-Примеры [`examples/snake`](examples/snake), [`examples/tetris`](examples/tetris) и
-[`examples/pacman`](examples/pacman) проходят этот путь целиком и работают на CYD; см.
-[examples/README-ru.md](examples/README-ru.md). English: [workflow.md](workflow.md).
+Как игра, сделанная в этом редакторе, попадает на плату: что где лежит, что делаете вы, что делают сборки. Примеры
+[`examples/snake`](examples/snake), [`examples/tetris`](examples/tetris) и [`examples/pacman`](examples/pacman)
+проходят этот путь целиком и работают на платах [jef-sure/boards](https://github.com/jef-sure/esp32-component-boards)
+(CYD, 10", 7" и 4.3" Guition) и на компьютере; см. [examples/README-ru.md](examples/README-ru.md). Так же устроен
+`examples/hello` движка. English: [workflow.md](workflow.md).
 
 ## Игра — это папка
 
@@ -14,13 +15,16 @@ mygame/
     HERO/  GUARD/          картинки видов (PNG, папка на вид)
     HERO.anim  GUARD.anim  анимации видов на языке движка, с вашими комментариями
     dialogs/intro.dlg      диалоги
+    sounds/  music/        сэмплы звуков (WAV) и ноты музыки (MML)
     po/ru.po               переводы
   main/main.c              код игры: то, чего данные не говорят
-  main/CMakeLists.txt      сборка для платы (idf.py); делает пакет из game_data/
-  main/idf_component.yml   движок, DGX-DI и что нужно платам
-  CMakeLists.txt           проект ESP-IDF, выбор платы
-  Makefile                 сборка для компьютера (make, SDL2); тоже делает пакет
-  tools/pack.py            упаковщик движка над game_data/ (его зовут сборки)
+  main/CMakeLists.txt      сборка (idf.py), для платы и для компьютера; делает пакет из game_data/
+  main/idf_component.yml   движок, платы (jef-sure/boards), DGX-DI
+  CMakeLists.txt           проект ESP-IDF: плата, выбранная пресетом, где движок
+  sdkconfig.defaults.<плата>, CMakePresets.json
+                           платы, как их записал board_select.py из jef-sure/boards
+  sdkconfig.defaults       свои настройки ESP-IDF игры, после настроек платы
+  tools/pack.py            упаковщик движка над game_data/ (его зовёт сборка)
 ```
 
 - **Открывают `game_data/`**, а не JSON отдельно. `.json` — служебный файл редактора и упаковщика: сводка проекта,
@@ -47,12 +51,26 @@ mygame/
 
 ## Сборка
 
-В папке игры одна команда:
+В папке игры, в оболочке с ESP-IDF, одна команда:
 
 ```sh
-idf.py build flash         # плата: по умолчанию CYD; другая — idf.py -D GAME_BOARD=jc8012p4a1c build flash
-make && make run           # та же игра окном на компьютере
+idf.py build flash monitor                       # текущая плата, CYD
+idf.py --preset jc8012p4a1c build flash monitor  # другая: 10"; jc1060p470c — 7", jc4827w543c — 4.3"
+idf.py --preset host build                       # компьютер: окно с дисплеем CYD
+./build/host/mygame.elf
 ```
+
+Каждая плата собирается в `build/<плата>` со своим sdkconfig: ни `set-target`, ни menuconfig. Платы — те, что
+`board_select.py` из jef-sure/boards записал в папку (`sdkconfig.defaults.<плата>`, `CMakePresets.json`): другая —
+`python3 managed_components/jef-sure__boards/tools/board_select.py <плата> .` после первой сборки, которая его скачала,
+текущая — `board_select.py --current <плата> .`. ESP-IDF 5 пресеты не читает:
+`idf.py -B build/<плата> -D SDKCONFIG=build/<плата>/sdkconfig -D BOARD=<плата> build`.
+
+Компьютер — плата `host` из jef-sure/boards: цель linux у ESP-IDF, дисплей — окно DGX размером с показанную плату,
+мышь — палец, клавиши — кнопки (стрелки или WASD, Space — A, Backspace — B, Enter — START; BOOT у CYD — клавиша B),
+NVS хранится в `build/host/flash.bin`. Без человека за компьютером (проверка) — переменные DGX: `DGX_HOST_SCRIPT`
+(файл нажатий клавиш и мыши с их временами), `DGX_HOST_QUIT_MS`, `DGX_HOST_SHOT` (дисплей в файл PPM), вместе с
+`SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy` (`docs/host-ru.md` движка, раздел 7).
 
 Пакет каждая сборка делает сама, когда `game_data/` новее его: `tools/pack.py` зовёт упаковщик движка
 (`Pack.add_sprites`) и пишет `main/assets/<имя>.pack` и заголовок `<имя>_pack.h`. Заголовок называет всё из данных
@@ -77,28 +95,41 @@ make && make run           # та же игра окном на компьюте
 
 ## Своя игра
 
-Скопируйте папку примера (самый маленький — змейка) и переименуйте:
+Движок делает её из примера, переименованной и ни к чему вокруг не привязанной (DGX-GE 0.5.0, `tools/dgx_ge_new.py`):
+
+```sh
+python3 ~/git/esp32-component-dgx-ge/tools/dgx_ge_new.py ~/games/mygame --from snake   # или tetris, pacman, hello
+```
+
+Примеры редактора он находит рядом с папкой движка (или по `$DGX_GE_EDITOR`), переименовывает проект, пакет, префикс
+в C (`SNAKE_` → `MYGAME_`) и разметку, оставляет платы примера и пишет `CMakeLists.txt` проекта, README и настройки
+clangd. Потом откройте `~/games/mygame` в редакторе.
+
+Вручную: скопируйте папку примера (самый маленький — змейка) и переименуйте:
 
 1. `game_data/snake.json` → `game_data/mygame.json`; в редакторе откройте папку и дайте проекту имя (поле слева
    сверху): имена заголовка станут `MYGAME_…`.
-2. В `Makefile`, `CMakeLists.txt` и `main/CMakeLists.txt`: `snake` → `mygame` (имена файлов пакета).
-3. В `main/main.c`: `SNAKE_` → `MYGAME_`, `snake_pack` → `mygame_pack` — и делайте код своим.
+2. В `CMakeLists.txt` и `main/CMakeLists.txt`: `snake` → `mygame` (проект, имена файлов пакета).
+3. В `main/main.c`: `SNAKE_` → `MYGAME_`, `snake_pack` → `mygame_pack`, пространство NVS `"snake"` — и делайте код
+   своим.
+
+Копия вне папки редактора не находит рядом движка и берёт его из реестра (`main/idf_component.yml`); `DGX_GE=<копия>`
+даёт ей копию движка.
 
 ## Что нужно
 
 - Браузер с доступом к папкам: Chrome или Edge. Сервер не нужен: откройте `index.html`.
 - Движок **DGX-GE** с его инструментами (`tools/dgx_ge_pack.py`): копия
-  [esp32-component-dgx-ge](https://github.com/jef-sure/esp32-component-dgx-ge). Сборки берут его из переменной
-  `DGX_GE` (`export DGX_GE=~/git/esp32-component-dgx-ge`), иначе — рядом с папкой редактора: склонируйте оба
-  репозитория рядом, и говорить ничего не нужно.
-- **python3 с Pillow** для упаковщика — системный. В Python самого ESP-IDF Pillow нет; сборка для платы сама находит
-  системный `python3`.
-- Для платы: **ESP-IDF** 5.3 и новее (примеры собраны 6.0.1). **DGX** и **DGX-DI** придут из реестра сами.
-- Для компьютера: **SDL2** (`libsdl2-dev`), GNU make 4.3+, компилятор C; DGX и DGX-DI — те, что скачала сборка
-  `idf.py` этой игры (в её `managed_components/`), или копии
-  [esp32-component-dgx](https://github.com/jef-sure/esp32-component-dgx) и
-  [esp32-component-dgx-di](https://github.com/jef-sure/esp32-component-dgx-di) рядом с папкой редактора, или
-  `make DGX=… DGX_DI=…`.
+  [esp32-component-dgx-ge](https://github.com/jef-sure/esp32-component-dgx-ge), которую сборка берёт из переменной
+  `DGX_GE` (`export DGX_GE=~/git/esp32-component-dgx-ge`), иначе — рядом с папкой редактора (склонируйте оба
+  репозитория рядом, и говорить ничего не нужно); без копии — из ESP Component Registry (`^0.5.0`), сборка скачает
+  его в `managed_components/`.
+- **python3 с Pillow** для упаковщика — системный. В Python самого ESP-IDF Pillow нет; сборка сама находит системный
+  `python3`.
+- **ESP-IDF** 5.5 и новее (6 читает пресеты; примеры собраны 6.0.1), для плат и для компьютера одинаково.
+  **jef-sure/boards**, **DGX** и **DGX-DI** придут из реестра сами, а с ними то, что нужно плате (драйвер её сенсорной
+  панели, её кодек).
+- Для компьютера: **SDL2** (`libsdl2-dev`) и компилятор C компьютера.
 
 ### Версии
 
@@ -106,26 +137,30 @@ make && make run           # та же игра окном на компьюте
 
 | Что | Не ниже | Почему | Проверено с |
 | --- | --- | --- | --- |
-| DGX-GE | 0.4.0 | все три игры: музыка нотами на синтезаторах чипа, NES и FM, переменные игры (громкости, которые ставят ползунки диалога паузы), время кадра выражением (часы змейки, падение фигуры тетриса), события одного шага в очереди, поворот Пакмена на четверти, общая обвязка (`dgx_ge_frame_fit`, `board_sound_open`…), два времени разговора, `dgx_ge_grid_play`, фон и музыка сцены в её блобе | 0.4.0 |
-| DGX | 0.8.0 | DGX-GE требует `^0.8.0` | 0.8.1 |
-| DGX-DI | 0.1.2 | `idf_component.yml` игр | 0.1.2 |
-| ESP-IDF | 5.3 | минимум DGX-GE | 6.0.1 с DGX-GE 0.2.0; с 0.3.0 и 0.4.0 — только сборка для компьютера |
-| `atanisoft/esp_lcd_touch_xpt2046` (CYD) | 1.0 | `idf_component.yml` игр | — |
-| `espressif/esp_codec_dev`, `espressif/esp_lcd_touch_gt911` (платы P4) | 1.6.2, 1.0 | `idf_component.yml` игр | — |
+| DGX-GE | 0.5.0 | платы jef-sure/boards и то, что игра делает поверх них, — движка: касание как указатель и пад на дисплее (`dgx_ge_di_*`, `dgx_ge_pad_*`), звук (`dgx_ge_sound_open`), шаг цикла (`dgx_ge_pace`), кнопки платы по именам (`dgx_ge_key_named`); до неё (0.4.0) музыка нотами, переменные игры, время кадра выражением, поворот Пакмена на четверти | 0.5.0 |
+| jef-sure/boards | 0.0.5 | платы и плата компьютера `host`, уровень громкости динамика платы, кнопки по именам | 0.0.5 |
+| DGX | 0.10.10 | DGX-GE требует `^0.10.10` (окно компьютера) | 0.10.11 |
+| DGX-DI | 0.1.5 | `idf_component.yml` игр: первая, что собирается для компьютера | 0.1.5 |
+| ESP-IDF | 5.5 | минимум jef-sure/boards | 6.0.1: CYD, 10", 7", 4.3" и компьютер |
 | python3, Pillow | — | упаковщик | Python 3.14, Pillow 12.1 |
-| GNU make | 4.3 | `host.mk` движка | 4.4.1 |
 | SDL2 | — | плата компьютера | 2.32 |
 | node | — | только `examples/editor_check.js`, `make_games.py`, `check_games.py` | 24 |
 
 Прочерк: о неработающих старых версиях ничего не известно, но старые и не пробовали. `main/idf_component.yml` игр
-тоже требуют этот DGX-GE (`^0.4.0`); их `main/CMakeLists.txt` включают синтезатор их музыки (`dgx_ge_synths(chip)` —
-Пакмен, `nes` — тетрис, `fm` — змейка), их Makefile говорят то же (`DGX_GE_SYNTH_<ИМЯ>=1`).
+тоже требуют этот DGX-GE (`^0.5.0`); их `main/CMakeLists.txt` включают синтезатор их музыки (`dgx_ge_synths(chip)` —
+Пакмен, `nes` — тетрис, `fm` — змейка).
 
-## Касание CYD
+## Касание, кнопки, дисплей
 
-Плата CYD в движке свою резистивную панель не включает. Примеры берут её сами (`main/cyd_touch.c`, XPT2046 через
-DGX-DI, сборка с `GAME_CYD`) и читают жесты касанием DGX-DI: свайп короткий (2 мм: быстрое движение панель отдаёт
-немногими точками), долгое нажатие — пауза. На компьютере палец — мышь.
+Игры спрашивают части платы по роду (`boards.h`), никогда по её имени. Касание — платы (и резистивная XPT2046 у CYD,
+и мышь компьютера); жесты — касание DGX-DI в игре: свайп короткий (2 мм: быстрое движение резистивная панель отдаёт
+немногими точками), долгое нажатие — пауза. Пад DGX-DI рисуется поверх игры, где касание следит за несколькими
+пальцами, а своих стрелок у платы нет (10", 7", 4.3"); на CYD играет палец, на компьютере — клавиши. Кнопка платы без
+имени геймпада (BOOT у CYD) — START: начинает игру, ставит паузу, выбирает ответ. Пакмен ставит дисплей стоймя, где
+лёжа тот не показывает лабиринт целиком (CYD, 4.3"); на компьютере его окно держит CYD стоймя
+(`CONFIG_BOARD_HOST_TURN=0` в его `sdkconfig.defaults`). Сенсорной панели 10" нужна её прошивка, которую нельзя
+раздавать: игра встраивает `main/jc8012p4a1c_touch.fw`, если он есть (его делает `tools/gsl_firmware.py` из DGX-DI;
+jef-sure/boards, `docs/en/touch-firmware.md`), иначе касания нет.
 
 ## Если что-то не так
 
@@ -134,5 +169,8 @@ DGX-DI, сборка с `GAME_CYD`) и читают жесты касанием 
 | На кнопке папки ⚠ | Подсказка скажет: браузер не разрешил запись (щёлкните), или в папке наверху другой `.json` (упаковщику нужен один) |
 | Сборка остановилась на «the pack of game_data/ could not be made» | Выше — сообщение упаковщика: ошибка, которую редактор показывает в «Проблемах», или нет Pillow у `python3` |
 | Ошибка компиляции с именем `MYGAME_…` | Имя изменили в редакторе: заголовок за ним следует, поправьте и код |
-| «No engine at …» | Задайте `DGX_GE` — папку DGX-GE, или положите его копию рядом с папкой редактора |
+| «a DGX-GE older than 0.5.0» | Копия движка (`$DGX_GE`, иначе та, что рядом с папкой редактора) старее игры: обновите её (`git pull`) или уберите, чтобы взять движок из реестра |
+| «no sdkconfig.defaults.<плата> here» | Этой платы нет среди плат игры: `board_select.py <плата> .` из jef-sure/boards добавит её |
+| ESP-IDF 5 не собирает плату | Он не читает `CMakePresets.json`: `idf.py -B build/<плата> -D SDKCONFIG=build/<плата>/sdkconfig -D BOARD=<плата> build` |
+| sdkconfig платы держит старую настройку | ESP-IDF читает умолчания только в новый sdkconfig: удалите `build/<плата>` |
 | В предпросмотре диалога в редакторе не видно текста | Редактор показывает диалоги шрифтом DGX, загруженным один раз в узле «Шрифты» («Загрузить шрифт .c…»); на игру это не влияет |

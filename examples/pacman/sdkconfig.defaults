@@ -2,3 +2,6 @@
 # in milliseconds, so a tick a millisecond.
 CONFIG_FREERTOS_HZ=1000
 CONFIG_COMPILER_OPTIMIZATION_PERF=y
+# On the computer (the board host, showing the CYD) the window holds the CYD standing, its glass upright, as the game
+# stands it on the board (main.c, stand_up); the other boards have no such setting
+CONFIG_BOARD_HOST_TURN=0

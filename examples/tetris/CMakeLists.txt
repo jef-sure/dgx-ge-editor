@@ -1,44 +1,57 @@
-# Tetris for a board of the engine: idf.py build (the CYD), or another board by its directory in the engine's boards/:
-#   idf.py -B build-p4 -D SDKCONFIG=build-p4/sdkconfig -D GAME_BOARD=jc8012p4a1c build
-# The pack is made by the build from what the editor saved (main/CMakeLists.txt). Its sdkconfig: the board's
-# settings, those of its chip's revision, then the game's own (sdkconfig.defaults). For the computer: make (Makefile).
+# Tetris for a board of jef-sure/boards, or for the computer. The boards are chosen once, by tools/board_select.py of
+# jef-sure/boards, which wrote sdkconfig.defaults.<board> here and CMakePresets.json, whose preset builds a board in
+# build/<board> (ESP-IDF 6 reads the presets; ESP-IDF 5: idf.py -B build/<board> -D SDKCONFIG=build/<board>/sdkconfig
+# -D BOARD=<board> build):
+#   idf.py build                            the CYD (cyd_s028r), the current board
+#   idf.py --preset jc8012p4a1c build       the 10", the 7" (jc1060p470c), the 4.3" (jc4827w543c)
+#   idf.py --preset host build              the computer, a window as large as the CYD's display: build/host/tetris.elf
+# The pack is made by the build from game_data/, what the sprite editor keeps (main/CMakeLists.txt). Its sdkconfig: the
+# board's settings, then the game's own (sdkconfig.defaults), a later file over an earlier.
 cmake_minimum_required(VERSION 3.22)
 
-set(GAME_BOARD cyd CACHE STRING "the board: cyd, jc8012p4a1c (10\"), jc1060p470 (7\")")
-# the engine (DGX-GE, its component's folder): $DGX_GE, else a checkout of esp32-component-dgx-ge beside the editor's
-# folder; main/idf_component.yml takes it from $DGX_GE, set here when it was not
+# BOARD=<board>, which the preset of a board sets, builds with sdkconfig.defaults.<board> that board_select.py wrote,
+# then with the game's own sdkconfig.defaults. A -D SDKCONFIG_DEFAULTS=... on the command line wins.
+set(BOARD "" CACHE STRING "a board of this project: its file sdkconfig.defaults.<board>")
+if(NOT SDKCONFIG_DEFAULTS AND BOARD)
+	if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/sdkconfig.defaults.${BOARD})
+		message(FATAL_ERROR "no sdkconfig.defaults.${BOARD} here: run board_select.py ${BOARD} . of jef-sure/boards")
+	endif()
+	set(SDKCONFIG_DEFAULTS "sdkconfig.defaults.${BOARD};sdkconfig.defaults")
+endif()
+
+# The engine (DGX-GE): a checkout of it, $DGX_GE, else esp32-component-dgx-ge beside the editor's folder; without one,
+# the registry's (main/idf_component.yml), downloaded into managed_components/. A checkout is a component of the project
+# under the name the component manager knows the engine by, jef-sure__dgx-ge: a link of that name in the build's folder
+# (ESP-IDF names a component after its folder, and override_path in main/idf_component.yml leaves jef-sure__dgx-ge
+# unknown).
 if(DEFINED ENV{DGX_GE})
 	get_filename_component(engine $ENV{DGX_GE} ABSOLUTE)
 else()
 	get_filename_component(engine ${CMAKE_CURRENT_LIST_DIR}/../../../esp32-component-dgx-ge ABSOLUTE)
 endif()
-if(NOT EXISTS ${engine}/boards/${GAME_BOARD}/sdkconfig.defaults)
-	message(FATAL_ERROR "No engine at ${engine}: set DGX_GE to the folder of DGX-GE (a checkout of esp32-component-dgx-ge), or put that checkout beside the editor's folder")
-endif()
-set(ENV{DGX_GE} ${engine})
-set(board ${engine}/boards/${GAME_BOARD})
-if(GAME_BOARD STREQUAL "cyd")
-	set(board_target esp32)
-	set(board_defaults "${board}/sdkconfig.defaults")
-elseif(GAME_BOARD STREQUAL "jc8012p4a1c")
-	set(board_target esp32p4)
-	set(board_defaults "${board}/sdkconfig.defaults;${board}/sdkconfig.defaults.rev3")
-elseif(GAME_BOARD STREQUAL "jc1060p470")
-	set(board_target esp32p4)
-	set(board_defaults "${board}/sdkconfig.defaults;${board}/sdkconfig.defaults.rev1")
+if(EXISTS ${engine}/dgx_ge_di.cmake)
+	file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR})
+	file(CREATE_LINK ${engine} ${CMAKE_BINARY_DIR}/jef-sure__dgx-ge SYMBOLIC)
+	list(APPEND EXTRA_COMPONENT_DIRS ${CMAKE_BINARY_DIR}/jef-sure__dgx-ge)
+elseif(EXISTS ${engine}/idf_component.yml)
+	message(FATAL_ERROR "${engine}: a DGX-GE older than 0.5.0 (no dgx_ge_di.cmake); the game takes 0.5.0 or later")
 else()
-	message(FATAL_ERROR "GAME_BOARD ${GAME_BOARD}: cyd, jc8012p4a1c or jc1060p470")
+	set(engine ${CMAKE_CURRENT_LIST_DIR}/managed_components/jef-sure__dgx-ge)
 endif()
-if(NOT SDKCONFIG_DEFAULTS)
-	set(SDKCONFIG_DEFAULTS "${board_defaults};sdkconfig.defaults")
-endif()
-if(NOT IDF_TARGET AND NOT DEFINED ENV{IDF_TARGET})
-	set(IDF_TARGET ${board_target})
+
+# the computer (BOARD=host, the linux target of ESP-IDF): main and what it requires, the drivers of a chip are not there
+if(BOARD STREQUAL "host")
+	set(COMPONENTS main)
+	# in a shell of ESP-IDF the linker of a chip comes first in PATH: the compiler of the computer looks in /usr/bin first
+	set(CMAKE_EXE_LINKER_FLAGS "-B/usr/bin/")
 endif()
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-idf_build_set_property(DEPENDENCIES_LOCK ${CMAKE_CURRENT_LIST_DIR}/dependencies.lock.${IDF_TARGET})
-# the board and the engine for main/CMakeLists.txt: properties of the build, which ESP-IDF hands on even where it reads that file early
-idf_build_set_property(GAME_BOARD ${GAME_BOARD})
+# each board has its lock of the components beside the project: dependencies.lock.<board>
+if(BOARD)
+	idf_build_set_property(DEPENDENCIES_LOCK ${CMAKE_CURRENT_LIST_DIR}/dependencies.lock.${BOARD})
+endif()
+# the engine for main/CMakeLists.txt (its touch, its packer): a property of the build, which ESP-IDF hands on even where
+# it reads that file early
 idf_build_set_property(GAME_ENGINE ${engine})
 project(tetris)
